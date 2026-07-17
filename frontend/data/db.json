@@ -1,0 +1,37 @@
+{
+  "marketCache": {
+    "market_rate_usd": {
+      "value": {
+        "price": 17975,
+        "change": -0.47,
+        "status": "down",
+        "updated_at": "2026-07-16T08:40:36.804Z"
+      },
+      "expireAt": 1784191296804
+    },
+    "market_rate_gold": {
+      "value": {
+        "price": 2648766,
+        "buybackPrice": 2357052,
+        "change": -0.8,
+        "status": "down",
+        "updated_at": "2026-07-16T08:40:36.809Z"
+      },
+      "expireAt": 1784191296809
+    },
+    "market_rate_ihsg": {
+      "value": {
+        "price": 6094.793,
+        "change": 0.87,
+        "status": "up",
+        "updated_at": "2026-07-16T08:40:54.596Z"
+      },
+      "expireAt": 1784191284596
+    }
+  },
+  "marketLastUpdate": {
+    "ihsg": "2026-07-16T08:40:54.596Z",
+    "gold": "2026-07-16T08:40:36.809Z",
+    "usd": "2026-07-16T08:40:36.804Z"
+  }
+}

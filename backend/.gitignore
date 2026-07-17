@@ -1,0 +1,6 @@
+﻿node_modules/
+dist/
+.env
+logs/
+uploads/images/*
+!uploads/images/.gitkeep

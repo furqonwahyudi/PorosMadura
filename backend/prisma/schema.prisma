@@ -1,0 +1,374 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  EDITOR
+  REPORTER
+  CONTRIBUTOR
+}
+
+enum ArticleStatus {
+  DRAFT
+  PUBLISHED
+  SCHEDULED
+  ARCHIVED
+}
+
+enum AdStatus {
+  ACTIVE
+  INACTIVE
+  PENDING
+  DRAFT
+  EXPIRED
+}
+
+enum AdType {
+  DISPLAY
+  NATIVE
+  VIDEO
+  POPUP
+  INTERSTITIAL
+  FLOATING
+}
+
+enum AdFormat {
+  IMAGE
+  HTML
+  ADSENSE
+  GAM
+  JAVASCRIPT
+  IFRAME
+  EMBED
+  VIDEO
+  NATIVE
+}
+
+enum TargetDevice {
+  ALL
+  DESKTOP
+  LAPTOP
+  TABLET
+  MOBILE
+}
+
+enum CampaignStatus {
+  ACTIVE
+  COMPLETED
+  PAUSED
+}
+
+model User {
+  id          String    @id @default(uuid())
+  email       String    @unique
+  password    String
+  name        String
+  role        Role      @default(REPORTER)
+  avatar      String?
+  bio         String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  articlesAuthored   Article[] @relation("Author")
+  articlesEdited     Article[] @relation("Editor")
+  articlesReported   Article[] @relation("Reporter")
+  auditLogs          AuditLog[]
+  refreshTokens      RefreshToken[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  description String?
+  icon        String?
+  color       String?
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  parentId    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  articles    Article[]
+
+  @@map("categories")
+}
+
+model Article {
+  id              String        @id @default(uuid())
+  title           String
+  slug            String        @unique
+  content         String        @db.Text
+  excerpt         String?
+  image           String?
+  imageCaption    String?
+  status          ArticleStatus @default(DRAFT)
+  publishedAt     DateTime?
+  scheduledAt     DateTime?
+  isBreaking      Boolean       @default(false)
+  isHeadline      Boolean       @default(false)
+  isEditorChoice  Boolean       @default(false)
+  isTrending      Boolean       @default(false)
+  views           Int           @default(0)
+  reads           Int           @default(0)
+  shares          Int           @default(0)
+  metaTitle       String?
+  metaDescription String?
+  metaKeywords    String[]      @default([])
+  canonicalUrl    String?
+  videoUrl        String?
+  audioUrl        String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+
+  authorId    String
+  author      User     @relation("Author", fields: [authorId], references: [id])
+
+  editorId    String?
+  editor      User?    @relation("Editor", fields: [editorId], references: [id])
+
+  reporterId  String?
+  reporter    User?    @relation("Reporter", fields: [reporterId], references: [id])
+
+  tags        ArticleTag[]
+  comments    Comment[]
+
+  @@map("articles")
+}
+
+model Tag {
+  id       String       @id @default(uuid())
+  name     String       @unique
+  slug     String       @unique
+  articles ArticleTag[]
+
+  @@map("tags")
+}
+
+model ArticleTag {
+  articleId String
+  tagId     String
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([articleId, tagId])
+  @@map("article_tags")
+}
+
+model Comment {
+  id         String   @id @default(uuid())
+  content    String   @db.Text
+  author     String
+  email      String?
+  likes      Int      @default(0)
+  dislikes   Int      @default(0)
+  isApproved Boolean  @default(false)
+  parentId   String?
+  articleId  String
+  createdAt  DateTime @default(now())
+
+  article   Article   @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies   Comment[] @relation("CommentReplies")
+
+  @@map("comments")
+}
+
+model AdSlot {
+  id          String  @id @default(uuid())
+  name        String
+  slug        String  @unique
+  size        String
+  type        AdType  @default(DISPLAY)
+  page        String  @default("all")
+  sticky      Boolean @default(false)
+  floating    Boolean @default(false)
+  priority    Int     @default(1)
+  isActive    Boolean @default(true)
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ads      Ad[]
+  pricings AdPricing[]
+
+  @@map("ad_slots")
+}
+
+model Advertiser {
+  id        String     @id @default(uuid())
+  name      String
+  email     String     @unique
+  phone     String?
+  company   String
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  campaigns Campaign[]
+  ads       Ad[]
+
+  @@map("advertisers")
+}
+
+model Campaign {
+  id           String         @id @default(uuid())
+  name         String
+  budget       Decimal        @db.Decimal(12, 2)
+  startDate    DateTime
+  endDate      DateTime
+  status       CampaignStatus @default(ACTIVE)
+  advertiserId String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  advertiser Advertiser @relation(fields: [advertiserId], references: [id])
+  ads        Ad[]
+
+  @@map("campaigns")
+}
+
+model Ad {
+  id           String       @id @default(uuid())
+  name         String
+  title        String?
+  imageDesktop String?
+  imageMobile  String?
+  landingUrl   String
+  targetBlank  Boolean      @default(true)
+  altText      String?
+  format       AdFormat     @default(IMAGE)
+  htmlCode     String?      @db.Text
+  scriptCode   String?      @db.Text
+  priority     Int          @default(1)
+  status       AdStatus     @default(DRAFT)
+  startDate    DateTime
+  endDate      DateTime
+  schedule     Json?
+  targetDevice TargetDevice @default(ALL)
+  targetPages  String[]     @default([])
+  impressions  Int          @default(0)
+  clicks       Int          @default(0)
+  revenue      Decimal      @default(0) @db.Decimal(12, 2)
+  viewability  Decimal      @default(0) @db.Decimal(5, 2)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  slotId       String
+  slot         AdSlot     @relation(fields: [slotId], references: [id])
+  advertiserId String
+  advertiser   Advertiser @relation(fields: [advertiserId], references: [id])
+  campaignId   String?
+  campaign     Campaign?  @relation(fields: [campaignId], references: [id])
+
+  @@map("ads")
+}
+
+model AdPricing {
+  id                 String   @id @default(uuid())
+  slotId             String
+  pricePerDay        Decimal  @db.Decimal(10, 2)
+  pricePerImpression Decimal? @db.Decimal(10, 6)
+  pricePerClick      Decimal? @db.Decimal(10, 4)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  slot AdSlot @relation(fields: [slotId], references: [id])
+
+  @@map("ad_pricings")
+}
+
+model MediaFile {
+  id         String   @id @default(uuid())
+  name       String
+  filename   String
+  url        String
+  path       String
+  mimeType   String
+  size       Int
+  width      Int?
+  height     Int?
+  tags       String[] @default([])
+  uploadedAt DateTime @default(now())
+
+  @@map("media_files")
+}
+
+model DailyAnalytics {
+  id             String   @id @default(uuid())
+  date           DateTime @unique @db.Date
+  visits         Int      @default(0)
+  pageviews      Int      @default(0)
+  uniqueVisitors Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  @@map("daily_analytics")
+}
+
+model SearchLog {
+  id             String   @id @default(uuid())
+  term           String   @unique
+  count          Int      @default(1)
+  lastSearchedAt DateTime @default(now())
+
+  @@map("search_logs")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  role      String?
+  action    String
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}
+
+model WebsiteSettings {
+  id             String   @id @default("singleton")
+  siteName       String   @default("Poros Madura")
+  tagline        String   @default("Berita Tepat, Fakta Kuat")
+  logoUrl        String?
+  faviconUrl     String?
+  primaryColor   String   @default("#0D2B5C")
+  secondaryColor String   @default("#1E40AF")
+  accentColor    String   @default("#D71920")
+  contactEmail   String?
+  contactPhone   String?
+  address        String?
+  socials        Json     @default("{}")
+  adSettings     Json     @default("{}")
+  updatedAt      DateTime @updatedAt
+
+  @@map("website_settings")
+}

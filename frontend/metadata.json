@@ -1,0 +1,6 @@
+{
+  "name": "Poros Madura",
+  "description": "Website Portal Berita Profesional Terlengkap & Modern dengan CMS Admin Terintegrasi AI - Poros Madura",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
