@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import path from 'path';
 import rateLimit from 'express-rate-limit';
+import { prisma } from './config/database';
 import { errorHandler } from './middleware/errorHandler';
 import { notFound } from './middleware/notFound';
 import authRoutes from './modules/auth/auth.routes';
