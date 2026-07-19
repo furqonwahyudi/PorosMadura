@@ -67,9 +67,33 @@ export async function getArticles(req: Request, res: Response, next: NextFunctio
     const category = req.query.category as string;
     const subCategory = req.query.subCategory as string;
     const status = req.query.status as string || 'PUBLISHED';
-    const sort = req.query.sort as string || 'publishedAt';
+    const sort = req.query.sort as string || (status === 'DRAFT' || status === 'all' || status === 'ALL' ? 'createdAt' : 'publishedAt');
+    const q = req.query.q as string;
 
-    const where: any = { status: status as any };
+    const where: any = {};
+    if (status !== 'ALL' && status !== 'all') {
+      where.status = status as any;
+    }
+    if (req.query.isEditorChoice === 'true') {
+      where.isEditorChoice = true;
+    }
+    if (req.query.isBreaking === 'true') {
+      where.isBreaking = true;
+    }
+    if (req.query.isHeadline === 'true') {
+      where.isHeadline = true;
+    }
+    if (req.query.isTrending === 'true') {
+      where.isTrending = true;
+    }
+    if (q) {
+      where.OR = [
+        { title: { contains: q, mode: 'insensitive' } },
+        { excerpt: { contains: q, mode: 'insensitive' } },
+        { content: { contains: q, mode: 'insensitive' } },
+      ];
+    }
+
     if (category) {
       const cat = await prisma.category.findFirst({ where: { slug: category } });
       if (cat) {
@@ -118,6 +142,28 @@ export async function getArticleBySlug(req: Request, res: Response, next: NextFu
           take: 20,
           orderBy: { createdAt: 'desc' },
         },
+      },
+    });
+
+    if (!article) throw new AppError('Artikel tidak ditemukan', 404);
+
+    res.json({ success: true, data: article });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getArticleById(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { id } = req.params;
+    const article = await prisma.article.findUnique({
+      where: { id },
+      include: {
+        category: true,
+        author: { select: { id: true, name: true } },
+        editor: { select: { id: true, name: true } },
+        reporter: { select: { id: true, name: true } },
+        tags: { include: { tag: true } },
       },
     });
 
@@ -366,3 +412,56 @@ export async function archiveArticle(req: AuthRequest, res: Response, next: Next
     next(error);
   }
 }
+
+export async function scrapeArticle(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { url } = req.body;
+    if (!url) throw new AppError('URL is required', 400);
+
+    const response = await fetch(url);
+    if (!response.ok) throw new AppError('Failed to fetch the URL', 400);
+    const html = await response.text();
+
+    const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
+    let title = titleMatch ? titleMatch[1].trim() : '';
+    title = title.split(' - ')[0].split(' | ')[0].trim();
+
+    const descMatch = html.match(/<meta\s+name=["']description["']\s+content=["']([^"']+)["']/i) 
+      || html.match(/<meta\s+property=["']og:description["']\s+content=["']([^"']+)["']/i);
+    const excerpt = descMatch ? descMatch[1].trim() : '';
+
+    let content = '';
+    const bodyMatch = html.match(/<body[^>]*>([\s\S]+?)<\/body>/i);
+    if (bodyMatch) {
+      let bodyHtml = bodyMatch[1];
+      bodyHtml = bodyHtml.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+      bodyHtml = bodyHtml.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+      
+      const pMatches = bodyHtml.match(/<p[^>]*>([\s\S]+?)<\/p>/gi);
+      if (pMatches) {
+        content = pMatches
+          .map(p => p.replace(/<[^>]*>/g, '').trim())
+          .filter(text => text.length > 50)
+          .slice(0, 8)
+          .map(text => `<p>${text}</p>`)
+          .join('\n');
+      }
+    }
+
+    if (!content) {
+      content = '<p>Konten artikel gagal diambil secara otomatis. Silakan isi konten secara manual.</p>';
+    }
+
+    res.json({
+      success: true,
+      data: {
+        title,
+        excerpt,
+        content
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+

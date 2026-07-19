@@ -32,8 +32,8 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     adminApi
-      .get<{ user: AdminUser }>("/api/auth/me")
-      .then(({ user }) => setUser(user))
+      .get<{ success: boolean; data: AdminUser }>("/api/auth/me")
+      .then((res) => setUser(res.data))
       .catch(() => {
         localStorage.removeItem("admin_token");
         setToken(null);
@@ -42,13 +42,14 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const res = await adminApi.post<{ accessToken: string; user: AdminUser }>(
-      "/api/auth/login",
-      { email, password }
-    );
-    localStorage.setItem("admin_token", res.accessToken);
-    setToken(res.accessToken);
-    setUser(res.user);
+    const res = await adminApi.post<{
+      success: boolean;
+      data: { accessToken: string; user: AdminUser };
+    }>("/api/auth/login", { email, password });
+    
+    localStorage.setItem("admin_token", res.data.accessToken);
+    setToken(res.data.accessToken);
+    setUser(res.data.user);
   }, []);
 
   const logout = useCallback(() => {

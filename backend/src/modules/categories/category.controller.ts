@@ -17,11 +17,23 @@ const categorySchema = z.object({
 
 export async function getCategories(req: Request, res: Response, next: NextFunction) {
   try {
+    const isAdmin = req.query.admin === 'true';
+    const whereClause: any = {};
+    if (!isAdmin) {
+      whereClause.isActive = true;
+      whereClause.parentId = null;
+    } else {
+      whereClause.parentId = null;
+    }
+
     const categories = await prisma.category.findMany({
-      where: { isActive: true, parentId: null },
+      where: whereClause,
       include: {
-        children: { where: { isActive: true }, orderBy: { sortOrder: 'asc' } },
-        _count: { select: { articles: { where: { status: 'PUBLISHED' } } } },
+        children: { 
+          where: isAdmin ? undefined : { isActive: true }, 
+          orderBy: { sortOrder: 'asc' } 
+        },
+        _count: { select: { articles: true } },
       },
       orderBy: { sortOrder: 'asc' },
     });

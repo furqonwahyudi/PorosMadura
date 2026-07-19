@@ -1,103 +1,306 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Menu, Bell, Search, LogOut, ChevronDown } from "lucide-react";
+import React, { useState } from "react";
+import { useLocation, Link } from "react-router-dom";
+import {
+  Search, Bell, Moon, Sun, Command, ChevronRight,
+  Settings, LogOut, User, HelpCircle, Menu
+} from "lucide-react";
 import { useAdminAuth } from "../../../context/AdminAuthContext";
 
 interface AdminTopbarProps {
-  onMenuToggle: () => void;
-  pageTitle: string;
+  onToggleSidebar: () => void;
+  onOpenSearch: () => void;
+  darkMode: boolean;
+  onToggleDark: () => void;
 }
 
-export default function AdminTopbar({ onMenuToggle, pageTitle }: AdminTopbarProps) {
-  const { user, logout } = useAdminAuth();
-  const navigate = useNavigate();
-  const [showUserMenu, setShowUserMenu] = useState(false);
+const NOTIFICATIONS = [
+  { id: 1, type: "comment", text: "Ahmad Fauzi mengomentari \"Jembatan Suramadu\"", time: "2 menit lalu", unread: true },
+  { id: 2, type: "publish", text: "Artikel terjadwal berhasil diterbitkan otomatis", time: "14 menit lalu", unread: true },
+  { id: 3, type: "user", text: "Jurnalis baru Siti Rahayu telah mendaftar", time: "1 jam lalu", unread: true },
+  { id: 4, type: "system", text: "Google Indexing API: 24 URL terkirim", time: "2 jam lalu", unread: false },
+];
 
-  const handleLogout = () => {
-    logout();
-    navigate("/admin/login");
-  };
+const PATH_LABELS: Record<string, string> = {
+  admin: "Portal Admin",
+  dashboard: "Dashboard",
+  analytics: "Analytics",
+  visitor: "Visitors",
+  posts: "Post Management",
+  create: "Create Article",
+  published: "Published",
+  draft: "Draft",
+  scheduled: "Scheduled",
+  recommendation: "Recommendation",
+  breaking: "Breaking News",
+  trash: "Trash",
+  taxonomies: "Taxonomies",
+  categories: "Categories",
+  tags: "Tags",
+  media: "Media Library",
+  upload: "Upload",
+  images: "Images",
+  videos: "Videos",
+  documents: "Documents",
+  optimization: "Optimization",
+  comments: "Comments",
+  moderation: "Moderation",
+  spam: "Spam",
+  blacklist: "Blacklist",
+  reports: "User Reports",
+  users: "User Management",
+  roles: "Roles & Permissions",
+  ads: "Advertisement",
+  seo: "SEO Settings",
+  market: "Market Widget",
+  settings: "Website Settings",
+};
+
+export default function AdminTopbar({ onToggleSidebar, onOpenSearch, darkMode, onToggleDark }: AdminTopbarProps) {
+  const { user, logout } = useAdminAuth();
+  const location = useLocation();
+  const [showNotifs, setShowNotifs] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+
+  // Generate breadcrumbs from path
+  const paths = location.pathname.split("/").filter(Boolean);
+  const crumbs = paths.map(path => PATH_LABELS[path] || path.charAt(0).toUpperCase() + path.slice(1).replace("-", " "));
+  const unreadCount = NOTIFICATIONS.filter(n => n.unread).length;
 
   return (
-    <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-6 shrink-0 z-20">
-      {/* Left: hamburger + page title */}
-      <div className="flex items-center gap-4">
-        <button
-          onClick={onMenuToggle}
-          className="lg:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
-          aria-label="Toggle sidebar"
-        >
-          <Menu size={20} />
-        </button>
-        <h1 className="text-base font-semibold text-slate-800 font-['Poppins'] truncate max-w-xs lg:max-w-none">
-          {pageTitle}
-        </h1>
+    <header
+      style={{
+        height: "var(--header-height)",
+        background: "var(--surface)",
+        borderBottom: "1px solid var(--border)",
+        display: "flex",
+        alignItems: "center",
+        padding: "0 20px",
+        gap: 12,
+        position: "sticky",
+        top: 0,
+        zIndex: 20,
+        flexShrink: 0,
+      }}
+    >
+      {/* Mobile Menu Toggle */}
+      <button
+        onClick={onToggleSidebar}
+        className="lg:hidden p-1.5 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-muted)]"
+        style={{ border: "none", background: "transparent", cursor: "pointer" }}
+      >
+        <Menu size={20} />
+      </button>
+
+      {/* Breadcrumb */}
+      <div style={{ display: "flex", alignItems: "center", gap: 4, flex: 1, minWidth: 0 }}>
+        {crumbs.map((crumb, i) => (
+          <span key={i} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            {i > 0 && <ChevronRight size={12} style={{ color: "var(--text-tertiary)" }} />}
+            <span style={{
+              fontSize: 13,
+              color: i === crumbs.length - 1 ? "var(--text-primary)" : "var(--text-tertiary)",
+              fontWeight: i === crumbs.length - 1 ? 600 : 400,
+              whiteSpace: "nowrap",
+            }}>
+              {crumb}
+            </span>
+          </span>
+        ))}
       </div>
 
-      {/* Right: search + notif + user */}
-      <div className="flex items-center gap-2">
-        {/* Search bar (desktop only) */}
-        <div className="hidden md:flex items-center gap-2 bg-slate-100 rounded-lg px-3 py-1.5 w-52">
-          <Search size={14} className="text-slate-400 shrink-0" />
-          <input
-            type="text"
-            placeholder="Cari artikel, user..."
-            className="bg-transparent text-xs text-slate-600 placeholder-slate-400 outline-none w-full"
-          />
-        </div>
-
-        {/* Notification bell */}
-        <button className="relative p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors">
-          <Bell size={18} />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#D71920] rounded-full" />
+      {/* Actions */}
+      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+        {/* Search trigger */}
+        <button
+          onClick={onOpenSearch}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "5px 10px",
+            background: "var(--bg-subtle)",
+            border: "1px solid var(--border)",
+            borderRadius: 8,
+            cursor: "pointer",
+            color: "var(--text-tertiary)",
+            fontSize: 12,
+            transition: "all 0.1s",
+          }}
+          onMouseEnter={e => e.currentTarget.style.borderColor = "var(--text-secondary)"}
+          onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
+        >
+          <Search size={13} />
+          <span className="hidden sm:inline">Search...</span>
+          <span style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
+            padding: "1px 5px",
+            background: "var(--bg-muted)",
+            borderRadius: 4,
+            fontSize: 11,
+            fontFamily: "'JetBrains Mono', monospace",
+          }}>
+            <Command size={10} /><span>K</span>
+          </span>
         </button>
 
-        {/* User dropdown */}
-        <div className="relative">
+        {/* Dark mode */}
+        <button
+          onClick={onToggleDark}
+          style={{
+            width: 32, height: 32, borderRadius: 8, border: "none", background: "transparent",
+            cursor: "pointer", color: "var(--text-secondary)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            transition: "background 0.1s",
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = "var(--bg-subtle)"}
+          onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+        >
+          {darkMode ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
+
+        {/* Notifications */}
+        <div style={{ position: "relative" }}>
           <button
-            onClick={() => setShowUserMenu(!showUserMenu)}
-            className="flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+            onClick={() => { setShowNotifs(!showNotifs); setShowProfile(false); }}
+            style={{
+              width: 32, height: 32, borderRadius: 8, border: "none", background: "transparent",
+              cursor: "pointer", color: "var(--text-secondary)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              transition: "background 0.1s",
+              position: "relative",
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = "var(--bg-subtle)"}
+            onMouseLeave={e => e.currentTarget.style.background = "transparent"}
           >
-            <div className="w-7 h-7 rounded-full bg-[#0D2B5C] flex items-center justify-center text-white text-xs font-bold shrink-0">
-              {user?.name?.charAt(0)?.toUpperCase() ?? "A"}
-            </div>
-            <div className="hidden sm:block text-left">
-              <p className="text-xs font-semibold text-slate-800 leading-none">
-                {user?.name ?? "Admin"}
-              </p>
-              <p className="text-[10px] text-slate-400 mt-0.5 capitalize">
-                {user?.role?.toLowerCase().replace("_", " ") ?? ""}
-              </p>
-            </div>
-            <ChevronDown size={14} className="text-slate-400 hidden sm:block" />
+            <Bell size={16} />
+            {unreadCount > 0 && (
+              <span style={{
+                position: "absolute", top: 4, right: 4, width: 8, height: 8,
+                background: "var(--brand)", borderRadius: "50%",
+                border: "2px solid var(--surface)",
+              }} />
+            )}
           </button>
 
-          {showUserMenu && (
+          {showNotifs && (
             <>
+              <div style={{ position: "fixed", inset: 0, zIndex: 30 }} onClick={() => setShowNotifs(false)} />
               <div
-                className="fixed inset-0 z-10"
-                onClick={() => setShowUserMenu(false)}
-              />
-              <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-lg border border-slate-200 py-1 z-20">
-                <div className="px-3 py-2 border-b border-slate-100 mb-1">
-                  <p className="text-xs font-semibold text-slate-800 truncate">
-                    {user?.name}
-                  </p>
-                  <p className="text-[10px] text-slate-400 truncate">
-                    {user?.email}
-                  </p>
+                className="animate-fade-in"
+                style={{
+                  position: "absolute", right: 0, marginTop: 6, width: 320,
+                  background: "var(--surface)", border: "1px solid var(--border)",
+                  borderRadius: 12, boxShadow: "var(--shadow-lg)", overflow: "hidden", zIndex: 40,
+                }}
+              >
+                <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>Notifikasi</span>
+                  <span style={{ fontSize: 11, color: "var(--brand)", fontWeight: 600, cursor: "pointer" }}>Mark all read</span>
                 </div>
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors"
-                >
-                  <LogOut size={14} />
-                  Logout
-                </button>
+                <div style={{ maxHeight: 280, overflowY: "auto" }}>
+                  {NOTIFICATIONS.map(n => (
+                    <div
+                      key={n.id}
+                      style={{
+                        padding: "10px 16px", borderBottom: "1px solid var(--border)",
+                        background: n.unread ? "var(--brand-subtle)" : "transparent",
+                        display: "flex", gap: 10, alignItems: "flex-start",
+                        cursor: "pointer", fontSize: 12.5,
+                      }}
+                    >
+                      <div style={{ flex: 1, color: "var(--text-primary)" }}>{n.text}</div>
+                      <div style={{ fontSize: 10, color: "var(--text-tertiary)", whiteSpace: "nowrap" }}>{n.time}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </>
           )}
         </div>
+
+        {/* Profile Menu */}
+        {user && (
+          <div style={{ position: "relative" }}>
+            <button
+              onClick={() => { setShowProfile(!showProfile); setShowNotifs(false); }}
+              style={{
+                display: "flex", alignItems: "center", gap: 8, padding: "2px 6px",
+                background: "transparent", border: "none", borderRadius: 8, cursor: "pointer",
+                transition: "background 0.1s",
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = "var(--bg-subtle)"}
+              onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+            >
+              <div className="w-7 h-7 rounded-full bg-[var(--brand)] text-white flex items-center justify-center font-bold text-xs">
+                {user.name.charAt(0).toUpperCase()}
+              </div>
+            </button>
+
+            {showProfile && (
+              <>
+                <div style={{ position: "fixed", inset: 0, zIndex: 30 }} onClick={() => setShowProfile(false)} />
+                <div
+                  className="animate-fade-in"
+                  style={{
+                    position: "absolute", right: 0, marginTop: 6, width: 220,
+                    background: "var(--surface)", border: "1px solid var(--border)",
+                    borderRadius: 12, boxShadow: "var(--shadow-lg)", overflow: "hidden", zIndex: 40,
+                  }}
+                >
+                  {/* Account Header */}
+                  <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--border)" }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>{user.name}</div>
+                    <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 2 }}>{user.email}</div>
+                  </div>
+
+                  {/* Links */}
+                  <div style={{ padding: "6px" }}>
+                    <Link
+                      to="/admin/settings"
+                      onClick={() => setShowProfile(false)}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 8, padding: "8px 10px",
+                        borderRadius: 8, color: "var(--text-secondary)", fontSize: 13, textDecoration: "none",
+                      }}
+                      className="hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]"
+                    >
+                      <User size={14} /> Profile
+                    </Link>
+                    <Link
+                      to="/admin/settings"
+                      onClick={() => setShowProfile(false)}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 8, padding: "8px 10px",
+                        borderRadius: 8, color: "var(--text-secondary)", fontSize: 13, textDecoration: "none",
+                      }}
+                      className="hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]"
+                    >
+                      <Settings size={14} /> Settings
+                    </Link>
+                  </div>
+
+                  {/* Logout */}
+                  <div style={{ borderTop: "1px solid var(--border)", padding: "6px" }}>
+                    <button
+                      onClick={() => { logout(); setShowProfile(false); }}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 8, padding: "8px 10px",
+                        width: "100%", border: "none", background: "transparent", cursor: "pointer",
+                        borderRadius: 8, color: "var(--red)", fontSize: 13, fontWeight: 500,
+                        textAlign: "left",
+                      }}
+                      className="hover:bg-[var(--red-subtle)]"
+                    >
+                      <LogOut size={14} /> Log Out
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </header>
   );

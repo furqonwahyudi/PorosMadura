@@ -16,6 +16,7 @@ import analyticsRoutes from './modules/analytics/analytics.routes';
 import settingsRoutes from './modules/settings/settings.routes';
 import commentRoutes from './modules/comments/comment.routes';
 import searchRoutes from './modules/search/search.routes';
+import tagRoutes from './modules/tags/tag.routes';
 
 const app = express();
 
@@ -70,6 +71,7 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/search', searchRoutes);
+app.use('/api/tags', tagRoutes);
 
 // =============================================
 // Error Handling

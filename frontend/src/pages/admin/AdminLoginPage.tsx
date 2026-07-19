@@ -144,7 +144,24 @@ export default function AdminLoginPage() {
               </button>
             </form>
 
-            <p className="text-center text-[10px] text-slate-400 mt-6">
+            {/* Dev Account Helper Panel */}
+            <div className="mt-5 p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-left">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2 font-['Poppins']">
+                Development Credentials:
+              </span>
+              <div className="space-y-1.5 text-xs">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500 font-medium">Email:</span>
+                  <span className="font-mono text-slate-700 font-semibold select-all bg-white px-1.5 py-0.5 rounded border border-slate-100">admin@porosmadura.com</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500 font-medium">Password:</span>
+                  <span className="font-mono text-slate-700 font-semibold select-all bg-white px-1.5 py-0.5 rounded border border-slate-100">Admin@PorosMadura2026</span>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-center text-[10px] text-slate-400 mt-5">
               Hanya untuk anggota tim redaksi Poros Madura
             </p>
           </div>

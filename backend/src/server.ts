@@ -23,7 +23,7 @@ async function main() {
   }
 }
 
-main();
+main(); // Start server - tags registered
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
