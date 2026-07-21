@@ -1,26 +1,15 @@
 import React, { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { adminApi } from "../../../lib/adminApi";
+import { useForm } from "react-hook-form";
+import { useDialog } from "../../../context/DialogContext";
 import {
-  Image, Search, Filter, Grid3x3, List, X, Copy, Trash2,
+  Image as ImageIcon, Search, Filter, Grid3x3, List, X, Copy, Trash2,
   ChevronLeft, ChevronRight, Upload, Info, Eye, Edit2,
   FileImage, Video, FileText, Music
 } from "lucide-react";
 
 type MediaType = "all" | "images" | "videos" | "documents" | "audio";
-
-const MOCK_MEDIA = [
-  { id: "1", name: "foto-berita-banjir-sampang.jpg", type: "image", size: "1.2 MB", dimensions: "1920×1080", date: "19 Jul 2026", uploader: "Ahmad Syafi'i", url: "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=400&h=250&fit=crop", alt: "" },
-  { id: "2", name: "pelantikan-bupati-bangkalan.jpg", type: "image", size: "856 KB", dimensions: "1600×900", date: "18 Jul 2026", uploader: "Siti Rahmah", url: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&h=250&fit=crop", alt: "" },
-  { id: "3", name: "pasar-tradisional-sumenep.jpg", type: "image", size: "2.1 MB", dimensions: "2400×1600", date: "18 Jul 2026", uploader: "Ahmad Syafi'i", url: "https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=400&h=250&fit=crop", alt: "" },
-  { id: "4", name: "video-profil-madura.mp4", type: "video", size: "45.6 MB", dimensions: "1920×1080", date: "17 Jul 2026", uploader: "Tim Produksi", url: "", alt: "" },
-  { id: "5", name: "rilis-pers-bupati.pdf", type: "document", size: "342 KB", dimensions: "—", date: "17 Jul 2026", uploader: "Humas Pemda", url: "", alt: "" },
-  { id: "6", name: "lomba-karapan-sapi.jpg", type: "image", size: "1.8 MB", dimensions: "2048×1365", date: "16 Jul 2026", uploader: "Siti Rahmah", url: "https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=400&h=250&fit=crop", alt: "" },
-  { id: "7", name: "dermaga-kamal-madura.jpg", type: "image", size: "967 KB", dimensions: "1920×1280", date: "16 Jul 2026", uploader: "Ahmad Syafi'i", url: "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=400&h=250&fit=crop", alt: "" },
-  { id: "8", name: "rekap-apbd-2026.xlsx", type: "document", size: "128 KB", dimensions: "—", date: "15 Jul 2026", uploader: "Bagian Keuangan", url: "", alt: "" },
-  { id: "9", name: "wisata-pantai-lombang.jpg", type: "image", size: "3.2 MB", dimensions: "3000×2000", date: "15 Jul 2026", uploader: "Tim Foto", url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&h=250&fit=crop", alt: "" },
-  { id: "10", name: "garam-madura-petani.jpg", type: "image", size: "1.1 MB", dimensions: "1800×1200", date: "14 Jul 2026", uploader: "Siti Rahmah", url: "https://images.unsplash.com/photo-1474171829340-a2d6d8e4d4f7?w=400&h=250&fit=crop", alt: "" },
-  { id: "11", name: "wawancara-gubernur.mp4", type: "video", size: "78.3 MB", dimensions: "1280×720", date: "14 Jul 2026", uploader: "Tim Produksi", url: "", alt: "" },
-  { id: "12", name: "batik-madura-festival.jpg", type: "image", size: "2.4 MB", dimensions: "2560×1440", date: "13 Jul 2026", uploader: "Ahmad Syafi'i", url: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=250&fit=crop", alt: "" },
-];
 
 const TYPE_ICONS: Record<string, React.ReactNode> = {
   image: <FileImage size={32} style={{ color: "var(--blue)" }} />,
@@ -30,29 +19,62 @@ const TYPE_ICONS: Record<string, React.ReactNode> = {
 };
 
 export default function GalleryPage() {
+  const { showToast } = useDialog();
   const [filter, setFilter] = useState<MediaType>("all");
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [selected, setSelected] = useState<typeof MOCK_MEDIA[0] | null>(null);
+  const [selected, setSelected] = useState<any | null>(null);
   const [altText, setAltText] = useState("");
   const [copied, setCopied] = useState(false);
 
-  const filtered = MOCK_MEDIA.filter(m => {
+  const { data: mediaFiles = [], refetch } = useQuery<any[]>({
+    queryKey: ["admin", "media", "list"],
+    queryFn: async () => {
+      const res = await adminApi.get<{ success: boolean; data: any[] }>("/api/media");
+      return res.data.map(item => ({
+        id: item.id,
+        name: item.name,
+        type: item.mimeType?.startsWith("image/") ? "image" : item.mimeType?.startsWith("video/") ? "video" : "document",
+        size: (item.size / 1024 / 1024).toFixed(2) + " MB",
+        dimensions: item.width && item.height ? `${item.width}×${item.height}` : "—",
+        date: new Date(item.uploadedAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
+        uploader: "Super Admin",
+        url: item.url,
+        alt: item.tags?.join(", ") || ""
+      }));
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (mediaId: string) => adminApi.delete(`/api/media/${mediaId}`),
+    onSuccess: () => {
+      showToast("Media berhasil dihapus!", "success");
+      setSelected(null);
+      refetch();
+    },
+    onError: (err: any) => {
+      showToast(err.message || "Gagal menghapus media", "error");
+    }
+  });
+
+  const filtered = mediaFiles.filter(m => {
     if (filter !== "all" && m.type !== filter.slice(0, -1)) return false;
     if (search && !m.name.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
 
-  const handleSelect = (item: typeof MOCK_MEDIA[0]) => {
+  const handleSelect = (item: any) => {
     setSelected(item);
     setAltText(item.alt || "");
     setCopied(false);
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(`https://cdn.porosmadura.com/media/${selected?.name}`);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (selected) {
+      navigator.clipboard.writeText(selected.url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const filterTabs: { key: MediaType; label: string }[] = [
@@ -72,7 +94,7 @@ export default function GalleryPage() {
             Central Media Library
           </h1>
           <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: "4px 0 0" }}>
-            {MOCK_MEDIA.length} aset media tersimpan
+            {mediaFiles.length} aset media tersimpan
           </p>
         </div>
         <button
@@ -88,7 +110,7 @@ export default function GalleryPage() {
       </div>
 
       {/* Main layout */}
-      <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+      <div style={{ display: "flex", gap: 16, alignItems: "flex-start", width: "100%" }}>
         {/* Left panel */}
         <div style={{ flex: 1, minWidth: 0 }}>
           {/* Filter bar */}
@@ -151,7 +173,7 @@ export default function GalleryPage() {
 
           {/* Grid or List */}
           {viewMode === "grid" ? (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 10 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 16, width: "100%" }}>
               {filtered.map(item => (
                 <div
                   key={item.id}
@@ -165,24 +187,26 @@ export default function GalleryPage() {
                   onMouseLeave={e => { if (selected?.id !== item.id) e.currentTarget.style.borderColor = "var(--border)"; }}
                 >
                   {item.type === "image" ? (
-                    <img
-                      src={item.url}
-                      alt={item.name}
-                      style={{ width: "100%", height: 110, objectFit: "cover", display: "block" }}
-                    />
+                    <div style={{ width: "100%", aspectRatio: "4/3", overflow: "hidden", background: "var(--bg-subtle)" }}>
+                      <img
+                        src={item.url}
+                        alt={item.name}
+                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                      />
+                    </div>
                   ) : (
                     <div style={{
-                      width: "100%", height: 110, display: "flex", alignItems: "center",
+                      width: "100%", aspectRatio: "4/3", display: "flex", alignItems: "center",
                       justifyContent: "center", background: "var(--bg-subtle)",
                     }}>
                       {TYPE_ICONS[item.type]}
                     </div>
                   )}
-                  <div style={{ padding: "8px 10px" }}>
-                    <p style={{ fontSize: 11, fontWeight: 500, color: "var(--text-primary)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  <div style={{ padding: "10px 12px" }}>
+                    <p style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={item.name}>
                       {item.name}
                     </p>
-                    <p style={{ fontSize: 11, color: "var(--text-tertiary)", margin: "2px 0 0" }}>{item.size}</p>
+                    <p style={{ fontSize: 11, color: "var(--text-tertiary)", margin: "4px 0 0" }}>{item.size}</p>
                   </div>
                 </div>
               ))}
@@ -292,15 +316,17 @@ export default function GalleryPage() {
                 >
                   <Copy size={12} /> {copied ? "Disalin!" : "Copy URL"}
                 </button>
-                <button
+                 <button
+                  onClick={() => deleteMutation.mutate(selected.id)}
+                  disabled={deleteMutation.isPending}
                   style={{
                     flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
                     padding: "7px 0", borderRadius: 7, border: "1px solid var(--border)",
                     background: "var(--bg-subtle)", color: "var(--red)",
-                    fontSize: 12, fontWeight: 500, cursor: "pointer",
+                    fontSize: 12, fontWeight: 500, cursor: deleteMutation.isPending ? "not-allowed" : "pointer",
                   }}
                 >
-                  <Trash2 size={12} /> Hapus
+                  <Trash2 size={12} /> {deleteMutation.isPending ? "Deleting..." : "Hapus"}
                 </button>
               </div>
             </div>

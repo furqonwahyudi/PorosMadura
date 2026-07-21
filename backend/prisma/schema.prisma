@@ -319,17 +319,18 @@ model AdPricing {
 }
 
 model MediaFile {
-  id         String   @id @default(uuid())
-  name       String
-  filename   String
-  url        String
-  path       String
-  mimeType   String
-  size       Int
-  width      Int?
-  height     Int?
-  tags       String[] @default([])
-  uploadedAt DateTime @default(now())
+  id          String   @id @default(uuid())
+  name        String
+  filename    String
+  url         String
+  path        String
+  mimeType    String
+  size        Int
+  width       Int?
+  height      Int?
+  isTemporary Boolean  @default(false)
+  tags        String[] @default([])
+  uploadedAt  DateTime @default(now())
 
   @@map("media_files")
 }

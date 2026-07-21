@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminApi } from "../../../lib/adminApi";
 import { useForm } from "react-hook-form";
 import { useDialog } from "../../../context/DialogContext";
@@ -8,7 +8,7 @@ import {
   Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight,
   List, ListOrdered, Link as LinkIcon, Image as ImageIcon, Code, Quote, Eye,
   Save, Send, Clock, ChevronRight, X, Plus, Tag, CheckCircle2,
-  AlertTriangle, Settings2, Star, Zap, TrendingUp, Award, Calendar, Strikethrough
+  AlertTriangle, Settings2, Star, Zap, TrendingUp, Award, Calendar, Strikethrough, Trash2
 } from "lucide-react";
 
 interface Category {
@@ -21,6 +21,9 @@ interface MediaAsset {
   id: string;
   url: string;
   filename: string;
+  name: string;
+  isTemporary: boolean;
+  uploadedAt?: string;
 }
 
 const toolbarGroups = [
@@ -35,13 +38,58 @@ export default function CreateArticlePage() {
   const navigate = useNavigate();
   const { showToast } = useDialog();
   const editorRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
 
   const [editorHtml, setEditorHtml] = useState("");
   const [featuredImage, setFeaturedImage] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [showMediaModal, setShowMediaModal] = useState(false);
+  const [activeMediaTab, setActiveMediaTab] = useState<"upload" | "library">("library");
+  const [selectedMediaUrl, setSelectedMediaUrl] = useState<string>("");
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const [activeToolStates, setActiveToolStates] = useState<Record<string, boolean>>({});
+
+  const handleDirectUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingMedia(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await adminApi.post<{ success: boolean; data: MediaAsset }>("/api/media/upload?temp=true", formData);
+      if (res.success && res.data) {
+        showToast("Gambar berhasil diunggah! Gambar akan terdaftar di Pustaka Media Utama setelah artikel diterbitkan.", "success");
+        setFeaturedImage(res.data.url);
+        setSelectedMediaUrl(res.data.url);
+        // Invalidate both list keys agar halaman media utama dan modal sama-sama update
+        queryClient.invalidateQueries({ queryKey: ["admin", "media", "list"] });
+        // Pindah ke tab library agar user bisa lihat gambar yang baru saja diupload
+        setActiveMediaTab("library");
+      }
+    } catch (err: any) {
+      showToast(err.message || "Gagal mengupload gambar", "error");
+    } finally {
+      setIsUploadingMedia(false);
+    }
+  };
+
+  const deleteMediaMutation = useMutation({
+    mutationFn: async (mediaId: string) => adminApi.delete(`/api/media/${mediaId}`),
+    onSuccess: () => {
+      showToast("Gambar berhasil dihapus!", "success");
+      queryClient.invalidateQueries({ queryKey: ["admin", "media", "list"] });
+    },
+    onError: (err: any) => {
+      showToast(err.message || "Gagal menghapus gambar", "error");
+    }
+  });
+
+  const handleDeleteMedia = (mediaId: string) => {
+    deleteMediaMutation.mutate(mediaId);
+  };
 
   // Tab State
   const [activeRightTab, setActiveRightTab] = useState("publish");
@@ -136,19 +184,12 @@ export default function CreateArticlePage() {
     }
   });
 
-  // Fetch Media Library
+  // Fetch Media Library — includeTemp=true agar gambar yang baru diupload (sebelum artikel dipublish) juga muncul
   const { data: mediaLibrary } = useQuery<MediaAsset[]>({
-    queryKey: ["admin", "media", "list"],
+    queryKey: ["admin", "media", "list", "all"],
     queryFn: async () => {
-      try {
-        const res = await adminApi.get<{ success: boolean; data: MediaAsset[] }>("/api/media");
-        return res.data;
-      } catch {
-        return [
-          { id: "1", url: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop", filename: "jembatan_suramadu.png" },
-          { id: "2", url: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=600&h=400&fit=crop", filename: "beasiswa.png" },
-        ];
-      }
+      const res = await adminApi.get<{ success: boolean; data: MediaAsset[] }>("/api/media?includeTemp=true");
+      return res.data;
     }
   });
 
@@ -1007,12 +1048,12 @@ export default function CreateArticlePage() {
       {showMediaModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowMediaModal(false)} />
-          <div className="relative z-10 bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-2xl overflow-hidden animate-fade-in">
+          <div className="relative z-10 bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-2xl overflow-hidden animate-fade-in flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <div>
                 <h3 className="text-sm font-bold text-slate-800 font-['Poppins']">Pustaka Media</h3>
-                <p className="text-[11px] text-slate-400 mt-0.5">Pilih salah satu gambar utama</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">Kelola dan pilih gambar utama artikel</p>
               </div>
               <button
                 onClick={() => setShowMediaModal(false)}
@@ -1022,42 +1063,150 @@ export default function CreateArticlePage() {
               </button>
             </div>
 
-            {/* Grid */}
-            <div className="p-5 max-h-[60vh] overflow-y-auto">
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                {mediaLibrary?.map((media) => (
-                  <div
-                    key={media.id}
-                    onClick={() => {
-                      setFeaturedImage(media.url);
-                      setShowMediaModal(false);
-                    }}
-                    className="group relative rounded-xl overflow-hidden cursor-pointer aspect-square bg-slate-100 border-2 border-transparent hover:border-[#D60000] transition-all shadow-sm hover:shadow-md"
-                  >
-                    <img
-                      src={media.url}
-                      alt={media.filename}
-                      className="w-full h-full object-cover transition-transform group-hover:scale-105"
+            {/* WordPress-style Tabs */}
+            <div className="flex border-b border-slate-100 bg-slate-50/50 px-6">
+              <button
+                type="button"
+                onClick={() => setActiveMediaTab("upload")}
+                className={`py-3 px-4 text-xs font-bold border-b-2 transition-all cursor-pointer bg-transparent border-none ${
+                  activeMediaTab === "upload"
+                    ? "border-[#D60000] text-[#D60000]"
+                    : "border-transparent text-slate-400 hover:text-slate-600"
+                }`}
+              >
+                Unggah Berkas
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveMediaTab("library")}
+                className={`py-3 px-4 text-xs font-bold border-b-2 transition-all cursor-pointer bg-transparent border-none ${
+                  activeMediaTab === "library"
+                    ? "border-[#D60000] text-[#D60000]"
+                    : "border-transparent text-slate-400 hover:text-slate-600"
+                }`}
+              >
+                Pustaka Media
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-5 max-h-[50vh] overflow-y-auto min-h-[300px] flex flex-col justify-center">
+              {activeMediaTab === "upload" ? (
+                <div className="border-2 border-dashed border-slate-200 rounded-2xl p-10 flex flex-col items-center justify-center bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                  <ImageIcon size={40} className="text-slate-300 mb-4" />
+                  <p className="text-xs font-bold text-slate-700 mb-1">Tarik gambar ke sini untuk mengunggah</p>
+                  <p className="text-[10px] text-slate-400 mb-4">atau klik tombol di bawah</p>
+                  <label className="px-5 py-2 bg-[#D60000] text-white rounded-xl text-xs font-bold cursor-pointer hover:bg-red-700 transition-colors shadow-sm">
+                    {isUploadingMedia ? "Mengunggah..." : "Pilih Berkas"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={isUploadingMedia}
+                      onChange={handleDirectUpload}
+                      className="hidden"
                     />
-                    <div className="absolute inset-0 bg-[#0D2B5C]/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-start p-2">
-                      <span className="text-white text-[9px] font-bold bg-black/40 px-1.5 py-0.5 rounded truncate max-w-full">
-                        {media.filename}
-                      </span>
+                  </label>
+                </div>
+              ) : (
+                <>
+                  {!mediaLibrary || mediaLibrary.length === 0 ? (
+                    <div className="text-center py-10 text-slate-400 text-xs">
+                      Tidak ada gambar tersedia. Unggah berkas baru terlebih dahulu.
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ) : (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 self-start w-full">
+                      {mediaLibrary?.map((media) => (
+                        <div
+                          key={media.id}
+                          onClick={() => setSelectedMediaUrl(media.url)}
+                          className={`group relative rounded-xl overflow-hidden cursor-pointer aspect-square bg-slate-100 border-2 transition-all shadow-sm ${
+                            selectedMediaUrl === media.url
+                              ? "border-[#D60000] ring-4 ring-red-100"
+                              : "border-transparent hover:border-slate-200"
+                          }`}
+                        >
+                          <img
+                            src={media.url}
+                            alt={media.filename}
+                            className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                          />
+                          {/* Overlay info + delete */}
+                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-1.5">
+                            {/* Tombol hapus */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (confirm(`Hapus gambar "${media.name || media.filename}"?`)) {
+                                  if (selectedMediaUrl === media.url) setSelectedMediaUrl("");
+                                  handleDeleteMedia(media.id);
+                                }
+                              }}
+                              className="self-end w-6 h-6 flex items-center justify-center rounded-lg bg-red-600 hover:bg-red-700 text-white border-none cursor-pointer shadow-sm transition-colors"
+                              title="Hapus gambar"
+                            >
+                              <Trash2 size={11} />
+                            </button>
+                            {/* Badge status temporary */}
+                            <div className="flex items-end justify-between">
+                              <span className="text-white text-[8px] font-bold bg-black/60 px-1.5 py-0.5 rounded truncate max-w-[70%]">
+                                {media.name || media.filename}
+                              </span>
+                              {media.isTemporary && (
+                                <span className="text-[7px] font-bold bg-amber-500 text-white px-1.5 py-0.5 rounded ml-1 shrink-0">
+                                  TEMP
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          {/* Checkmark saat terpilih */}
+                          {selectedMediaUrl === media.url && (
+                            <div className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-[#D60000] flex items-center justify-center shadow">
+                              <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 border-t border-slate-100 flex justify-between items-center">
-              <p className="text-[10px] text-slate-400">{mediaLibrary?.length || 0} file tersedia</p>
-              <button
-                onClick={() => setShowMediaModal(false)}
-                className="text-xs font-semibold text-slate-500 hover:text-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors border-none bg-transparent cursor-pointer"
-              >
-                Tutup
-              </button>
+            <div className="px-6 py-4 border-t border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <p className="text-[10px] text-slate-400">
+                {activeMediaTab === "library" ? `${mediaLibrary?.length || 0} file tersedia` : "Maksimal ukuran file: 10MB"}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowMediaModal(false)}
+                  className="text-xs font-semibold text-slate-500 hover:text-slate-700 px-4 py-2 rounded-xl hover:bg-slate-100 transition-colors border-none bg-transparent cursor-pointer"
+                >
+                  Batal
+                </button>
+                {activeMediaTab === "library" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (selectedMediaUrl) {
+                        setFeaturedImage(selectedMediaUrl);
+                        setShowMediaModal(false);
+                      }
+                    }}
+                    disabled={!selectedMediaUrl}
+                    className={`text-xs font-bold px-4 py-2 rounded-xl text-white transition-colors border-none cursor-pointer ${
+                      selectedMediaUrl
+                        ? "bg-[#D60000] hover:bg-red-700 shadow-sm"
+                        : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                    }`}
+                  >
+                    Pilih Gambar Utama
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

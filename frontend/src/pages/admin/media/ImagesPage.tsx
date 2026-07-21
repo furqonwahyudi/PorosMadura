@@ -1,16 +1,7 @@
 import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { adminApi } from "../../../lib/adminApi";
 import { Search, Crop, RotateCw, Maximize2, X, Image as ImageIcon, Check } from "lucide-react";
-
-const MOCK_IMAGES = [
-  { id: "1", name: "foto-berita-banjir-sampang.jpg", size: "1.2 MB", dimensions: "1920×1080", date: "19 Jul 2026", url: "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=400&h=250&fit=crop" },
-  { id: "2", name: "pelantikan-bupati-bangkalan.jpg", size: "856 KB", dimensions: "1600×900", date: "18 Jul 2026", url: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&h=250&fit=crop" },
-  { id: "3", name: "pasar-tradisional-sumenep.jpg", size: "2.1 MB", dimensions: "2400×1600", date: "18 Jul 2026", url: "https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=400&h=250&fit=crop" },
-  { id: "4", name: "lomba-karapan-sapi.jpg", size: "1.8 MB", dimensions: "2048×1365", date: "16 Jul 2026", url: "https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=400&h=250&fit=crop" },
-  { id: "5", name: "dermaga-kamal-madura.jpg", size: "967 KB", dimensions: "1920×1280", date: "16 Jul 2026", url: "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=400&h=250&fit=crop" },
-  { id: "6", name: "wisata-pantai-lombang.jpg", size: "3.2 MB", dimensions: "3000×2000", date: "15 Jul 2026", url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&h=250&fit=crop" },
-  { id: "7", name: "garam-madura-petani.jpg", size: "1.1 MB", dimensions: "1800×1200", date: "14 Jul 2026", url: "https://images.unsplash.com/photo-1474171829340-a2d6d8e4d4f7?w=400&h=250&fit=crop" },
-  { id: "8", name: "batik-madura-festival.jpg", size: "2.4 MB", dimensions: "2560×1440", date: "13 Jul 2026", url: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=250&fit=crop" },
-];
 
 const ASPECT_RATIOS = [
   { label: "16:9", detail: "Gambar Utama Artikel", color: "var(--blue)" },
@@ -20,17 +11,34 @@ const ASPECT_RATIOS = [
 
 export default function ImagesPage() {
   const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState<typeof MOCK_IMAGES[0] | null>(null);
+  const [selected, setSelected] = useState<any | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [activeRatio, setActiveRatio] = useState("16:9");
   const [rotation, setRotation] = useState(0);
   const [quality, setQuality] = useState(80);
 
-  const filtered = MOCK_IMAGES.filter(img =>
+  const { data: mediaFiles = [] } = useQuery<any[]>({
+    queryKey: ["admin", "media", "list"],
+    queryFn: async () => {
+      const res = await adminApi.get<{ success: boolean; data: any[] }>("/api/media");
+      return res.data
+        .filter(item => item.mimeType?.startsWith("image/"))
+        .map(item => ({
+          id: item.id,
+          name: item.name,
+          size: (item.size / 1024 / 1024).toFixed(2) + " MB",
+          dimensions: item.width && item.height ? `${item.width}×${item.height}` : "—",
+          date: new Date(item.uploadedAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
+          url: item.url,
+        }));
+    }
+  });
+
+  const filtered = mediaFiles.filter(img =>
     !search || img.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const openEditor = (img: typeof MOCK_IMAGES[0]) => {
+  const openEditor = (img: any) => {
     setSelected(img);
     setEditorOpen(true);
     setRotation(0);
@@ -46,7 +54,7 @@ export default function ImagesPage() {
             Image Asset Management
           </h1>
           <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: "4px 0 0" }}>
-            {MOCK_IMAGES.length} gambar tersimpan — JPG, PNG, WebP, GIF
+            {mediaFiles.length} gambar tersimpan — JPG, PNG, WebP, GIF
           </p>
         </div>
       </div>

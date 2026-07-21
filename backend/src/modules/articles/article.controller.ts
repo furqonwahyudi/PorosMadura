@@ -13,7 +13,7 @@ const articleSchema = z.object({
   image: z.string().optional(),
   imageCaption: z.string().optional(),
   status: z.enum(['DRAFT', 'PUBLISHED', 'SCHEDULED', 'ARCHIVED']).optional(),
-  scheduledAt: z.string().datetime().optional(),
+  scheduledAt: z.union([z.string().datetime(), z.literal(''), z.null()]).optional().nullable(),
   isBreaking: z.boolean().optional(),
   isHeadline: z.boolean().optional(),
   isEditorChoice: z.boolean().optional(),
@@ -326,7 +326,7 @@ export async function createArticle(req: AuthRequest, res: Response, next: NextF
         image: data.image,
         imageCaption: data.imageCaption,
         status: (data.status as any) || 'DRAFT',
-        scheduledAt: data.scheduledAt ? new Date(data.scheduledAt) : undefined,
+        scheduledAt: (data.scheduledAt && data.scheduledAt !== '') ? new Date(data.scheduledAt) : null,
         publishedAt: data.status === 'PUBLISHED' ? new Date() : undefined,
         isBreaking: data.isBreaking || false,
         isHeadline: data.isHeadline || false,
@@ -345,6 +345,13 @@ export async function createArticle(req: AuthRequest, res: Response, next: NextF
       },
       select: articleSelect,
     });
+
+    if (data.image && (data.status === 'PUBLISHED' || data.status === 'SCHEDULED')) {
+      await prisma.mediaFile.updateMany({
+        where: { url: data.image },
+        data: { isTemporary: false },
+      });
+    }
 
     await prisma.auditLog.create({
       data: { userId: req.user!.id, role: req.user!.role, action: `CREATE_ARTICLE:${article.id}` },
@@ -384,10 +391,17 @@ export async function updateArticle(req: AuthRequest, res: Response, next: NextF
       data: {
         ...rest,
         ...(rest.status === 'PUBLISHED' && !existing.publishedAt ? { publishedAt: new Date() } : {}),
-        scheduledAt: rest.scheduledAt ? new Date(rest.scheduledAt) : undefined,
+        scheduledAt: (rest.scheduledAt && rest.scheduledAt !== '') ? new Date(rest.scheduledAt) : null,
       },
       select: articleSelect,
     });
+
+    if (data.image && (data.status === 'PUBLISHED' || data.status === 'SCHEDULED' || rest.status === 'PUBLISHED' || rest.status === 'SCHEDULED')) {
+      await prisma.mediaFile.updateMany({
+        where: { url: data.image },
+        data: { isTemporary: false },
+      });
+    }
 
     await prisma.auditLog.create({
       data: { userId: req.user!.id, role: req.user!.role, action: `UPDATE_ARTICLE:${id}` },

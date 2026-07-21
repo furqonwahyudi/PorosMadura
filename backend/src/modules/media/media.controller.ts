@@ -6,7 +6,12 @@ import { AppError } from '../../middleware/errorHandler';
 
 export async function getMedia(req: Request, res: Response, next: NextFunction) {
   try {
-    const media = await prisma.mediaFile.findMany({ orderBy: { uploadedAt: 'desc' } });
+    const includeTemp = req.query.includeTemp === 'true';
+    const where = includeTemp ? {} : { isTemporary: false };
+    const media = await prisma.mediaFile.findMany({
+      where,
+      orderBy: { uploadedAt: 'desc' }
+    });
     res.json({ success: true, data: media });
   } catch (error) { next(error); }
 }
@@ -17,6 +22,7 @@ export async function uploadMedia(req: Request, res: Response, next: NextFunctio
 
     const baseUrl = `${req.protocol}://${req.get('host')}`;
     const url = `${baseUrl}/uploads/images/${req.file.filename}`;
+    const isTemporary = req.query.temp === 'true';
 
     const media = await prisma.mediaFile.create({
       data: {
@@ -26,6 +32,7 @@ export async function uploadMedia(req: Request, res: Response, next: NextFunctio
         path: req.file.path,
         mimeType: req.file.mimetype,
         size: req.file.size,
+        isTemporary,
       },
     });
 

@@ -15,22 +15,26 @@ async function request<T>(
   body?: unknown
 ): Promise<T> {
   const token = getToken();
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
+  const headers: Record<string, string> = {};
   if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  let reqBody: any = body;
+  if (body instanceof FormData) {
+    reqBody = body;
+  } else if (body) {
+    headers["Content-Type"] = "application/json";
+    reqBody = JSON.stringify(body);
+  }
 
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
     headers,
-    body: body ? JSON.stringify(body) : undefined,
+    body: reqBody,
   });
 
   if (res.status === 401) {
-    if (window.location.pathname !== "/admin/login") {
-      localStorage.removeItem("admin_token");
-      window.location.href = "/admin/login";
-    }
+    // Jangan langsung redirect di sini — biarkan AdminAuthContext yang handle
+    // setelah mencoba refresh token. Cukup throw error 401.
     const errObj: any = new Error("Unauthorized");
     errObj.status = 401;
     throw errObj;

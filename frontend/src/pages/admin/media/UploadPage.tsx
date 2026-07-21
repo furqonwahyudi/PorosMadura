@@ -1,4 +1,6 @@
 import React, { useState, useRef, useCallback } from "react";
+import { adminApi } from "../../../lib/adminApi";
+import { useDialog } from "../../../context/DialogContext";
 import { Upload, X, CheckCircle, AlertCircle, File, FileImage, Video, FileText, RefreshCw } from "lucide-react";
 
 interface UploadItem {
@@ -40,33 +42,30 @@ export default function UploadPage() {
     }));
     setItems(prev => [...prev, ...newItems]);
 
-    // Simulate upload progress per file
-    newItems.forEach(item => {
+    newItems.forEach(async (item) => {
       const maxSize = item.file.type.startsWith("image") ? 20 * 1024 * 1024 : 200 * 1024 * 1024;
       const isTooBig = item.file.size > maxSize;
-      const isWrongType = !["image/jpeg","image/jpg","image/png","image/webp","image/gif","video/mp4","video/mov","application/pdf","application/msword","application/vnd.openxmlformats-officedocument.wordprocessingml.document"].includes(item.file.type);
 
-      if (isTooBig || isWrongType) {
-        setTimeout(() => {
-          setItems(prev => prev.map(i => i.id === item.id
-            ? { ...i, progress: 0, status: "error", errorMsg: isTooBig ? "File terlalu besar" : "Format tidak didukung" }
-            : i
-          ));
-        }, 600);
+      if (isTooBig) {
+        setItems(prev => prev.map(i => i.id === item.id ? { ...i, status: "error", errorMsg: "File terlalu besar" } : i));
         return;
       }
 
-      let prog = 0;
-      const interval = setInterval(() => {
-        prog += Math.random() * 18 + 5;
-        if (prog >= 100) {
-          prog = 100;
-          clearInterval(interval);
+      setItems(prev => prev.map(i => i.id === item.id ? { ...i, progress: 40 } : i));
+
+      const formData = new FormData();
+      formData.append("file", item.file);
+
+      try {
+        const res = await adminApi.post<{ success: boolean }>("/api/media/upload?temp=false", formData);
+        if (res.success) {
           setItems(prev => prev.map(i => i.id === item.id ? { ...i, progress: 100, status: "success" } : i));
         } else {
-          setItems(prev => prev.map(i => i.id === item.id ? { ...i, progress: Math.round(prog) } : i));
+          setItems(prev => prev.map(i => i.id === item.id ? { ...i, status: "error", errorMsg: "Gagal mengunggah berkas" } : i));
         }
-      }, 150);
+      } catch (err: any) {
+        setItems(prev => prev.map(i => i.id === item.id ? { ...i, status: "error", errorMsg: err.message || "Network error" } : i));
+      }
     });
   }, []);
 

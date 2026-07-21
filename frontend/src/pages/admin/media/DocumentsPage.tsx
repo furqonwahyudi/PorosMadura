@@ -1,25 +1,42 @@
 import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { adminApi } from "../../../lib/adminApi";
 import { FileText, Search, Download, ExternalLink, Trash2, FileSpreadsheet, File } from "lucide-react";
-
-const MOCK_DOCS = [
-  { id: "1", name: "rilis-pers-bupati-bangkalan-jul2026.pdf", type: "PDF", size: "342 KB", articles: ["Bupati Bangkalan Resmikan Jembatan Baru"], downloads: 128, date: "17 Jul 2026", uploader: "Humas Pemda" },
-  { id: "2", name: "rekap-apbd-2026-kabupaten-sumenep.xlsx", type: "XLSX", size: "128 KB", articles: ["Anggaran Sumenep 2026 Naik 12%"], downloads: 67, date: "15 Jul 2026", uploader: "Bagian Keuangan" },
-  { id: "3", name: "hasil-audit-bpk-2025.pdf", type: "PDF", size: "2.1 MB", articles: ["Laporan BPK: Pemda Bangkalan Raih Opini WTP"], downloads: 312, date: "10 Jul 2026", uploader: "Redaksi" },
-  { id: "4", name: "perda-nomor-5-2026.docx", type: "DOCX", size: "89 KB", articles: ["DPRD Sampang Sahkan Perda Lingkungan"], downloads: 43, date: "9 Jul 2026", uploader: "Reporter Hukum" },
-  { id: "5", name: "data-inflasi-madura-q2-2026.xlsx", type: "XLSX", size: "204 KB", articles: ["Inflasi Madura Q2 Stabil di Angka 2.3%"], downloads: 89, date: "5 Jul 2026", uploader: "Tim Data" },
-  { id: "6", name: "surat-edaran-kemendag-2026.pdf", type: "PDF", size: "156 KB", articles: ["Harga BBM Non-Subsidi Naik Mulai Agustus"], downloads: 201, date: "3 Jul 2026", uploader: "Redaksi" },
-];
 
 const TYPE_CONFIG: Record<string, { color: string; icon: React.ReactNode }> = {
   PDF: { color: "var(--red)", icon: <File size={14} style={{ color: "var(--red)" }} /> },
   XLSX: { color: "var(--green)", icon: <FileSpreadsheet size={14} style={{ color: "var(--green)" }} /> },
   DOCX: { color: "var(--blue)", icon: <FileText size={14} style={{ color: "var(--blue)" }} /> },
+  DOC: { color: "var(--blue)", icon: <FileText size={14} style={{ color: "var(--blue)" }} /> },
+  DEFAULT: { color: "var(--orange)", icon: <FileText size={14} style={{ color: "var(--orange)" }} /> },
 };
 
 export default function DocumentsPage() {
   const [search, setSearch] = useState("");
 
-  const filtered = MOCK_DOCS.filter(d =>
+  const { data: mediaFiles = [] } = useQuery<any[]>({
+    queryKey: ["admin", "media", "list"],
+    queryFn: async () => {
+      const res = await adminApi.get<{ success: boolean; data: any[] }>("/api/media");
+      return res.data
+        .filter(item => !item.mimeType?.startsWith("image/") && !item.mimeType?.startsWith("video/"))
+        .map(item => {
+          const ext = item.name.split(".").pop()?.toUpperCase() || "PDF";
+          return {
+            id: item.id,
+            name: item.name,
+            type: ext,
+            size: (item.size / 1024).toFixed(1) + " KB",
+            articles: ["Rilis Resmi"],
+            downloads: 0,
+            date: new Date(item.uploadedAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
+            uploader: "Super Admin",
+          };
+        });
+    }
+  });
+
+  const filtered = mediaFiles.filter(d =>
     !search || d.name.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -32,7 +49,7 @@ export default function DocumentsPage() {
             Document Attachments &amp; Press Release Repositories
           </h1>
           <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: "4px 0 0" }}>
-            {MOCK_DOCS.length} dokumen tersimpan — PDF, DOC, DOCX, XLS, XLSX
+            {mediaFiles.length} dokumen tersimpan — PDF, DOC, DOCX, XLS, XLSX
           </p>
         </div>
         <button style={{
@@ -47,7 +64,7 @@ export default function DocumentsPage() {
       {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
         {[
-          { label: "Total Dokumen", val: "6", sub: "3 PDF · 2 XLSX · 1 DOCX" },
+          { label: "Total Dokumen", val: mediaFiles.length.toString(), sub: "Berkas lampiran aktif" },
           { label: "Total Download", val: "840", sub: "Kumulatif semua dokumen" },
           { label: "Ukuran Total", val: "3.0 MB", sub: "Dioptimasi secara otomatis" },
         ].map(s => (

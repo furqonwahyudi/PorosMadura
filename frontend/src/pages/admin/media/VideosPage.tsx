@@ -1,25 +1,40 @@
 import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { adminApi } from "../../../lib/adminApi";
 import { Video, Play, ExternalLink, Link2, Youtube, Search, Eye } from "lucide-react";
 
 type Strategy = "self-hosted" | "external";
 
-const MOCK_VIDEOS = [
-  { id: "1", name: "video-profil-madura.mp4", size: "45.6 MB", duration: "03:24", dimensions: "1920×1080", date: "17 Jul 2026", uploader: "Tim Produksi", strategy: "self-hosted" as Strategy, thumbnail: "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=320&h=180&fit=crop" },
-  { id: "2", name: "wawancara-gubernur.mp4", size: "78.3 MB", duration: "12:07", dimensions: "1280×720", date: "14 Jul 2026", uploader: "Tim Produksi", strategy: "self-hosted" as Strategy, thumbnail: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=320&h=180&fit=crop" },
-  { id: "3", name: "liputan-banjir-sampang.mp4", size: "92.1 MB", duration: "08:45", dimensions: "1920×1080", date: "12 Jul 2026", uploader: "Tim Produksi", strategy: "external" as Strategy, externalId: "dQw4w9WgXcQ", platform: "YouTube", thumbnail: "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=320&h=180&fit=crop" },
-  { id: "4", name: "festival-budaya-sumenep.mp4", size: "61.7 MB", duration: "05:33", dimensions: "1920×1080", date: "10 Jul 2026", uploader: "Tim Produksi", strategy: "self-hosted" as Strategy, thumbnail: "https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=320&h=180&fit=crop" },
-];
-
 export default function VideosPage() {
   const [search, setSearch] = useState("");
-  const [selectedVideo, setSelectedVideo] = useState<typeof MOCK_VIDEOS[0] | null>(null);
+  const [selectedVideo, setSelectedVideo] = useState<any | null>(null);
   const [editStrategy, setEditStrategy] = useState<Strategy>("self-hosted");
   const [externalUrl, setExternalUrl] = useState("");
   const [hls, setHls] = useState(true);
 
-  const filtered = MOCK_VIDEOS.filter(v => !search || v.name.toLowerCase().includes(search.toLowerCase()));
+  const { data: mediaFiles = [] } = useQuery<any[]>({
+    queryKey: ["admin", "media", "list"],
+    queryFn: async () => {
+      const res = await adminApi.get<{ success: boolean; data: any[] }>("/api/media");
+      return res.data
+        .filter(item => item.mimeType?.startsWith("video/"))
+        .map(item => ({
+          id: item.id,
+          name: item.name,
+          size: (item.size / 1024 / 1024).toFixed(2) + " MB",
+          duration: "—",
+          dimensions: item.width && item.height ? `${item.width}×${item.height}` : "—",
+          date: new Date(item.uploadedAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
+          uploader: "Super Admin",
+          strategy: "self-hosted" as Strategy,
+          thumbnail: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=320&h=180&fit=crop"
+        }));
+    }
+  });
 
-  const openConfig = (v: typeof MOCK_VIDEOS[0]) => {
+  const filtered = mediaFiles.filter(v => !search || v.name.toLowerCase().includes(search.toLowerCase()));
+
+  const openConfig = (v: any) => {
     setSelectedVideo(v);
     setEditStrategy(v.strategy);
     setExternalUrl(v.externalId ? `https://www.youtube.com/watch?v=${v.externalId}` : "");
