@@ -128,6 +128,7 @@ export default function App() {
                 {/* User Management */}
                 <Route path="/admin/users" element={<AllUsersPage />} />
                 <Route path="/admin/users/create" element={<AddUserPage />} />
+                <Route path="/admin/users/add" element={<AddUserPage />} />
                 <Route path="/admin/users/roles" element={<RolesPage />} />
 
                 {/* Ads Management */}

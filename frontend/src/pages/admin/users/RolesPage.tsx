@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Shield, Save, CheckCircle, HelpCircle } from "lucide-react";
+import { useDialog } from "../../../context/DialogContext";
 
 type Role = "Super Admin" | "Pemimpin Redaksi" | "Editor" | "Reporter" | "Kontributor" | "Sales";
 type Permission = "create_post" | "publish_post" | "edit_others_post" | "delete_post" | "manage_comments" | "manage_ads" | "manage_seo" | "manage_settings";
@@ -43,6 +44,7 @@ const PERMISSION_LABELS: Record<Permission, { label: string; desc: string }> = {
 };
 
 export default function RolesPage() {
+  const { showToast } = useDialog();
   const [matrix, setMatrix] = useState<Record<Role, Record<Permission, boolean>>>(INITIAL_MATRIX);
   const [saved, setSaved] = useState(false);
 
@@ -59,6 +61,7 @@ export default function RolesPage() {
 
   const handleSave = () => {
     setSaved(true);
+    showToast("Matriks konfigurasi RBAC berhasil diperbarui!", "success");
     setTimeout(() => setSaved(false), 2000);
   };
 

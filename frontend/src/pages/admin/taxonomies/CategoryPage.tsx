@@ -169,13 +169,21 @@ export default function CategoryPage() {
   return (
     <div className="space-y-6 p-6 animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col gap-1">
-        <h2 className="text-xl font-bold text-slate-800 font-['Poppins'] tracking-tight">
-          Article Categories Hierarchy
-        </h2>
-        <p className="text-xs text-slate-500">
-          Kelola sistem pohon kategori berita, atur warna navigasi, dan konfigurasi optimasi mesin pencari kategori.
-        </p>
+      <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-xl font-bold text-slate-800 font-['Poppins'] tracking-tight">
+            Article Categories Hierarchy
+          </h2>
+          <p className="text-xs text-slate-500">
+            Kelola sistem pohon kategori berita, atur warna navigasi, dan konfigurasi optimasi mesin pencari kategori.
+          </p>
+        </div>
+        <button
+          onClick={resetForm}
+          className="flex items-center gap-1.5 px-4 py-2 bg-[#0D2B5C] hover:bg-[#0f3670] active:bg-[#0a2149] text-white text-xs font-bold rounded-xl shadow-md shadow-blue-900/10 cursor-pointer transition-all shrink-0"
+        >
+          <Plus size={14} /> Tambah Kategori Baru
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

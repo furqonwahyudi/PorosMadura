@@ -53,7 +53,7 @@ export default function RecommendationPage() {
     mutationFn: (id: string) =>
       adminApi.put(`/api/articles/${id}`, { isEditorChoice: false }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin", "recommendation", "list"] });
+      queryClient.invalidateQueries({ queryKey: ["admin"] });
       showToast("Label Rekomendasi berhasil dihapus!", "success");
     },
     onError: (err: any) => {

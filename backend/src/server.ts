@@ -13,6 +13,25 @@ async function main() {
     await prisma.$connect();
     logger.info('✅ Database PostgreSQL terhubung');
 
+    // Auto-migrate schema updates for comments & blacklist
+    try {
+      await prisma.$executeRawUnsafe(`
+        ALTER TABLE comments ADD COLUMN IF NOT EXISTS "isSpam" BOOLEAN DEFAULT false;
+        ALTER TABLE comments ADD COLUMN IF NOT EXISTS "isReported" BOOLEAN DEFAULT false;
+        ALTER TABLE comments ADD COLUMN IF NOT EXISTS "reportReason" TEXT;
+        ALTER TABLE comments ADD COLUMN IF NOT EXISTS "ipAddress" TEXT;
+        CREATE TABLE IF NOT EXISTS "blacklist_words" (
+          "id" TEXT NOT NULL PRIMARY KEY,
+          "word" TEXT NOT NULL UNIQUE,
+          "type" TEXT NOT NULL DEFAULT 'WORD',
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+      logger.info('✅ Schema database comments & blacklist_words diperbarui');
+    } catch (e: any) {
+      logger.warn('Schema DDL migration notice:', e.message);
+    }
+
     app.listen(PORT, () => {
       logger.info(`🚀 Poros Madura API berjalan di http://localhost:${PORT}`);
       logger.info(`📝 Environment: ${process.env.NODE_ENV}`);

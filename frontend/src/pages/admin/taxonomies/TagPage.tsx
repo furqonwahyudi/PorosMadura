@@ -8,11 +8,11 @@ import {
   Search,
   Plus,
   Trash2,
+  Edit2,
   ChevronLeft,
   ChevronRight,
   Merge,
   Save,
-  CheckCircle,
   X,
   AlertCircle
 } from "lucide-react";
@@ -29,13 +29,14 @@ export default function TagPage() {
   const { showConfirm, showToast } = useDialog();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  
+  const [editingTag, setEditingTag] = useState<TagItem | null>(null);
+
   // Selection & Merging State
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [targetMergeId, setTargetMergeId] = useState("");
 
-  // Create Tag Form
-  const { register, handleSubmit, reset } = useForm({
+  // Tag Form
+  const { register, handleSubmit, reset, setValue } = useForm({
     defaultValues: {
       name: "",
       slug: ""
@@ -51,8 +52,7 @@ export default function TagPage() {
     queryFn: async () => {
       let url = `/api/tags?page=${page}&limit=15`;
       if (search) url += `&q=${encodeURIComponent(search)}`;
-      const res = await adminApi.get<any>(url);
-      return res;
+      return adminApi.get<any>(url);
     }
   });
 
@@ -70,11 +70,23 @@ export default function TagPage() {
     mutationFn: (data: any) => adminApi.post("/api/tags", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "tags"] });
-      reset();
+      resetForm();
       showToast("Tag berhasil dibuat!", "success");
     },
     onError: (err: any) => {
       showToast(err.message || "Gagal membuat tag.", "error");
+    }
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => adminApi.put(`/api/tags/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "tags"] });
+      resetForm();
+      showToast("Tag berhasil diperbarui!", "success");
+    },
+    onError: (err: any) => {
+      showToast(err.message || "Gagal memperbarui tag.", "error");
     }
   });
 
@@ -104,11 +116,29 @@ export default function TagPage() {
     }
   });
 
-  const handleCreate = (data: any) => {
-    createMutation.mutate({
-      name: data.name,
-      slug: data.slug || undefined
-    });
+  const resetForm = () => {
+    setEditingTag(null);
+    reset({ name: "", slug: "" });
+  };
+
+  const handleEditClick = (tag: TagItem) => {
+    setEditingTag(tag);
+    setValue("name", tag.name);
+    setValue("slug", tag.slug);
+  };
+
+  const handleSave = (data: any) => {
+    if (editingTag) {
+      updateMutation.mutate({
+        id: editingTag.id,
+        data: { name: data.name, slug: data.slug || undefined }
+      });
+    } else {
+      createMutation.mutate({
+        name: data.name,
+        slug: data.slug || undefined
+      });
+    }
   };
 
   const handleMergeSubmit = () => {
@@ -149,13 +179,21 @@ export default function TagPage() {
   return (
     <div className="space-y-6 p-6 animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col gap-1">
-        <h2 className="text-xl font-bold text-slate-800 font-['Poppins'] tracking-tight">
-          Keyword Tags Management
-        </h2>
-        <p className="text-xs text-slate-500">
-          Kelola kata kunci berita (tags cloud), bersihkan redundansi penamaan, dan gabungkan tag duplikat.
-        </p>
+      <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-xl font-bold text-slate-800 font-['Poppins'] tracking-tight">
+            Keyword Tags Management
+          </h2>
+          <p className="text-xs text-slate-500">
+            Kelola kata kunci berita (tags cloud), bersihkan redundansi penamaan, dan gabungkan tag duplikat.
+          </p>
+        </div>
+        <button
+          onClick={resetForm}
+          className="flex items-center gap-1.5 px-4 py-2 bg-[#D71920] hover:bg-red-700 active:bg-red-800 text-white text-xs font-bold rounded-xl shadow-md shadow-red-500/10 cursor-pointer transition-all"
+        >
+          <Plus size={14} /> Tambah Tag Baru
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -163,16 +201,16 @@ export default function TagPage() {
         {/* ── Left Column: Form & Merge Tool ── */}
         <div className="lg:col-span-1 space-y-6 text-xs">
           
-          {/* Create Tag */}
+          {/* Create / Edit Tag Form */}
           <div className="bg-white border border-slate-100 shadow-sm rounded-2xl p-5 space-y-4">
             <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-50 pb-2.5">
-              <Plus size={14} className="text-[#0D2B5C]" />
-              Tambah Tag Baru
+              {editingTag ? <Edit2 size={14} className="text-[#0D2B5C]" /> : <Plus size={14} className="text-[#0D2B5C]" />}
+              {editingTag ? `Edit Tag: ${editingTag.name}` : "Tambah Tag Baru"}
             </h3>
             
-            <form onSubmit={handleSubmit(handleCreate)} className="space-y-3.5">
+            <form onSubmit={handleSubmit(handleSave)} className="space-y-3.5">
               <div className="space-y-1">
-                <label className="block font-bold text-slate-600">Nama Tag</label>
+                <label className="block font-bold text-slate-600">Nama Tag *</label>
                 <input
                   type="text"
                   placeholder="Contoh: Liga Indonesia, Pilkada..."
@@ -190,14 +228,25 @@ export default function TagPage() {
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-[#0D2B5C] focus:bg-white transition-all text-xs font-medium"
                 />
               </div>
-              <button
-                type="submit"
-                disabled={createMutation.isPending}
-                className="w-full py-2 bg-[#D71920] hover:bg-red-700 active:bg-red-800 text-white rounded-xl font-bold transition-all shadow-md shadow-red-500/10 flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <Save size={13} />
-                Tambah Tag
-              </button>
+              <div className="flex items-center gap-2 pt-1">
+                {editingTag && (
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="px-3 py-2 border border-slate-200 text-slate-500 rounded-xl hover:bg-slate-50 transition-colors font-semibold cursor-pointer shrink-0"
+                  >
+                    Batal
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                  className="w-full py-2 bg-[#D71920] hover:bg-red-700 active:bg-red-800 text-white rounded-xl font-bold transition-all shadow-md shadow-red-500/10 flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Save size={13} />
+                  {editingTag ? "Simpan Perubahan" : "Tambah Tag"}
+                </button>
+              </div>
             </form>
           </div>
 
@@ -338,20 +387,29 @@ export default function TagPage() {
                         {tag.count} kali
                       </td>
                       <td className="py-3 pr-3 text-right">
-                        <button
-                          onClick={() => {
-                            showConfirm(
-                              `Apakah Anda yakin ingin menghapus tag "${tag.name}"?`,
-                              () => deleteMutation.mutate(tag.id),
-                              "Hapus Tag",
-                              { type: "danger", confirmText: "Hapus", cancelText: "Batal" }
-                            );
-                          }}
-                          className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded-lg transition-colors cursor-pointer"
-                          title="Hapus Tag"
-                        >
-                          <Trash2 size={13} />
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => handleEditClick(tag)}
+                            className="text-slate-400 hover:text-[#0D2B5C] hover:bg-slate-50 p-1.5 rounded-lg transition-colors cursor-pointer"
+                            title="Edit Tag"
+                          >
+                            <Edit2 size={13} />
+                          </button>
+                          <button
+                            onClick={() => {
+                              showConfirm(
+                                `Apakah Anda yakin ingin menghapus tag "${tag.name}"?`,
+                                () => deleteMutation.mutate(tag.id),
+                                "Hapus Tag",
+                                { type: "danger", confirmText: "Hapus", cancelText: "Batal" }
+                              );
+                            }}
+                            className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded-lg transition-colors cursor-pointer"
+                            title="Hapus Tag"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))

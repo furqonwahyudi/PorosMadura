@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { UserPlus, Key, Mail, Shield, User, ArrowLeft, Check, AlertCircle } from "lucide-react";
+import { adminApi } from "../../../lib/adminApi";
+import { UserPlus, Key, Mail, Shield, User, ArrowLeft, Check, AlertCircle, Loader2 } from "lucide-react";
 
 export default function AddUserPage() {
   const [username, setUsername] = useState("");
@@ -7,8 +8,9 @@ export default function AddUserPage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("Reporter");
+  const [role, setRole] = useState("REPORTER");
   const [sendEmail, setSendEmail] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
@@ -21,48 +23,54 @@ export default function AddUserPage() {
     setPassword(generated);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setSuccess(false);
 
-    if (!username || !email || !firstName || !password) {
+    if (!email || !firstName || !password) {
       setError("Semua field bertanda * wajib diisi!");
       return;
     }
 
-    // Simulate saving
-    setSuccess(true);
-    // Reset state
-    setUsername("");
-    setEmail("");
-    setFirstName("");
-    setLastName("");
-    setPassword("");
+    if (password.length < 8) {
+      setError("Password minimal 8 karakter!");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const fullName = lastName ? `${firstName} ${lastName}`.trim() : firstName.trim();
+      await adminApi.post("/api/users", {
+        name: fullName,
+        email,
+        password,
+        role
+      });
+
+      setSuccess(true);
+      setUsername("");
+      setEmail("");
+      setFirstName("");
+      setLastName("");
+      setPassword("");
+    } catch (err: any) {
+      setError(err.response?.data?.message || err.message || "Gagal membuat akun pengguna.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div style={{ padding: "24px", display: "flex", flexDirection: "column", gap: 20 }} className="animate-fade-in">
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <button
-          onClick={() => window.history.back()}
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "center",
-            width: 36, height: 36, borderRadius: "50%", border: "1px solid var(--border)",
-            background: "var(--surface)", color: "var(--text-secondary)", cursor: "pointer"
-          }}
-        >
-          <ArrowLeft size={16} />
-        </button>
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--text-primary)", margin: 0, letterSpacing: -0.5 }}>
-            Create New Administrative Account
-          </h1>
-          <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: "4px 0 0" }}>
-            Tambahkan pengguna baru dengan peran tertentu ke dalam sistem CMS
-          </p>
-        </div>
+      <div>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--text-primary)", margin: 0, letterSpacing: -0.5 }}>
+          Create New Administrative Account
+        </h1>
+        <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: "4px 0 0" }}>
+          Tambahkan pengguna baru dengan peran tertentu ke dalam sistem CMS
+        </p>
       </div>
 
       {success && (

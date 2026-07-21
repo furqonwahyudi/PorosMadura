@@ -183,22 +183,35 @@ model ArticleTag {
 }
 
 model Comment {
-  id         String   @id @default(uuid())
-  content    String   @db.Text
-  author     String
-  email      String?
-  likes      Int      @default(0)
-  dislikes   Int      @default(0)
-  isApproved Boolean  @default(false)
-  parentId   String?
-  articleId  String
-  createdAt  DateTime @default(now())
+  id           String   @id @default(uuid())
+  content      String   @db.Text
+  author       String
+  email        String?
+  ipAddress    String?
+  likes        Int      @default(0)
+  dislikes     Int      @default(0)
+  isApproved   Boolean  @default(false)
+  isSpam       Boolean  @default(false)
+  isReported   Boolean  @default(false)
+  reportReason String?
+  parentId     String?
+  articleId    String
+  createdAt    DateTime @default(now())
 
   article   Article   @relation(fields: [articleId], references: [id], onDelete: Cascade)
   parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
   replies   Comment[] @relation("CommentReplies")
 
   @@map("comments")
+}
+
+model BlacklistWord {
+  id        String   @id @default(uuid())
+  word      String   @unique
+  type      String   @default("WORD")
+  createdAt DateTime @default(now())
+
+  @@map("blacklist_words")
 }
 
 model AdSlot {

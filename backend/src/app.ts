@@ -35,12 +35,23 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'),
-  max: parseInt(process.env.RATE_LIMIT_MAX || '200'),
+// Dedicated Rate Limiter for Login (to prevent brute force)
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 mins
+  max: 30, // 30 attempts per 15 mins for login
   standardHeaders: true,
   legacyHeaders: false,
+  message: { success: false, message: 'Terlalu banyak percobaan login, coba lagi setelah 15 menit.' },
+});
+app.use('/api/auth/login', loginLimiter);
+
+// General Rate Limiter for API
+const limiter = rateLimit({
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'),
+  max: parseInt(process.env.RATE_LIMIT_MAX || '5000'),
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () => process.env.NODE_ENV === 'development',
   message: { success: false, message: 'Terlalu banyak permintaan, coba lagi nanti.' },
 });
 app.use('/api', limiter);

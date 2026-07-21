@@ -9,6 +9,8 @@ import {
   Search as SearchOpt, Map, ArrowLeftRight, Globe, ChevronLeft, ChevronDown,
   ChevronRight, BarChart3, Gauge, ShoppingCart, Layers
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { adminApi } from "../../../lib/adminApi";
 import { useAdminAuth } from "../../../context/AdminAuthContext";
 
 type NavItem = {
@@ -143,6 +145,60 @@ export default function AdminSidebar({ isOpen, onClose, collapsed, onToggleColla
   const { user } = useAdminAuth();
   const location = useLocation();
 
+  // Dynamic Queries for Real-time Sidebar Badges
+  const { data: statsRes } = useQuery<{ success: boolean; data: { total: number; breaking: number; recommendation: number; headline: number; trending: number; trash: number } }>({
+    queryKey: ["admin", "article-stats"],
+    queryFn: async () => adminApi.get<any>("/api/articles/stats/counts"),
+    refetchInterval: 15000,
+  });
+
+  const { data: usersRes } = useQuery<{ success: boolean; data: any[] }>({
+    queryKey: ["admin", "users"],
+    queryFn: async () => adminApi.get<any>("/api/users"),
+  });
+
+  const { data: categoriesRes } = useQuery<{ success: boolean; data: any[] }>({
+    queryKey: ["admin", "sidebar-categories"],
+    queryFn: async () => adminApi.get<any>("/api/categories?admin=true"),
+  });
+
+  const { data: tagsRes } = useQuery<any>({
+    queryKey: ["admin", "sidebar-tags"],
+    queryFn: async () => adminApi.get<any>("/api/tags?limit=1"),
+  });
+
+  const { data: commentStatsRes } = useQuery<{ success: boolean; data: { moderation: number; spam: number; reports: number; total: number } }>({
+    queryKey: ["admin", "sidebar-comment-stats"],
+    queryFn: async () => adminApi.get<any>("/api/comments/admin/stats"),
+    refetchInterval: 15000,
+  });
+
+  const stats = statsRes?.data;
+  const userCount = usersRes?.data?.length;
+  const categoryCount = categoriesRes?.data?.length;
+  const tagCount = tagsRes?.pagination?.total;
+  const commentStats = commentStatsRes?.data;
+
+  const dynamicNAV: NavItem[] = NAV.map(section => {
+    if (!section.children) return section;
+    return {
+      ...section,
+      children: section.children.map(item => {
+        if (item.id === "all-articles") return { ...item, badge: stats?.total ?? 0 };
+        if (item.id === "recommendation") return { ...item, badge: stats?.recommendation ?? 0, badgeColor: (stats?.recommendation || 0) > 0 ? "orange" : undefined };
+        if (item.id === "breaking") return { ...item, badge: stats?.breaking ?? 0, badgeColor: (stats?.breaking || 0) > 0 ? "red" : undefined };
+        if (item.id === "trash") return { ...item, badge: stats?.trash ?? 0 };
+        if (item.id === "categories") return { ...item, badge: categoryCount ?? 0 };
+        if (item.id === "tags") return { ...item, badge: tagCount ?? 0 };
+        if (item.id === "all-users") return { ...item, badge: userCount ?? 0 };
+        if (item.id === "moderation") return { ...item, badge: commentStats?.moderation ?? 0, badgeColor: (commentStats?.moderation || 0) > 0 ? "orange" : undefined };
+        if (item.id === "spam") return { ...item, badge: commentStats?.spam ?? 0, badgeColor: (commentStats?.spam || 0) > 0 ? "red" : undefined };
+        if (item.id === "user-reports") return { ...item, badge: commentStats?.reports ?? 0, badgeColor: (commentStats?.reports || 0) > 0 ? "red" : undefined };
+        return item;
+      })
+    };
+  });
+
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {};
     NAV.forEach(section => {
@@ -227,7 +283,7 @@ export default function AdminSidebar({ isOpen, onClose, collapsed, onToggleColla
 
         {/* Nav scroll area */}
         <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "8px 0" }} className="scrollbar-thin">
-          {NAV.map(section => {
+          {dynamicNAV.map(section => {
             const hasChildren = section.children && section.children.length > 0;
             const isSectionOpen = !!openSections[section.id];
 

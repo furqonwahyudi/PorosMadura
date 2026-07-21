@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import {
   getArticles, getArticleBySlug, getBreakingNews,
-  getHeadlines, getTrending, getEditorChoice,
+  getHeadlines, getTrending, getEditorChoice, getArticleStats,
   incrementView, incrementRead, incrementShare,
   createArticle, updateArticle, deleteArticle,
   publishArticle, archiveArticle, scrapeArticle,
@@ -13,6 +13,7 @@ const router = Router();
 
 // === PUBLIC ROUTES ===
 router.get('/', getArticles);
+router.get('/stats/counts', getArticleStats);
 router.get('/breaking', getBreakingNews);
 router.get('/headline', getHeadlines);
 router.get('/trending', getTrending);

@@ -1,22 +1,101 @@
 import React, { useState } from "react";
-import { CheckCircle, X, Flag, Reply, MessageSquare, User, Globe, Clock, ChevronDown } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { adminApi } from "../../../lib/adminApi";
+import { useDialog } from "../../../context/DialogContext";
+import { CheckCircle, X, Flag, Reply, MessageSquare, User, Globe, Clock, Loader2, Send } from "lucide-react";
 
-const MOCK_COMMENTS = [
-  { id: "1", author: "Budi Santoso", email: "budi.s@gmail.com", ip: "182.4.12.53", userAgent: "Chrome 125, Android", content: "Semoga infrastruktur di Sampang segera diperbaiki pak Bupati, sudah lama warga menunggu!", article: "Bupati Bangkalan Resmikan Jembatan Baru", time: "2 menit lalu" },
-  { id: "2", author: "Rina Maulida", email: "rina.m@yahoo.com", ip: "36.77.201.10", userAgent: "Safari, iPhone 14", content: "Terima kasih beritanya sangat informatif. Warga Sumenep sangat terbantu dengan berita seperti ini.", article: "DPRD Sumenep Bahas Anggaran Kesehatan 2026", time: "8 menit lalu" },
-  { id: "3", author: "Agus Wahyudi", email: "agus.w@outlook.com", ip: "114.122.77.4", userAgent: "Firefox 127, Windows", content: "Kenapa tidak ada foto pelaksanaannya? Tolong redaksi lebih lengkap dalam meliputi berita lapangan.", article: "Festival Seni Budaya Madura Ke-14 Sukses Digelar", time: "15 menit lalu" },
-  { id: "4", author: "Dewi Puspita", email: "dewi.p@gmail.com", ip: "202.93.4.19", userAgent: "Chrome 125, Windows", content: "Akhirnya ada juga liputan tentang petani garam Madura. Mereka butuh perhatian lebih dari pemerintah!", article: "Harga Garam Madura Anjlok, Petani Mengeluh", time: "23 menit lalu" },
-  { id: "5", author: "Hasan Basri", email: "hbasri@gmail.com", ip: "180.244.3.87", userAgent: "Chrome, Android", content: "Tolong cross-check dulu sebelum publish, data yang disajikan berbeda dengan data BPS yang saya punya.", article: "Inflasi Madura Q2 Stabil di 2.3%", time: "41 menit lalu" },
-];
+interface CommentItem {
+  id: string;
+  content: string;
+  author: string;
+  email?: string;
+  isApproved: boolean;
+  createdAt: string;
+  article?: {
+    id: string;
+    title: string;
+    slug: string;
+  };
+}
 
 export default function CommentModerationPage() {
-  const [comments, setComments] = useState(MOCK_COMMENTS);
+  const queryClient = useQueryClient();
+  const { showConfirm, showToast } = useDialog();
+
   const [replyId, setReplyId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
 
-  const approve = (id: string) => setComments(prev => prev.filter(c => c.id !== id));
-  const reject = (id: string) => setComments(prev => prev.filter(c => c.id !== id));
-  const spam = (id: string) => setComments(prev => prev.filter(c => c.id !== id));
+  // Fetch pending comments for moderation
+  const { data: commentsRes, isLoading } = useQuery<{ success: boolean; data: CommentItem[] }>({
+    queryKey: ["admin", "comments", "pending"],
+    queryFn: async () => adminApi.get<any>("/api/comments/admin/all?status=pending")
+  });
+
+  const comments = commentsRes?.data || [];
+
+  // Mutations
+  const approveMutation = useMutation({
+    mutationFn: async (id: string) => adminApi.patch(`/api/comments/${id}/approve`, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin"] });
+      showToast("Komentar disetujui!", "success");
+    },
+    onError: (err: any) => showToast(err.message || "Gagal menyetujui komentar", "error")
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: async (id: string) => adminApi.patch(`/api/comments/${id}/unapprove`, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin"] });
+      showToast("Komentar ditolak!", "info");
+    },
+    onError: (err: any) => showToast(err.message || "Gagal menolak komentar", "error")
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => adminApi.delete(`/api/comments/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin"] });
+      showToast("Komentar berhasil dihapus!", "success");
+    },
+    onError: (err: any) => showToast(err.message || "Gagal menghapus komentar", "error")
+  });
+
+  const replyMutation = useMutation({
+    mutationFn: async ({ commentId, content }: { commentId: string; content: string }) =>
+      adminApi.post(`/api/comments/admin/${commentId}/reply`, { content }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin"] });
+      showToast("Balasan redaksi berhasil dikirim & disetujui!", "success");
+      setReplyId(null);
+      setReplyText("");
+    },
+    onError: (err: any) => showToast(err.message || "Gagal mengirim balasan", "error")
+  });
+
+  const handleApproveAll = () => {
+    if (comments.length === 0) return;
+    showConfirm(
+      `Apakah Anda yakin ingin menyetujui sekaligus ${comments.length} komentar yang sedang antre?`,
+      async () => {
+        for (const c of comments) {
+          await adminApi.patch(`/api/comments/${c.id}/approve`, {});
+        }
+        queryClient.invalidateQueries({ queryKey: ["admin", "comments"] });
+        showToast("Semua komentar berhasil disetujui!", "success");
+      },
+      "Setujui Semua Komentar",
+      { confirmText: "Setujui Semua", type: "confirm" }
+    );
+  };
+
+  const handleSendReply = (commentId: string) => {
+    if (!replyText.trim()) {
+      showToast("Tuliskan isi balasan terlebih dahulu!", "warning");
+      return;
+    }
+    replyMutation.mutate({ commentId, content: replyText });
+  };
 
   return (
     <div style={{ padding: "24px", display: "flex", flexDirection: "column", gap: 20 }} className="animate-fade-in">
@@ -32,10 +111,11 @@ export default function CommentModerationPage() {
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button
-            onClick={() => setComments([])}
+            onClick={handleApproveAll}
+            disabled={comments.length === 0}
             style={{
               padding: "7px 14px", borderRadius: 8, border: "1px solid var(--border)",
-              background: "transparent", color: "var(--green)", fontSize: 12, fontWeight: 600, cursor: "pointer",
+              background: "transparent", color: comments.length === 0 ? "var(--text-tertiary)" : "var(--green)", fontSize: 12, fontWeight: 600, cursor: comments.length === 0 ? "not-allowed" : "pointer",
             }}
           >
             Setujui Semua ({comments.length})
@@ -44,12 +124,10 @@ export default function CommentModerationPage() {
       </div>
 
       {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
         {[
           { label: "Menunggu Review", val: comments.length, color: "var(--yellow)" },
-          { label: "Disetujui Hari Ini", val: 142, color: "var(--green)" },
-          { label: "Ditolak / Spam", val: 23, color: "var(--red)" },
-          { label: "Total Komentar", val: "1,284", color: "var(--blue)" },
+          { label: "Total Komentar", val: comments.length, color: "var(--blue)" },
         ].map(s => (
           <div key={s.label} style={{
             background: "var(--surface)", border: "1px solid var(--border)",
@@ -62,14 +140,19 @@ export default function CommentModerationPage() {
       </div>
 
       {/* Comment queue */}
-      {comments.length === 0 ? (
+      {isLoading ? (
+        <div style={{ display: "flex", justifyContent: "center", padding: "40px 0", color: "var(--text-secondary)", fontSize: 13, alignItems: "center" }}>
+          <Loader2 className="animate-spin" size={16} style={{ marginRight: 8 }} />
+          Memuat antrean moderasi komentar...
+        </div>
+      ) : comments.length === 0 ? (
         <div style={{
           background: "var(--surface)", border: "1px solid var(--border)",
           borderRadius: 12, padding: "48px 24px", textAlign: "center",
         }}>
           <CheckCircle size={40} style={{ color: "var(--green)", margin: "0 auto 12px" }} />
           <p style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)", margin: "0 0 4px" }}>Antrean Bersih!</p>
-          <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: 0 }}>Semua komentar sudah diproses.</p>
+          <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: 0 }}>Semua komentar pembaca di database sudah diproses.</p>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -81,7 +164,6 @@ export default function CommentModerationPage() {
               <div style={{ padding: "14px 16px" }}>
                 {/* Meta row */}
                 <div style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: 10 }}>
-                  {/* Avatar */}
                   <div style={{
                     width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
                     background: "var(--brand-subtle)",
@@ -92,21 +174,19 @@ export default function CommentModerationPage() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 12px", alignItems: "center" }}>
                       <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>{c.author}</span>
-                      <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>{c.email}</span>
+                      {c.email && <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>{c.email}</span>}
                       <span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11, color: "var(--text-tertiary)" }}>
-                        <Globe size={10} /> {c.ip}
-                      </span>
-                      <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>{c.userAgent}</span>
-                      <span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11, color: "var(--text-tertiary)" }}>
-                        <Clock size={10} /> {c.time}
+                        <Clock size={10} /> {new Date(c.createdAt).toLocaleString("id-ID")}
                       </span>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
-                      <MessageSquare size={10} style={{ color: "var(--text-tertiary)" }} />
-                      <span style={{ fontSize: 11, color: "var(--brand)" }}>
-                        Pada: {c.article}
-                      </span>
-                    </div>
+                    {c.article && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
+                        <MessageSquare size={10} style={{ color: "var(--text-tertiary)" }} />
+                        <span style={{ fontSize: 11, color: "var(--brand)" }}>
+                          Pada Artikel: {c.article.title}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -123,7 +203,8 @@ export default function CommentModerationPage() {
                 {/* Actions */}
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   <button
-                    onClick={() => approve(c.id)}
+                    onClick={() => approveMutation.mutate(c.id)}
+                    disabled={approveMutation.isPending}
                     style={{
                       display: "flex", alignItems: "center", gap: 5, padding: "6px 12px",
                       borderRadius: 7, border: "1px solid var(--green)", background: "var(--green-subtle)",
@@ -143,17 +224,19 @@ export default function CommentModerationPage() {
                     <Reply size={12} /> Balas
                   </button>
                   <button
-                    onClick={() => spam(c.id)}
+                    onClick={() => deleteMutation.mutate(c.id)}
+                    disabled={deleteMutation.isPending}
                     style={{
                       display: "flex", alignItems: "center", gap: 5, padding: "6px 12px",
-                      borderRadius: 7, border: "1px solid var(--border)", background: "var(--bg-subtle)",
+                      borderRadius: 7, border: "1px solid var(--orange)", background: "var(--orange-subtle)",
                       color: "var(--orange)", fontSize: 12, fontWeight: 600, cursor: "pointer",
                     }}
                   >
-                    <Flag size={12} /> Tandai Spam
+                    <Flag size={12} /> Tandai Spam / Hapus
                   </button>
                   <button
-                    onClick={() => reject(c.id)}
+                    onClick={() => rejectMutation.mutate(c.id)}
+                    disabled={rejectMutation.isPending}
                     style={{
                       display: "flex", alignItems: "center", gap: 5, padding: "6px 12px",
                       borderRadius: 7, border: "1px solid var(--red)", background: "var(--red-subtle)",
@@ -184,12 +267,15 @@ export default function CommentModerationPage() {
                     />
                     <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                       <button
-                        onClick={() => { approve(c.id); setReplyId(null); setReplyText(""); }}
+                        onClick={() => handleSendReply(c.id)}
+                        disabled={replyMutation.isPending}
                         style={{
                           padding: "7px 14px", borderRadius: 7, border: "none",
                           background: "var(--brand)", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                          display: "flex", alignItems: "center", gap: 6
                         }}
                       >
+                        {replyMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
                         Kirim Balasan & Setujui
                       </button>
                       <button

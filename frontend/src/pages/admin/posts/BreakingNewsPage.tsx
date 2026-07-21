@@ -52,7 +52,7 @@ export default function BreakingNewsPage() {
     mutationFn: (id: string) =>
       adminApi.put(`/api/articles/${id}`, { isBreaking: false }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin", "breaking", "list"] });
+      queryClient.invalidateQueries({ queryKey: ["admin"] });
       showToast("Label Breaking News berhasil dihapus!", "success");
     },
     onError: (err: any) => {

@@ -34,9 +34,12 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     adminApi
       .get<{ success: boolean; data: AdminUser }>("/api/auth/me")
       .then((res) => setUser(res.data))
-      .catch(() => {
-        localStorage.removeItem("admin_token");
-        setToken(null);
+      .catch((err: any) => {
+        // Only clear token if explicitly Unauthorized (401). Don't log out on 429 rate limit or network glitches!
+        if (err?.message === "Unauthorized" || err?.status === 401) {
+          localStorage.removeItem("admin_token");
+          setToken(null);
+        }
       })
       .finally(() => setIsLoading(false));
   }, []);

@@ -63,7 +63,12 @@ export default function AdminTopbar({ onToggleSidebar, onOpenSearch, darkMode, o
 
   // Generate breadcrumbs from path
   const paths = location.pathname.split("/").filter(Boolean);
-  const crumbs = paths.map(path => PATH_LABELS[path] || path.charAt(0).toUpperCase() + path.slice(1).replace("-", " "));
+  const crumbs = paths.map((path, idx) => {
+    if ((path === "create" || path === "add") && paths[idx - 1] === "users") {
+      return "Create User";
+    }
+    return PATH_LABELS[path] || path.charAt(0).toUpperCase() + path.slice(1).replace("-", " ");
+  });
   const unreadCount = NOTIFICATIONS.filter(n => n.unread).length;
 
   return (

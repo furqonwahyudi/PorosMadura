@@ -50,13 +50,17 @@ export default function AllArticlesPage({ defaultStatus = "all" }: { defaultStat
   const [limit, setLimit] = useState(15);
 
   // Query for categories
-  const { data: categories } = useQuery<Category[]>({
+  const { data: categoriesRaw } = useQuery<any>({
     queryKey: ["admin", "categories"],
     queryFn: async () => {
-      const res = await adminApi.get<{ success: boolean; data: Category[] }>("/api/categories");
-      return res.data;
+      const res = await adminApi.get<any>("/api/categories");
+      return Array.isArray(res) ? res : res.data || [];
     }
   });
+
+  const categoriesList: Category[] = Array.isArray(categoriesRaw)
+    ? categoriesRaw
+    : categoriesRaw?.data || [];
 
   // Query for articles
   const { data: articleData, isLoading: articlesLoading } = useQuery<{
@@ -182,7 +186,7 @@ export default function AllArticlesPage({ defaultStatus = "all" }: { defaultStat
           }}
         >
           <option value="all">Semua Kategori</option>
-          {categories?.map(c => (
+          {categoriesList.map(c => (
             <option key={c.id} value={c.slug}>{c.name}</option>
           ))}
         </select>
@@ -342,22 +346,22 @@ export default function AllArticlesPage({ defaultStatus = "all" }: { defaultStat
                           </div>
                           {article.tags && article.tags.length > 0 && (
                             <div style={{ marginTop: 3, display: "flex", gap: 4, flexWrap: "nowrap", overflow: "hidden" }}>
-                              {article.tags.slice(0, 2).map(tag => (
-                                <span key={tag.tag.name} style={{
+                              {article.tags.slice(0, 2).map((tag, idx) => (
+                                <span key={tag.tag?.name || idx} style={{
                                   fontSize: 10, padding: "1px 6px", borderRadius: 99,
                                   background: "var(--bg-muted)", color: "var(--text-tertiary)", whiteSpace: "nowrap",
-                                }}>{tag.tag.name}</span>
+                                }}>{tag.tag?.name || "Tag"}</span>
                               ))}
                             </div>
                           )}
                         </td>
-                        <td style={{ padding: "12px 8px", fontSize: 12.5, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{article.author.name}</td>
+                        <td style={{ padding: "12px 8px", fontSize: 12.5, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{article.author?.name || "Super Admin"}</td>
                         <td style={{ padding: "12px 8px", fontSize: 12.5, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{article.editor?.name || "Ahmad Syafi'i"}</td>
                         <td style={{ padding: "12px 8px" }}>
                           <span style={{
                             fontSize: 11, fontWeight: 500, padding: "2px 8px", borderRadius: 99,
                             background: "var(--blue-subtle)", color: "var(--blue)", whiteSpace: "nowrap",
-                          }}>{article.category.name}</span>
+                          }}>{article.category?.name || "Umum"}</span>
                         </td>
                         <td style={{ padding: "12px 8px" }}>
                           <span style={{

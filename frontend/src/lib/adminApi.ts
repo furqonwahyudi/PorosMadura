@@ -27,14 +27,20 @@ async function request<T>(
   });
 
   if (res.status === 401) {
-    localStorage.removeItem("admin_token");
-    window.location.href = "/admin/login";
-    throw new Error("Unauthorized");
+    if (window.location.pathname !== "/admin/login") {
+      localStorage.removeItem("admin_token");
+      window.location.href = "/admin/login";
+    }
+    const errObj: any = new Error("Unauthorized");
+    errObj.status = 401;
+    throw errObj;
   }
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(err.message ?? "Request failed");
+    const errObj: any = new Error(err.message ?? "Request failed");
+    errObj.status = res.status;
+    throw errObj;
   }
 
   return res.json();

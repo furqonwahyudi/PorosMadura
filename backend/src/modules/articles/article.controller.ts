@@ -235,6 +235,33 @@ export async function getEditorChoice(req: Request, res: Response, next: NextFun
   }
 }
 
+export async function getArticleStats(_req: Request, res: Response, next: NextFunction) {
+  try {
+    const [totalArticles, breakingCount, editorChoiceCount, headlineCount, trendingCount, trashCount] = await Promise.all([
+      prisma.article.count({ where: { status: { not: 'ARCHIVED' } } }),
+      prisma.article.count({ where: { isBreaking: true, status: { not: 'ARCHIVED' } } }),
+      prisma.article.count({ where: { isEditorChoice: true, status: { not: 'ARCHIVED' } } }),
+      prisma.article.count({ where: { isHeadline: true, status: { not: 'ARCHIVED' } } }),
+      prisma.article.count({ where: { isTrending: true, status: { not: 'ARCHIVED' } } }),
+      prisma.article.count({ where: { status: 'ARCHIVED' } }),
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        total: totalArticles,
+        breaking: breakingCount,
+        recommendation: editorChoiceCount,
+        headline: headlineCount,
+        trending: trendingCount,
+        trash: trashCount,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function incrementView(req: Request, res: Response, next: NextFunction) {
   try {
     await prisma.article.updateMany({
