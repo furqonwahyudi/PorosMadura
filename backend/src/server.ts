@@ -21,6 +21,7 @@ async function main() {
         ALTER TABLE comments ADD COLUMN IF NOT EXISTS "reportReason" TEXT;
         ALTER TABLE comments ADD COLUMN IF NOT EXISTS "ipAddress" TEXT;
         ALTER TABLE media_files ADD COLUMN IF NOT EXISTS "isTemporary" BOOLEAN DEFAULT false;
+        ALTER TABLE website_settings ADD COLUMN IF NOT EXISTS "trashRetention" TEXT DEFAULT '30d';
         CREATE TABLE IF NOT EXISTS "blacklist_words" (
           "id" TEXT NOT NULL PRIMARY KEY,
           "word" TEXT NOT NULL UNIQUE,
@@ -28,7 +29,7 @@ async function main() {
           "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
       `);
-      logger.info('✅ Schema database comments, blacklist_words & media_files diperbarui');
+      logger.info('✅ Schema database comments, blacklist_words, media_files & website_settings diperbarui');
     } catch (e: any) {
       logger.warn('Schema DDL migration notice:', e.message);
     }

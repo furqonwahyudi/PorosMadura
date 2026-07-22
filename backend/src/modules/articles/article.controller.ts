@@ -61,6 +61,28 @@ const articleSelect = {
 
 export async function getArticles(req: Request, res: Response, next: NextFunction) {
   try {
+    // Auto-clean expired trash/archived articles
+    try {
+      const settings = await prisma.websiteSettings.findUnique({ where: { id: 'singleton' } });
+      const retention = settings?.trashRetention || '30d'; // default 30 days
+      let days = 30;
+      if (retention === '1d') days = 1;
+      else if (retention === '7d') days = 7;
+      else if (retention === '30d') days = 30;
+
+      const threshold = new Date();
+      threshold.setDate(threshold.getDate() - days);
+
+      await prisma.article.deleteMany({
+        where: {
+          status: 'ARCHIVED',
+          updatedAt: { lt: threshold }
+        }
+      });
+    } catch (e: any) {
+      console.warn('Failed to auto-clean trash articles:', e.message);
+    }
+
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const skip = (page - 1) * limit;

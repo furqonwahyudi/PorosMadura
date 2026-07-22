@@ -1,0 +1,106 @@
+DEBUG LOG:
+
+=== LAST 50 LINES OF ERROR.LOG ===
+                _count: {
+                  select: {
+                    _all: true
+                  }
+                }
+              },
+              where: {
+                isApproved: false,
+                isSpam: false,
+                ~~~~~~
+            ?   AND?: CommentWhereInput | CommentWhereInput[],
+            ?   OR?: CommentWhereInput[],
+            ?   NOT?: CommentWhereInput | CommentWhereInput[],
+            ?   id?: StringFilter | String,
+            ?   content?: StringFilter | String,
+            ?   author?: StringFilter | String,
+            ?   email?: StringNullableFilter | String | Null,
+            ?   likes?: IntFilter | Int,
+            ?   dislikes?: IntFilter | Int,
+            ?   parentId?: StringNullableFilter | String | Null,
+            ?   articleId?: StringFilter | String,
+            ?   createdAt?: DateTimeFilter | DateTime,
+            ?   article?: ArticleScalarRelationFilter | ArticleWhereInput,
+            ?   parent?: CommentNullableScalarRelationFilter | CommentWhereInput | Null,
+            ?   replies?: CommentListRelationFilter
+              }
+            })
+
+Unknown argument `isSpam`. Available options are marked with ?.
+    at throwValidationException (E:\PorosMadura\web\PorosMadura\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:46:9)
+    at zr.handleRequestError (E:\PorosMadura\web\PorosMadura\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:211:7)
+    at zr.handleAndLogRequestError (E:\PorosMadura\web\PorosMadura\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:183:12)
+    at zr.request (E:\PorosMadura\web\PorosMadura\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:152:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async a (E:\PorosMadura\web\PorosMadura\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:963:24)
+    at async Promise.all (index 0)
+    at async getCommentStats (E:\PorosMadura\web\PorosMadura\backend\src\modules\comments\comment.controller.ts:201:79)
+2026-07-22 08:06:48 [[31merror[39m]: 404 - Artikel tidak ditemukan - Error: Artikel tidak ditemukan
+    at getArticleBySlug (E:\PorosMadura\web\PorosMadura\backend\src\modules\articles\article.controller.ts:170:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+2026-07-22 08:06:48 [[31merror[39m]: 404 - Artikel tidak ditemukan - Error: Artikel tidak ditemukan
+    at getArticleBySlug (E:\PorosMadura\web\PorosMadura\backend\src\modules\articles\article.controller.ts:170:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+2026-07-22 08:06:48 [[31merror[39m]: 404 - Artikel tidak ditemukan - Error: Artikel tidak ditemukan
+    at getArticleBySlug (E:\PorosMadura\web\PorosMadura\backend\src\modules\articles\article.controller.ts:170:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+2026-07-22 08:06:48 [[31merror[39m]: 404 - Artikel tidak ditemukan - Error: Artikel tidak ditemukan
+    at getArticleBySlug (E:\PorosMadura\web\PorosMadura\backend\src\modules\articles\article.controller.ts:170:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+
+
+=== LAST 50 LINES OF COMBINED.LOG ===
+            ?   replies?: CommentListRelationFilter
+              }
+            })
+
+Unknown argument `isSpam`. Available options are marked with ?.
+    at throwValidationException (E:\PorosMadura\web\PorosMadura\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:46:9)
+    at zr.handleRequestError (E:\PorosMadura\web\PorosMadura\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:211:7)
+    at zr.handleAndLogRequestError (E:\PorosMadura\web\PorosMadura\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:183:12)
+    at zr.request (E:\PorosMadura\web\PorosMadura\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:152:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async a (E:\PorosMadura\web\PorosMadura\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:963:24)
+    at async Promise.all (index 0)
+    at async getCommentStats (E:\PorosMadura\web\PorosMadura\backend\src\modules\comments\comment.controller.ts:201:79)
+2026-07-22 07:38:01 [[32minfo[39m]: ✅ Database PostgreSQL terhubung
+2026-07-22 07:38:01 [[32minfo[39m]: ✅ Schema database comments, blacklist_words & media_files diperbarui
+2026-07-22 07:38:01 [[32minfo[39m]: 🚀 Poros Madura API berjalan di http://localhost:3001
+2026-07-22 07:38:01 [[32minfo[39m]: 📝 Environment: development
+2026-07-22 07:38:02 [[32minfo[39m]: ✅ Database PostgreSQL terhubung
+2026-07-22 07:38:02 [[32minfo[39m]: ✅ Schema database comments, blacklist_words & media_files diperbarui
+2026-07-22 07:38:02 [[32minfo[39m]: 🚀 Poros Madura API berjalan di http://localhost:3001
+2026-07-22 07:38:02 [[32minfo[39m]: 📝 Environment: development
+2026-07-22 07:49:55 [[32minfo[39m]: ✅ Database PostgreSQL terhubung
+2026-07-22 07:49:55 [[32minfo[39m]: ✅ Schema database comments, blacklist_words, media_files & website_settings diperbarui
+2026-07-22 07:49:55 [[32minfo[39m]: 🚀 Poros Madura API berjalan di http://localhost:3001
+2026-07-22 07:49:55 [[32minfo[39m]: 📝 Environment: development
+2026-07-22 07:49:56 [[32minfo[39m]: ✅ Database PostgreSQL terhubung
+2026-07-22 07:49:56 [[32minfo[39m]: ✅ Schema database comments, blacklist_words, media_files & website_settings diperbarui
+2026-07-22 07:49:56 [[32minfo[39m]: 🚀 Poros Madura API berjalan di http://localhost:3001
+2026-07-22 07:49:56 [[32minfo[39m]: 📝 Environment: development
+2026-07-22 07:50:01 [[32minfo[39m]: ✅ Database PostgreSQL terhubung
+2026-07-22 07:50:01 [[32minfo[39m]: ✅ Database PostgreSQL terhubung
+2026-07-22 07:50:01 [[32minfo[39m]: ✅ Schema database comments, blacklist_words, media_files & website_settings diperbarui
+2026-07-22 07:50:01 [[32minfo[39m]: 🚀 Poros Madura API berjalan di http://localhost:3001
+2026-07-22 07:50:01 [[32minfo[39m]: 📝 Environment: development
+2026-07-22 07:50:01 [[32minfo[39m]: ✅ Schema database comments, blacklist_words, media_files & website_settings diperbarui
+2026-07-22 07:50:01 [[32minfo[39m]: 🚀 Poros Madura API berjalan di http://localhost:3001
+2026-07-22 07:50:01 [[32minfo[39m]: 📝 Environment: development
+2026-07-22 08:06:48 [[31merror[39m]: 404 - Artikel tidak ditemukan - Error: Artikel tidak ditemukan
+    at getArticleBySlug (E:\PorosMadura\web\PorosMadura\backend\src\modules\articles\article.controller.ts:170:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+2026-07-22 08:06:48 [[31merror[39m]: 404 - Artikel tidak ditemukan - Error: Artikel tidak ditemukan
+    at getArticleBySlug (E:\PorosMadura\web\PorosMadura\backend\src\modules\articles\article.controller.ts:170:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+2026-07-22 08:06:48 [[31merror[39m]: 404 - Artikel tidak ditemukan - Error: Artikel tidak ditemukan
+    at getArticleBySlug (E:\PorosMadura\web\PorosMadura\backend\src\modules\articles\article.controller.ts:170:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+2026-07-22 08:06:48 [[31merror[39m]: 404 - Artikel tidak ditemukan - Error: Artikel tidak ditemukan
+    at getArticleBySlug (E:\PorosMadura\web\PorosMadura\backend\src\modules\articles\article.controller.ts:170:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+
+

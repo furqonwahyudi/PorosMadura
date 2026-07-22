@@ -257,23 +257,54 @@ export default function ArticleView({ article, onBack, lang, onSelectArticle }: 
 
           {/* Body content */}
           <article className="prose max-w-none text-gray-800 text-sm sm:text-base leading-relaxed space-y-4 mb-8">
-            {article.content.split("\n").filter(p => p.trim() !== "").map((paragraph, idx) => (
-              <React.Fragment key={idx}>
-                <p className="mb-4 whitespace-pre-wrap">{paragraph}</p>
-                {idx === 2 && (
-                  <AdManagerSlot slug="in-article-1" page="artikel" category={article.category} />
-                )}
-                {idx === 5 && (
-                  <AdManagerSlot slug="in-article-2" page="artikel" category={article.category} />
-                )}
-                {idx === 9 && (
-                  <AdManagerSlot slug="in-article-3" page="artikel" category={article.category} />
-                )}
-                {idx === 14 && (
-                  <AdManagerSlot slug="in-article-4" page="artikel" category={article.category} />
-                )}
-              </React.Fragment>
-            ))}
+            {article.content.includes("<p>") || article.content.includes("</div>") || article.content.includes("<br>") ? (
+              // Jika konten mengandung HTML, lakukan splitting berdasarkan penutup tag paragraf/div agar layout tetap rapi
+              article.content.split(/<\/p>|<\/div>/).map(p => p.trim()).filter(Boolean).map((p, idx) => {
+                // Rekonstruksi tag penutup yang sesuai secara aman
+                let paragraphHtml = p;
+                if (p.startsWith("<p")) {
+                  paragraphHtml = p + "</p>";
+                } else if (p.startsWith("<div")) {
+                  paragraphHtml = p + "</div>";
+                }
+                return (
+                  <React.Fragment key={idx}>
+                    <div dangerouslySetInnerHTML={{ __html: paragraphHtml }} className="mb-4" />
+                    {idx === 2 && (
+                      <AdManagerSlot slug="in-article-1" page="artikel" category={article.category} />
+                    )}
+                    {idx === 5 && (
+                      <AdManagerSlot slug="in-article-2" page="artikel" category={article.category} />
+                    )}
+                    {idx === 9 && (
+                      <AdManagerSlot slug="in-article-3" page="artikel" category={article.category} />
+                    )}
+                    {idx === 14 && (
+                      <AdManagerSlot slug="in-article-4" page="artikel" category={article.category} />
+                    )}
+                  </React.Fragment>
+                );
+              })
+            ) : (
+              // Fallback untuk plain text
+              article.content.split("\n").filter(p => p.trim() !== "").map((paragraph, idx) => (
+                <React.Fragment key={idx}>
+                  <p className="mb-4 whitespace-pre-wrap">{paragraph}</p>
+                  {idx === 2 && (
+                    <AdManagerSlot slug="in-article-1" page="artikel" category={article.category} />
+                  )}
+                  {idx === 5 && (
+                    <AdManagerSlot slug="in-article-2" page="artikel" category={article.category} />
+                  )}
+                  {idx === 9 && (
+                    <AdManagerSlot slug="in-article-3" page="artikel" category={article.category} />
+                  )}
+                  {idx === 14 && (
+                    <AdManagerSlot slug="in-article-4" page="artikel" category={article.category} />
+                  )}
+                </React.Fragment>
+              ))
+            )}
           </article>
 
 

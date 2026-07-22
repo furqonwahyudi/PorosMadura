@@ -5,7 +5,7 @@ import { adminApi } from "../../../lib/adminApi";
 import { useDialog } from "../../../context/DialogContext";
 import {
   Search, Plus, Download, Trash2, Edit2, ChevronDown,
-  ChevronLeft, ChevronRight, Check, Eye, MoreHorizontal, SortAsc, SortDesc
+  ChevronLeft, ChevronRight, Check, Eye, MoreHorizontal, SortAsc, SortDesc, RotateCcw
 } from "lucide-react";
 
 interface Category {
@@ -49,6 +49,16 @@ export default function AllArticlesPage({ defaultStatus = "all" }: { defaultStat
   const [bulkAction, setBulkAction] = useState("");
   const [limit, setLimit] = useState(15);
 
+  // Reset states and update statusFilter when routing changes defaultStatus
+  React.useEffect(() => {
+    setStatusFilter(defaultStatus);
+    setSearch("");
+    setSelectedCategory("all");
+    setPage(1);
+    setCheckedIds([]);
+    setBulkAction("");
+  }, [defaultStatus]);
+
   // Query for categories
   const { data: categoriesRaw } = useQuery<any>({
     queryKey: ["admin", "categories"],
@@ -85,7 +95,45 @@ export default function AllArticlesPage({ defaultStatus = "all" }: { defaultStat
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "posts"] });
       setCheckedIds([]);
-      showToast("Artikel berhasil dihapus!", "success");
+      showToast("Artikel berhasil dihapus permanen!", "success");
+    }
+  });
+
+  const restoreMutation = useMutation({
+    mutationFn: (id: string) => adminApi.put(`/api/articles/${id}`, { status: "DRAFT" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "posts"] });
+      showToast("Artikel berhasil dikembalikan ke Draft!", "success");
+    },
+    onError: (err: any) => {
+      showToast(err.message || "Gagal mengembalikan artikel", "error");
+    }
+  });
+
+  // Query to get website settings (for trashRetention duration)
+  const { data: settingsData } = useQuery<any>({
+    queryKey: ["admin", "settings"],
+    queryFn: async () => {
+      const res = await adminApi.get<any>("/api/settings");
+      return res.data || {};
+    },
+    enabled: defaultStatus === "ARCHIVED" // Only fetch if we are on the Trash page
+  });
+
+  const trashRetention = settingsData?.trashRetention || "30d";
+
+  // Mutation to update website settings
+  const updateRetentionMutation = useMutation({
+    mutationFn: async (val: string) => {
+      return adminApi.put<any>("/api/settings", { trashRetention: val });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "settings"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "posts"] }); // Invalidate posts to trigger auto-clean immediately with new setting!
+      showToast("Waktu penyimpanan sampah berhasil diperbarui!", "success");
+    },
+    onError: (err: any) => {
+      showToast(err.message || "Gagal memperbarui waktu penyimpanan", "error");
     }
   });
 
@@ -136,24 +184,28 @@ export default function AllArticlesPage({ defaultStatus = "all" }: { defaultStat
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--text-primary)", margin: 0, letterSpacing: -0.5 }}>All Articles</h1>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--text-primary)", margin: 0, letterSpacing: -0.5 }}>
+            {defaultStatus === "ARCHIVED" ? "Trash" : "All Articles"}
+          </h1>
           <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: "4px 0 0" }}>
             {total} articles total
           </p>
         </div>
-        <button
-          onClick={() => navigate("/admin/posts/create")}
-          style={{
-            display: "flex", alignItems: "center", gap: 7, padding: "8px 16px",
-            background: "var(--brand)", border: "none", borderRadius: 8,
-            cursor: "pointer", color: "#fff", fontSize: 13, fontWeight: 600,
-            transition: "background 0.1s",
-          }}
-          onMouseEnter={e => e.currentTarget.style.background = "var(--brand-hover)"}
-          onMouseLeave={e => e.currentTarget.style.background = "var(--brand)"}
-        >
-          <Plus size={15} /> New Article
-        </button>
+        {defaultStatus !== "ARCHIVED" && (
+          <button
+            onClick={() => navigate("/admin/posts/create")}
+            style={{
+              display: "flex", alignItems: "center", gap: 7, padding: "8px 16px",
+              background: "var(--brand)", border: "none", borderRadius: 8,
+              cursor: "pointer", color: "#fff", fontSize: 13, fontWeight: 600,
+              transition: "background 0.1s",
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = "var(--brand-hover)"}
+            onMouseLeave={e => e.currentTarget.style.background = "var(--brand)"}
+          >
+            <Plus size={15} /> New Article
+          </button>
+        )}
       </div>
 
       {/* Filters & Actions */}
@@ -191,25 +243,46 @@ export default function AllArticlesPage({ defaultStatus = "all" }: { defaultStat
           ))}
         </select>
 
-        {/* Status Filter Pills */}
-        <div style={{ display: "flex", gap: 4 }}>
-          {["all", "PUBLISHED", "DRAFT", "SCHEDULED"].map(s => (
-            <button
-              key={s}
-              onClick={() => { setStatusFilter(s); setPage(1); }}
+        {/* Trash Retention Setting (only on Trash Page) */}
+        {defaultStatus === "ARCHIVED" && (
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 12, color: "var(--text-secondary)", fontWeight: 500 }}>Retensi Trash:</span>
+            <select
+              value={trashRetention}
+              onChange={e => updateRetentionMutation.mutate(e.target.value)}
               style={{
-                padding: "5px 11px", borderRadius: 6, border: "1px solid",
-                fontSize: 12, fontWeight: 500, cursor: "pointer",
-                borderColor: statusFilter === s ? "var(--brand)" : "var(--border)",
-                background: statusFilter === s ? "var(--brand-subtle)" : "transparent",
-                color: statusFilter === s ? "var(--brand)" : "var(--text-secondary)",
-                transition: "all 0.1s",
+                padding: "6px 12px", background: "var(--bg-subtle)", border: "1px solid var(--border)",
+                borderRadius: 8, fontSize: 12, color: "var(--text-secondary)", outline: "none", cursor: "pointer",
               }}
             >
-              {s === "all" ? "All" : s.charAt(0) + s.slice(1).toLowerCase()}
-            </button>
-          ))}
-        </div>
+              <option value="1d">1 Hari</option>
+              <option value="7d">1 Minggu</option>
+              <option value="30d">1 Bulan</option>
+            </select>
+          </div>
+        )}
+
+        {/* Status Filter Pills */}
+        {defaultStatus !== "ARCHIVED" && (
+          <div style={{ display: "flex", gap: 4 }}>
+            {["all", "PUBLISHED", "DRAFT", "SCHEDULED"].map(s => (
+              <button
+                key={s}
+                onClick={() => { setStatusFilter(s); setPage(1); }}
+                style={{
+                  padding: "5px 11px", borderRadius: 6, border: "1px solid",
+                  fontSize: 12, fontWeight: 500, cursor: "pointer",
+                  borderColor: statusFilter === s ? "var(--brand)" : "var(--border)",
+                  background: statusFilter === s ? "var(--brand-subtle)" : "transparent",
+                  color: statusFilter === s ? "var(--brand)" : "var(--text-secondary)",
+                  transition: "all 0.1s",
+                }}
+              >
+                {s === "all" ? "All" : s.charAt(0) + s.slice(1).toLowerCase()}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Bulk Action Controls */}
         <div style={{ marginLeft: "auto", display: "flex", gap: 8 }} className="flex items-center">
@@ -225,9 +298,18 @@ export default function AllArticlesPage({ defaultStatus = "all" }: { defaultStat
                 }}
               >
                 <option value="">Aksi Massal</option>
-                <option value="delete">Hapus Selamanya</option>
-                <option value="draft">Ubah ke Draft</option>
-                <option value="archive">Ubah ke Arsip</option>
+                {defaultStatus === "ARCHIVED" ? (
+                  <>
+                    <option value="draft">Kembalikan ke Draft</option>
+                    <option value="delete">Hapus Selamanya</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="draft">Ubah ke Draft</option>
+                    <option value="archive">Pindahkan ke Trash</option>
+                    <option value="delete">Hapus Selamanya</option>
+                  </>
+                )}
               </select>
               <button
                 onClick={handleBulkAction}
@@ -377,27 +459,56 @@ export default function AllArticlesPage({ defaultStatus = "all" }: { defaultStat
                         </td>
                         <td style={{ padding: "12px 8px" }}>
                           <div style={{ display: "flex", gap: 4 }}>
-                            <button
-                              onClick={() => navigate(`/admin/posts/edit/${article.id}`)}
-                              style={{
-                                width: 28, height: 28, borderRadius: 6, border: "1px solid var(--border)",
-                                background: "transparent", cursor: "pointer", display: "flex",
-                                alignItems: "center", justifyContent: "center", color: "var(--text-tertiary)",
-                                transition: "all 0.1s",
-                              }}
-                              onMouseEnter={e => { e.currentTarget.style.background = "var(--bg-muted)"; e.currentTarget.style.color = "var(--text-primary)"; }}
-                              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-tertiary)"; }}
-                              className="flex items-center justify-center"
-                            >
-                              <Edit2 size={12} />
-                            </button>
+                            {article.status === "ARCHIVED" ? (
+                              <button
+                                onClick={() => restoreMutation.mutate(article.id)}
+                                style={{
+                                  width: 28, height: 28, borderRadius: 6, border: "1px solid var(--border)",
+                                  background: "transparent", cursor: "pointer", display: "flex",
+                                  alignItems: "center", justifyContent: "center", color: "var(--text-tertiary)",
+                                  transition: "all 0.1s",
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.background = "var(--green-subtle)"; e.currentTarget.style.color = "var(--green)"; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-tertiary)"; }}
+                                className="flex items-center justify-center"
+                                title="Kembalikan ke Draft"
+                              >
+                                <RotateCcw size={12} />
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => navigate(`/admin/posts/edit/${article.id}`)}
+                                style={{
+                                  width: 28, height: 28, borderRadius: 6, border: "1px solid var(--border)",
+                                  background: "transparent", cursor: "pointer", display: "flex",
+                                  alignItems: "center", justifyContent: "center", color: "var(--text-tertiary)",
+                                  transition: "all 0.1s",
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.background = "var(--bg-muted)"; e.currentTarget.style.color = "var(--text-primary)"; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-tertiary)"; }}
+                                className="flex items-center justify-center"
+                                title="Edit"
+                              >
+                                <Edit2 size={12} />
+                              </button>
+                            )}
                             <button
                               onClick={() => {
                                 showConfirm(
-                                  `Apakah Anda yakin ingin menghapus artikel "${article.title}"?`,
-                                  () => deleteMutation.mutate(article.id),
-                                  "Hapus Artikel",
-                                  { type: "danger", confirmText: "Hapus", cancelText: "Batal" }
+                                  article.status === "ARCHIVED"
+                                    ? `Apakah Anda yakin ingin menghapus permanen artikel "${article.title}"?`
+                                    : `Apakah Anda yakin ingin memindahkan artikel "${article.title}" ke Trash?`,
+                                  async () => {
+                                    if (article.status === "ARCHIVED") {
+                                      deleteMutation.mutate(article.id);
+                                    } else {
+                                      await adminApi.patch(`/api/articles/${article.id}/archive`, {});
+                                      queryClient.invalidateQueries({ queryKey: ["admin", "posts"] });
+                                      showToast("Artikel dipindahkan ke Trash!", "success");
+                                    }
+                                  },
+                                  article.status === "ARCHIVED" ? "Hapus Permanen" : "Pindahkan ke Trash",
+                                  { type: "danger", confirmText: article.status === "ARCHIVED" ? "Hapus Permanen" : "Pindahkan", cancelText: "Batal" }
                                 );
                               }}
                               style={{
@@ -409,6 +520,7 @@ export default function AllArticlesPage({ defaultStatus = "all" }: { defaultStat
                               onMouseEnter={e => { e.currentTarget.style.background = "var(--red-subtle)"; e.currentTarget.style.color = "var(--red)"; }}
                               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-tertiary)"; }}
                               className="flex items-center justify-center"
+                              title={article.status === "ARCHIVED" ? "Hapus Selamanya" : "Pindahkan ke Trash"}
                             >
                               <Trash2 size={12} />
                             </button>

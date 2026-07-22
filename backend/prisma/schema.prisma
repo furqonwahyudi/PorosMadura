@@ -382,6 +382,7 @@ model WebsiteSettings {
   address        String?
   socials        Json     @default("{}")
   adSettings     Json     @default("{}")
+  trashRetention String   @default("30d")
   updatedAt      DateTime @updatedAt
 
   @@map("website_settings")
