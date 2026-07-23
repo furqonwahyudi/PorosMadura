@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Article } from "../../../types";
 import { formatDate } from "../../../lib/utils";
 import AdManagerSlot from "../../shared/AdManagerSlot";
@@ -12,7 +12,10 @@ interface HomeSidebarProps {
   selectedCategory: string | null;
   marketSettings: {
     enabled: boolean;
-    displayMarkets: string[];
+    ihsgEnabled: boolean;
+    usdEnabled: boolean;
+    goldEnabled: boolean;
+    kriptoEnabled: boolean;
   };
   marketRates: Record<string, any>;
   trendingList: Article[];
@@ -82,7 +85,7 @@ export default function HomeSidebar({
           
           <div className="flex flex-col gap-3">
             {/* IHSG */}
-            {marketSettings.displayMarkets.includes("ihsg") && (
+            {marketSettings.ihsgEnabled && (
               <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50/60 border border-slate-100 hover:border-[#1E40AF]/20 transition-all duration-200">
                 <div className="flex flex-col">
                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">IHSG</span>
@@ -97,7 +100,7 @@ export default function HomeSidebar({
             )}
 
             {/* USD/IDR */}
-            {marketSettings.displayMarkets.includes("usd") && (
+            {marketSettings.usdEnabled && (
               <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50/60 border border-slate-100 hover:border-red-100 transition-all duration-200">
                 <div className="flex flex-col">
                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">USD / IDR</span>
@@ -107,12 +110,14 @@ export default function HomeSidebar({
                   price={marketRates.usd?.price ?? null} 
                   change={marketRates.usd?.change ?? null} 
                   status={marketRates.usd?.status ?? "stable"} 
+                  prefix="Rp "
+                  isInteger={true}
                 />
               </div>
             )}
 
             {/* Emas LM */}
-            {marketSettings.displayMarkets.includes("gold") && (
+            {marketSettings.goldEnabled && (
               <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50/60 border border-slate-100 hover:border-[#D71920]/20 transition-all duration-200">
                 <div className="flex flex-col">
                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Emas LM</span>
@@ -123,6 +128,23 @@ export default function HomeSidebar({
                   buybackPrice={marketRates.gold?.buybackPrice ?? null}
                   change={marketRates.gold?.change ?? null} 
                   status={marketRates.gold?.status ?? "stable"} 
+                  prefix="Rp "
+                  isInteger={true}
+                />
+              </div>
+            )}
+
+            {/* Kripto (BTC) */}
+            {marketSettings.kriptoEnabled && (
+              <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50/60 border border-slate-100 hover:border-amber-100 transition-all duration-200">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">BTC / IDR</span>
+                  <span className="text-[10px] text-slate-400 mt-0.5">{lang === "ID" ? "Bitcoin Rupiah" : "Bitcoin Price"}</span>
+                </div>
+                <AnimatedMarketRate 
+                  price={marketRates.crypto?.price ?? null} 
+                  change={marketRates.crypto?.change ?? null} 
+                  status={marketRates.crypto?.status ?? "stable"} 
                   prefix="Rp "
                   isInteger={true}
                 />
@@ -141,7 +163,7 @@ export default function HomeSidebar({
           <div className="flex items-center gap-2 pb-2 mb-4 border-b">
             <TrendingUp className="text-[#0D2B5C]" size={16} />
             <h4 className="text-xs font-bold uppercase tracking-wider text-[#0D2B5C]">
-              {lang === "ID" ? "Terpopuler / Trending" : "Trending Now"}
+              {lang === "ID" ? "Berita Terpopuler" : "Most Popular"}
             </h4>
           </div>
           <div className="flex flex-col gap-4">

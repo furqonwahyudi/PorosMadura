@@ -116,9 +116,20 @@ export default function AdvertisersPage() {
         <button
           onClick={() => setShowAddModal(true)}
           style={{
-            display: "flex", alignItems: "center", gap: 7, padding: "8px 16px",
-            background: "var(--brand)", border: "none", borderRadius: 8,
-            cursor: "pointer", color: "#fff", fontSize: 13, fontWeight: 600,
+            display: "flex", alignItems: "center", gap: 8, padding: "10px 18px",
+            background: "linear-gradient(135deg, #D60000 0%, #8B0000 100%)",
+            border: "none", borderRadius: 10,
+            cursor: "pointer", color: "#fff", fontSize: 13, fontWeight: 700,
+            boxShadow: "0 4px 14px rgba(214,0,0,0.25)",
+            transition: "all 0.2s ease",
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.opacity = "0.9";
+            e.currentTarget.style.transform = "translateY(-1px)";
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.opacity = "1";
+            e.currentTarget.style.transform = "translateY(0)";
           }}
         >
           <Plus size={15} /> Tambah Kontak Klien
@@ -152,7 +163,7 @@ export default function AdvertisersPage() {
         <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, overflow: "hidden" }}>
           <div style={{
             display: "grid", gridTemplateColumns: "2fr 1.5fr 2fr 100px 100px 80px",
-            gap: 12, padding: "10px 16px",
+            gap: 12, padding: "12px 16px",
             background: "var(--bg-subtle)", borderBottom: "1px solid var(--border)",
           }}>
             {["Nama Perusahaan", "Nama PIC", "Kontak", "Kampanye", "Iklan Aktif", "Aksi"].map(h => (
@@ -181,9 +192,28 @@ export default function AdvertisersPage() {
               <div style={{ display: "flex", gap: 6 }}>
                 <button
                   onClick={() => handleDelete(adv.id, adv.company)}
-                  style={{ padding: "5px 8px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--bg-subtle)", color: "var(--red)", cursor: "pointer", display: "flex", alignItems: "center" }}
+                  style={{
+                    padding: "7px 10px", borderRadius: 8,
+                    border: "1px solid rgba(214,0,0,0.15)",
+                    background: "rgba(214,0,0,0.04)",
+                    color: "#D60000", cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    transition: "all 0.2s ease"
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = "#D60000";
+                    e.currentTarget.style.color = "#fff";
+                    e.currentTarget.style.borderColor = "#D60000";
+                    e.currentTarget.style.boxShadow = "0 2px 8px rgba(214,0,0,0.25)";
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = "rgba(214,0,0,0.04)";
+                    e.currentTarget.style.color = "#D60000";
+                    e.currentTarget.style.borderColor = "rgba(214,0,0,0.15)";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
                 >
-                  <Trash2 size={12} />
+                  <Trash2 size={13} />
                 </button>
               </div>
             </div>

@@ -18,6 +18,7 @@ import settingsRoutes from './modules/settings/settings.routes';
 import commentRoutes from './modules/comments/comment.routes';
 import searchRoutes from './modules/search/search.routes';
 import tagRoutes from './modules/tags/tag.routes';
+import marketRoutes from './modules/market/market.routes';
 
 const app = express();
 
@@ -84,6 +85,7 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/tags', tagRoutes);
+app.use('/api/market', marketRoutes);
 
 // =============================================
 // Error Handling

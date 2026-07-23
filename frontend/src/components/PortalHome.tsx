@@ -36,6 +36,35 @@ export default function PortalHome({
   const [loading, setLoading] = useState(true);
   const [activeSlide, setActiveSlide] = useState(0);
   const [headlineDirection, setHeadlineDirection] = useState<"left" | "right">("right");
+  const [isHeadlineHovered, setIsHeadlineHovered] = useState(false);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [touchEndX, setTouchEndX] = useState<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchEndX(null);
+    setTouchStartX(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEndX(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX || !touchEndX) return;
+    const distance = touchStartX - touchEndX;
+    const minSwipeDistance = 50;
+
+    if (distance > minSwipeDistance) {
+      // Swipe left -> Next slide
+      setHeadlineDirection("right");
+      setActiveSlide(prev => (prev + 1) % headlineArticles.length);
+    } else if (distance < -minSwipeDistance) {
+      // Swipe right -> Previous slide
+      setHeadlineDirection("left");
+      setActiveSlide(prev => prev === 0 ? headlineArticles.length - 1 : prev - 1);
+    }
+  };
+
   const [activeKesehatanSlide, setActiveKesehatanSlide] = useState(0);
   const [slideDirection, setSlideDirection] = useState<"left" | "right">("right");
   const [activeTab, setActiveTab] = useState<"populer" | "dibaca" | "dibagikan">("populer");
@@ -55,18 +84,63 @@ export default function PortalHome({
     usd: { price: number | null; change: number | null; status: "up" | "down" | "stable" } | null;
     gold: { price: number | null; buybackPrice?: number | null; change: number | null; status: "up" | "down" | "stable" } | null;
   }>({
-    ihsg: null,
-    usd: null,
-    gold: null
+    ihsg: { price: 6094.793, change: 0.87, status: "up" },
+    usd: { price: 17975, change: -0.47, status: "down" },
+    gold: { price: 2648766, buybackPrice: 2357052, change: -0.8, status: "down" }
   });
 
   const [marketSettings, setMarketSettings] = useState<{
     enabled: boolean;
-    displayMarkets: string[];
+    ihsgEnabled: boolean;
+    usdEnabled: boolean;
+    goldEnabled: boolean;
+    kriptoEnabled: boolean;
   }>({
     enabled: true,
-    displayMarkets: ["ihsg", "usd", "gold"]
+    ihsgEnabled: true,
+    usdEnabled: true,
+    goldEnabled: true,
+    kriptoEnabled: false
   });
+
+  useEffect(() => {
+    let active = true;
+    let pollingInterval: NodeJS.Timeout | null = null;
+
+    const fetchMarketData = async (isInitial = false) => {
+      try {
+        if (isInitial) {
+          const [rates, settings] = await Promise.all([
+            api.getMarketRates(),
+            api.getMarketSettings()
+          ]);
+          if (active) {
+            if (rates) setMarketRates(rates);
+            if (settings) setMarketSettings(settings);
+          }
+        } else {
+          const rates = await api.getMarketRates();
+          if (active && rates) setMarketRates(rates);
+        }
+      } catch (err) {
+        console.error("Gagal mengambil data market:", err);
+      }
+    };
+
+    fetchMarketData(true);
+
+    // Setup polling every 15 seconds to fetch fresh rates in background
+    pollingInterval = setInterval(() => {
+      fetchMarketData(false);
+    }, 15000);
+
+    return () => {
+      active = false;
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -80,13 +154,15 @@ export default function PortalHome({
           const res = await api.search(searchQuery, 1, 100);
           result = res.articles;
         } else {
-          const catSlug = selectedCategory && selectedCategory !== "rekomendasi" ? slugify(selectedCategory) : undefined;
+          const isRekomendasi = selectedCategory && selectedCategory.toLowerCase() === "rekomendasi";
+          const catSlug = selectedCategory && !isRekomendasi ? slugify(selectedCategory) : undefined;
           const subCatSlug = selectedSubCategory ? slugify(selectedSubCategory) : undefined;
           
           const res = await api.getArticles({
             category: catSlug,
             subCategory: subCatSlug,
-            limit: 100
+            limit: 100,
+            isEditorChoice: isRekomendasi ? true : undefined
           });
           result = res.articles;
         }
@@ -127,7 +203,7 @@ export default function PortalHome({
   // Filter by selected tag if set and handle special "rekomendasi" category
   const filteredArticles = useMemo(() => {
     let list = articles;
-    if (selectedCategory === "rekomendasi") {
+    if (selectedCategory && selectedCategory.toLowerCase() === "rekomendasi") {
       list = list.filter(a => a.isEditorChoice === true);
     }
     if (selectedTag) {
@@ -147,25 +223,23 @@ export default function PortalHome({
     return filteredArticles.slice((recentPage - 1) * ITEMS_PER_PAGE, recentPage * ITEMS_PER_PAGE);
   }, [filteredArticles, recentPage]);
 
-  // Rotator effect for top headline slider
+  // Rotator effect for top headline slider - Select 5 newest articles chronically
   const headlineArticles = useMemo(() => {
-    const headlines = filteredArticles.filter(a => a.isHeadline);
-    if (headlines.length >= 5) {
-      return headlines.slice(0, 5);
-    }
-    const others = filteredArticles.filter(a => !a.isHeadline);
-    return [...headlines, ...others].slice(0, 5);
+    const sorted = [...filteredArticles].sort(
+      (a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
+    );
+    return sorted.slice(0, 5);
   }, [filteredArticles]);
 
   useEffect(() => {
     const len = headlineArticles.length;
-    if (len <= 1) return;
+    if (len <= 1 || isHeadlineHovered) return;
     const interval = setInterval(() => {
       setHeadlineDirection("right");
       setActiveSlide(prev => (prev + 1) % len);
     }, 7000);
     return () => clearInterval(interval);
-  }, [headlineArticles.length]);
+  }, [headlineArticles.length, isHeadlineHovered]);
 
   const kesehatanArticles = [...articles]
     .filter(a => isCategory(a, "Kesehatan"))
@@ -413,7 +487,14 @@ export default function PortalHome({
 
           {/* Section: Headline Slider/Carousel */}
           {headlineArticles.length > 0 && (
-            <div className="relative overflow-hidden rounded-2xl bg-[#111] group shadow-lg h-[340px] sm:h-[450px]">
+            <div 
+              onMouseEnter={() => setIsHeadlineHovered(true)}
+              onMouseLeave={() => setIsHeadlineHovered(false)}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              className="relative overflow-hidden rounded-2xl bg-[#111] group shadow-lg h-[340px] sm:h-[450px]"
+            >
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={`headline-${activeSlide}`}
@@ -438,14 +519,18 @@ export default function PortalHome({
                   transition={{ duration: 0.4, ease: "easeInOut" }}
                   className="absolute inset-0 w-full h-full"
                 >
-                  <img 
+                  <motion.img 
+                    key={`img-${activeSlide}`}
                     src={headlineArticles[activeSlide].image}
                     alt={headlineArticles[activeSlide].title}
                     referrerPolicy="no-referrer"
                     onError={(e) => {
                       e.currentTarget.src = "https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1200&q=80";
                     }}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.02]"
+                    initial={{ scale: 1 }}
+                    animate={{ scale: 1.06 }}
+                    transition={{ duration: 7.5, ease: "linear" }}
+                    className="absolute inset-0 w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
                   
@@ -512,6 +597,24 @@ export default function PortalHome({
                   <ChevronRight size={20} />
                 </button>
               </div>
+
+              {/* Keyframes for the Progress Bar Timer */}
+              <style dangerouslySetInnerHTML={{__html: `
+                @keyframes headlineProgress {
+                  from { width: 0%; }
+                  to { width: 100%; }
+                }
+              `}} />
+
+              {/* Progress Bar (Visual Timer) */}
+              <div 
+                key={`progress-${activeSlide}-${isHeadlineHovered}`}
+                className="absolute bottom-0 left-0 h-[3px] bg-[#D71920] z-30"
+                style={{
+                  animation: 'headlineProgress 7000ms linear forwards',
+                  animationPlayState: isHeadlineHovered ? 'paused' : 'running'
+                }}
+              />
             </div>
           )}
 
@@ -1201,7 +1304,7 @@ export default function PortalHome({
               
               <div className="flex flex-col gap-3">
                 {/* IHSG */}
-                {marketSettings.displayMarkets.includes("ihsg") && (
+                {marketSettings.ihsgEnabled && (
                   <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50/60 border border-slate-100 hover:border-[#1E40AF]/20 transition-all duration-200">
                     <div className="flex flex-col">
                       <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">IHSG</span>
@@ -1216,7 +1319,7 @@ export default function PortalHome({
                 )}
 
                 {/* USD/IDR */}
-                {marketSettings.displayMarkets.includes("usd") && (
+                {marketSettings.usdEnabled && (
                   <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50/60 border border-slate-100 hover:border-red-100 transition-all duration-200">
                     <div className="flex flex-col">
                       <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">USD / IDR</span>
@@ -1226,12 +1329,14 @@ export default function PortalHome({
                       price={marketRates.usd?.price ?? null} 
                       change={marketRates.usd?.change ?? null} 
                       status={marketRates.usd?.status ?? "stable"} 
+                      prefix="Rp "
+                      isInteger={true}
                     />
                   </div>
                 )}
 
                 {/* Emas LM */}
-                {marketSettings.displayMarkets.includes("gold") && (
+                {marketSettings.goldEnabled && (
                   <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50/60 border border-slate-100 hover:border-[#D71920]/20 transition-all duration-200">
                     <div className="flex flex-col">
                       <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Emas LM</span>
@@ -1242,6 +1347,23 @@ export default function PortalHome({
                       buybackPrice={marketRates.gold?.buybackPrice ?? null}
                       change={marketRates.gold?.change ?? null} 
                       status={marketRates.gold?.status ?? "stable"} 
+                      prefix="Rp "
+                      isInteger={true}
+                    />
+                  </div>
+                )}
+
+                {/* Kripto (BTC) */}
+                {marketSettings.kriptoEnabled && (
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50/60 border border-slate-100 hover:border-amber-100 transition-all duration-200">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">BTC / IDR</span>
+                      <span className="text-[10px] text-slate-400 mt-0.5">{lang === "ID" ? "Bitcoin Rupiah" : "Bitcoin Price"}</span>
+                    </div>
+                    <AnimatedMarketRate 
+                      price={marketRates.crypto?.price ?? null} 
+                      change={marketRates.crypto?.change ?? null} 
+                      status={marketRates.crypto?.status ?? "stable"} 
                       prefix="Rp "
                       isInteger={true}
                     />
@@ -1260,7 +1382,7 @@ export default function PortalHome({
               <div className="flex items-center gap-2 pb-2 mb-4 border-b">
                 <TrendingUp className="text-[#0D2B5C]" size={16} />
                 <h4 className="text-xs font-bold uppercase tracking-wider text-[#0D2B5C]">
-                  {lang === "ID" ? "Terpopuler / Trending" : "Trending Now"}
+                  {lang === "ID" ? "Berita Terpopuler" : "Most Popular"}
                 </h4>
               </div>
               <div className="flex flex-col gap-4">

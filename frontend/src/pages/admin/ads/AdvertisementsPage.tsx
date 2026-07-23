@@ -19,6 +19,8 @@ interface Advertiser {
 interface Campaign {
   id: string;
   name: string;
+  startDate: string;
+  endDate: string;
 }
 
 interface Ad {
@@ -39,7 +41,7 @@ interface Ad {
 
 export default function AdvertisementsPage() {
   const queryClient = useQueryClient();
-  const { confirm, toast } = useDialog();
+  const { showConfirm, showToast } = useDialog();
 
   // Form states
   const [name, setName] = useState("");
@@ -81,12 +83,16 @@ export default function AdvertisementsPage() {
   const campaigns = campaignsRes?.data || [];
   const ads = adsRes?.data || [];
 
-  // Default selections
+  // Find selected campaign to apply min/max limits
+  const selectedCampaign = campaigns.find(c => c.id === campaignId);
+  const minDate = selectedCampaign ? selectedCampaign.startDate.split("T")[0] : undefined;
+  const maxDate = selectedCampaign ? selectedCampaign.endDate.split("T")[0] : undefined;
+
+  // Default selections — campaign is optional, do not auto-select first campaign
   React.useEffect(() => {
     if (slots.length > 0 && !slotId) setSlotId(slots[0].id);
     if (advertisers.length > 0 && !advertiserId) setAdvertiserId(advertisers[0].id);
-    if (campaigns.length > 0 && !campaignId) setCampaignId(campaigns[0].id);
-  }, [slots, advertisers, campaigns, slotId, advertiserId, campaignId]);
+  }, [slots, advertisers, slotId, advertiserId]);
 
   // Mutations
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,9 +108,9 @@ export default function AdvertisementsPage() {
         headers: { "Content-Type": "multipart/form-data" }
       });
       setImageDesktop(res.data.url);
-      toast("success", "Gambar banner berhasil diunggah!");
+      showToast("Gambar banner berhasil diunggah!");
     } catch (err: any) {
-      toast("error", `Gagal mengunggah gambar: ${err.message}`);
+      showToast(`Gagal mengunggah gambar: ${err.message}`, "error");
     } finally {
       setUploading(false);
     }
@@ -117,7 +123,7 @@ export default function AdvertisementsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "ads"] });
       queryClient.invalidateQueries({ queryKey: ["admin", "ads", "slots"] });
-      toast("success", "Materi iklan berhasil disimpan!");
+      showToast("Materi iklan berhasil disimpan!");
       
       // Reset form
       setName("");
@@ -126,9 +132,10 @@ export default function AdvertisementsPage() {
       setImageDesktop("");
       setStartDate("");
       setEndDate("");
+      setCampaignId("");
     },
     onError: (err: any) => {
-      toast("error", `Gagal menyimpan: ${err.message}`);
+      showToast(`Gagal menyimpan: ${err.message}`, "error");
     }
   });
 
@@ -139,39 +146,55 @@ export default function AdvertisementsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "ads"] });
       queryClient.invalidateQueries({ queryKey: ["admin", "ads", "slots"] });
-      toast("success", "Materi iklan berhasil dihapus!");
+      showToast("Materi iklan berhasil dihapus!");
     },
     onError: (err: any) => {
-      toast("error", `Gagal menghapus: ${err.message}`);
+      showToast(`Gagal menghapus: ${err.message}`, "error");
     }
   });
 
   const handleDelete = (id: string, name: string) => {
-    confirm({
-      title: "Hapus Materi Iklan",
-      message: `Apakah Anda yakin ingin menghapus materi iklan "${name}"? Iklan ini tidak akan ditayangkan lagi di portal.`,
-      confirmText: "Ya, Hapus",
-      cancelText: "Batal",
-      type: "danger",
-      onConfirm: () => {
-        deleteMutation.mutate(id);
-      }
-    });
+    showConfirm(
+      `Apakah Anda yakin ingin menghapus materi iklan "${name}"? Iklan ini tidak akan ditayangkan lagi di portal.`,
+      () => { deleteMutation.mutate(id); },
+      "Hapus Materi Iklan",
+      { type: "danger", confirmText: "Ya, Hapus", cancelText: "Batal" }
+    );
   };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !advertiserId || !slotId || !startDate || !endDate) {
-      toast("warning", "Mohon lengkapi semua kolom wajib!");
+      showToast("Mohon lengkapi semua kolom wajib!", "warning");
       return;
     }
     if (format === "IMAGE" && !imageDesktop) {
-      toast("warning", "Silakan unggah gambar banner terlebih dahulu!");
+      showToast("Silakan unggah gambar banner terlebih dahulu!", "warning");
       return;
     }
     if (format === "HTML" && !htmlCode.trim()) {
-      toast("warning", "Kode Script programmatik wajib diisi!");
+      showToast("Kode Script programmatik wajib diisi!", "warning");
       return;
+    }
+
+    if (selectedCampaign) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const limitStart = new Date(selectedCampaign.startDate);
+      const limitEnd = new Date(selectedCampaign.endDate);
+
+      start.setHours(0, 0, 0, 0);
+      end.setHours(0, 0, 0, 0);
+      limitStart.setHours(0, 0, 0, 0);
+      limitEnd.setHours(0, 0, 0, 0);
+
+      if (start < limitStart || start > limitEnd || end < limitStart || end > limitEnd) {
+        showToast(
+          `Tanggal tayang iklan harus berada di dalam rentang waktu kampanye: ${limitStart.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })} sampai ${limitEnd.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}`,
+          "warning"
+        );
+        return;
+      }
     }
 
     createMutation.mutate({
@@ -197,20 +220,20 @@ export default function AdvertisementsPage() {
           Master Banner &amp; Programmatic Scripts Repository
         </h1>
         <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: "4px 0 0" }}>
-          Kelola aset kreatif iklan berupa gambar spanduk, tautan langsung, atau script programmatik (Database Terintegrasi)
+          Kelola aset kreatif iklan berupa gambar spanduk, tautan langsung, atau script programmatic (Database Terintegrasi)
         </p>
       </div>
 
-      {/* Grid */}
-      <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexWrap: "wrap" }}>
+      {/* Main form and list columns */}
+      <div style={{ display: "flex", gap: 20, flexWrap: "wrap", alignItems: "flex-start" }}>
         
         {/* Creator Form */}
         <form onSubmit={handleSave} style={{
           flex: 1, minWidth: 320, background: "var(--surface)", border: "1px solid var(--border)",
-          borderRadius: 12, padding: 20, display: "flex", flexDirection: "column", gap: 14,
+          borderRadius: 12, padding: 20, display: "flex", flexDirection: "column", gap: 16,
         }}>
-          <h2 style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", margin: "0 0 4px", display: "flex", alignItems: "center", gap: 6 }}>
-            <Plus size={15} style={{ color: "var(--brand)" }} /> Ad Creative Material Creator
+          <h2 style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>
+            + Ad Creative Material Creator
           </h2>
 
           {/* Ad Name */}
@@ -243,8 +266,19 @@ export default function AdvertisementsPage() {
             </div>
             <div style={{ flex: 1, minWidth: 150 }}>
               <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", marginBottom: 6 }}>Kampanye Kontrak</label>
-              <select value={campaignId} onChange={e => setCampaignId(e.target.value)}
-                style={{ width: "100%", padding: "8px 12px", background: "var(--bg-subtle)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 13, color: "var(--text-primary)", cursor: "pointer", boxSizing: "border-box" }}>
+              <select
+                value={campaignId}
+                onChange={e => {
+                  const val = e.target.value;
+                  setCampaignId(val);
+                  const selected = campaigns.find(c => c.id === val);
+                  if (selected) {
+                    setStartDate(selected.startDate.split("T")[0]);
+                    setEndDate(selected.endDate.split("T")[0]);
+                  }
+                }}
+                style={{ width: "100%", padding: "8px 12px", background: "var(--bg-subtle)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 13, color: "var(--text-primary)", cursor: "pointer", boxSizing: "border-box" }}
+              >
                 <option value="">-- Tanpa Kontrak (Mandiri/Sponsor) --</option>
                 {campaigns.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
@@ -349,20 +383,55 @@ export default function AdvertisementsPage() {
           <div>
             <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", marginBottom: 6 }}>Masa Aktif Tayang Iklan *</label>
             <div style={{ display: "flex", gap: 8 }}>
-              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
-                style={{ flex: 1, padding: "8px 12px", background: "var(--bg-subtle)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12, color: "var(--text-primary)", outline: "none", boxSizing: "border-box" }} required />
-              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
-                style={{ flex: 1, padding: "8px 12px", background: "var(--bg-subtle)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12, color: "var(--text-primary)", outline: "none", boxSizing: "border-box" }} required />
+              <input
+                type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
+                min={minDate} max={maxDate}
+                style={{ flex: 1, padding: "8px 12px", background: "var(--bg-subtle)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12, color: "var(--text-primary)", outline: "none", boxSizing: "border-box" }}
+                required
+              />
+              <input
+                type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
+                min={minDate} max={maxDate}
+                style={{ flex: 1, padding: "8px 12px", background: "var(--bg-subtle)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12, color: "var(--text-primary)", outline: "none", boxSizing: "border-box" }}
+                required
+              />
             </div>
+            {selectedCampaign && (
+              <span style={{ display: "block", fontSize: 11, color: "var(--text-tertiary)", marginTop: 7, lineHeight: 1.4 }}>
+                💡 Masa aktif iklan dibatasi oleh kontrak kampanye ({selectedCampaign.name}): <strong>{new Date(selectedCampaign.startDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</strong> s/d <strong>{new Date(selectedCampaign.endDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</strong>
+              </span>
+            )}
           </div>
 
           {/* Submit */}
-          <button type="submit" disabled={createMutation.isPending || advertisers.length === 0} style={{
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
-            padding: "10px 0", background: "var(--brand)", border: "none", borderRadius: 8,
-            cursor: "pointer", color: "#fff", fontSize: 13, fontWeight: 600, marginTop: 6,
-            opacity: advertisers.length === 0 ? 0.6 : 1
-          }}>
+          <button
+            type="submit"
+            disabled={createMutation.isPending || advertisers.length === 0}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              padding: "11px 16px",
+              background: (createMutation.isPending || advertisers.length === 0)
+                ? "var(--text-tertiary)"
+                : "linear-gradient(135deg, #D60000 0%, #8B0000 100%)",
+              border: "none", borderRadius: 10,
+              cursor: (createMutation.isPending || advertisers.length === 0) ? "not-allowed" : "pointer",
+              color: "#fff", fontSize: 13, fontWeight: 700, marginTop: 8,
+              boxShadow: (createMutation.isPending || advertisers.length === 0) ? "none" : "0 4px 14px rgba(214,0,0,0.25)",
+              transition: "all 0.2s ease",
+            }}
+            onMouseEnter={e => {
+              if (!createMutation.isPending && advertisers.length > 0) {
+                e.currentTarget.style.opacity = "0.9";
+                e.currentTarget.style.transform = "translateY(-1px)";
+              }
+            }}
+            onMouseLeave={e => {
+              if (!createMutation.isPending && advertisers.length > 0) {
+                e.currentTarget.style.opacity = "1";
+                e.currentTarget.style.transform = "translateY(0)";
+              }
+            }}
+          >
             {createMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} 
             Simpan Materi Iklan
           </button>
@@ -405,9 +474,28 @@ export default function AdvertisementsPage() {
                     )}
                     <button 
                       onClick={() => handleDelete(item.id, item.name)}
-                      style={{ padding: "5px 8px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--bg-subtle)", color: "var(--red)", cursor: "pointer" }}
+                      style={{
+                        padding: "7px 10px", borderRadius: 8,
+                        border: "1px solid rgba(214,0,0,0.15)",
+                        background: "rgba(214,0,0,0.04)",
+                        color: "#D60000", cursor: "pointer",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        transition: "all 0.2s ease"
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.background = "#D60000";
+                        e.currentTarget.style.color = "#fff";
+                        e.currentTarget.style.borderColor = "#D60000";
+                        e.currentTarget.style.boxShadow = "0 2px 8px rgba(214,0,0,0.25)";
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.background = "rgba(214,0,0,0.04)";
+                        e.currentTarget.style.color = "#D60000";
+                        e.currentTarget.style.borderColor = "rgba(214,0,0,0.15)";
+                        e.currentTarget.style.boxShadow = "none";
+                      }}
                     >
-                      <Trash2 size={12} />
+                      <Trash2 size={13} />
                     </button>
                   </div>
                 </div>

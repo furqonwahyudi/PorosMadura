@@ -1,0 +1,15 @@
+{
+  "enabled": true,
+  "ihsgEnabled": true,
+  "ihsgProvider": "yahoo",
+  "ihsgInterval": 30,
+  "usdEnabled": true,
+  "usdProvider": "yahoo",
+  "usdInterval": 60,
+  "goldEnabled": true,
+  "goldProvider": "logammulia",
+  "goldInterval": 60,
+  "kriptoEnabled": false,
+  "kriptoProvider": "yahoo",
+  "kriptoInterval": 60
+}

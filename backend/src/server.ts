@@ -1,6 +1,27 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+import { execSync } from 'child_process';
+import path from 'path';
+
+// Kill any orphaned node processes occupying port 3001
+try {
+  const stdout = execSync('netstat -ano | findstr :3001').toString();
+  const lines = stdout.split('\n');
+  for (const line of lines) {
+    const parts = line.trim().split(/\s+/);
+    if (parts.length >= 5) {
+      const pid = parts[parts.length - 1];
+      if (pid && parseInt(pid) > 0 && parseInt(pid) !== process.pid) {
+        execSync(`taskkill /F /PID ${pid}`);
+        console.log(`[SYS] Killed orphaned process ${pid} occupying port 3001`);
+      }
+    }
+  }
+} catch (e) {
+  // port was free, ignore
+}
+
 import app from './app';
 import { prisma } from './config/database';
 import { logger } from './config/logger';

@@ -26,7 +26,7 @@ interface Campaign {
 
 export default function CampaignsPage() {
   const queryClient = useQueryClient();
-  const { confirm, toast } = useDialog();
+  const { showConfirm, showToast } = useDialog();
 
   // Form states
   const [name, setName] = useState("");
@@ -67,14 +67,14 @@ export default function CampaignsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "campaigns"] });
-      toast("success", "Kampanye iklan berhasil didaftarkan!");
+      showToast("Kampanye iklan berhasil didaftarkan!");
       setName("");
       setBudget("");
       setStartDate("");
       setEndDate("");
     },
     onError: (err: any) => {
-      toast("error", `Gagal mendaftarkan kampanye: ${err.message}`);
+      showToast(`Gagal mendaftarkan kampanye: ${err.message}`, "error");
     }
   });
 
@@ -84,17 +84,17 @@ export default function CampaignsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "campaigns"] });
-      toast("success", "Kampanye berhasil dihapus!");
+      showToast("Kampanye berhasil dihapus!");
     },
     onError: (err: any) => {
-      toast("error", `Gagal menghapus: ${err.message}`);
+      showToast(`Gagal menghapus: ${err.message}`, "error");
     }
   });
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !advertiserId || !budget || !startDate || !endDate) {
-      toast("warning", "Semua kolom wajib diisi!");
+      showToast("Semua kolom wajib diisi!", "warning");
       return;
     }
     createMutation.mutate({
@@ -107,16 +107,12 @@ export default function CampaignsPage() {
   };
 
   const handleDelete = (id: string, name: string) => {
-    confirm({
-      title: "Hapus Kampanye",
-      message: `Apakah Anda yakin ingin menghapus kampanye "${name}"? Seluruh iklan di dalam kampanye ini akan terputus hubungannya.`,
-      confirmText: "Ya, Hapus",
-      cancelText: "Batal",
-      type: "danger",
-      onConfirm: () => {
-        deleteMutation.mutate(id);
-      }
-    });
+    showConfirm(
+      `Apakah Anda yakin ingin menghapus kampanye "${name}"? Seluruh iklan di dalam kampanye ini akan terputus hubungannya.`,
+      () => { deleteMutation.mutate(id); },
+      "Hapus Kampanye",
+      { type: "danger", confirmText: "Ya, Hapus", cancelText: "Batal" }
+    );
   };
 
   const formatCurrency = (val: number) => {
@@ -231,12 +227,35 @@ export default function CampaignsPage() {
           </div>
 
           {/* Submit */}
-          <button type="submit" disabled={createMutation.isPending || advertisers.length === 0} style={{
-            display: "flex", alignItems: "center", justifyCenter: "center", gap: 7,
-            padding: "10px 0", background: "var(--brand)", border: "none", borderRadius: 8,
-            cursor: "pointer", color: "#fff", fontSize: 13, fontWeight: 600, marginTop: 6,
-            opacity: advertisers.length === 0 ? 0.6 : 1
-          }}>
+          <button
+            type="submit"
+            disabled={createMutation.isPending || advertisers.length === 0}
+            style={{
+              width: "100%",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              padding: "11px 16px",
+              background: (createMutation.isPending || advertisers.length === 0)
+                ? "var(--text-tertiary)"
+                : "linear-gradient(135deg, #D60000 0%, #8B0000 100%)",
+              border: "none", borderRadius: 10,
+              cursor: (createMutation.isPending || advertisers.length === 0) ? "not-allowed" : "pointer",
+              color: "#fff", fontSize: 13, fontWeight: 700, marginTop: 8,
+              boxShadow: (createMutation.isPending || advertisers.length === 0) ? "none" : "0 4px 14px rgba(214,0,0,0.25)",
+              transition: "all 0.2s ease",
+            }}
+            onMouseEnter={e => {
+              if (!createMutation.isPending && advertisers.length > 0) {
+                e.currentTarget.style.opacity = "0.9";
+                e.currentTarget.style.transform = "translateY(-1px)";
+              }
+            }}
+            onMouseLeave={e => {
+              if (!createMutation.isPending && advertisers.length > 0) {
+                e.currentTarget.style.opacity = "1";
+                e.currentTarget.style.transform = "translateY(0)";
+              }
+            }}
+          >
             {createMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Target size={14} />} 
             Daftarkan Kampanye
           </button>
@@ -283,9 +302,28 @@ export default function CampaignsPage() {
                     </span>
                     <button 
                       onClick={() => handleDelete(c.id, c.name)}
-                      style={{ padding: "5px 8px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--bg-subtle)", color: "var(--red)", cursor: "pointer" }}
+                      style={{
+                        padding: "7px 10px", borderRadius: 8,
+                        border: "1px solid rgba(214,0,0,0.15)",
+                        background: "rgba(214,0,0,0.04)",
+                        color: "#D60000", cursor: "pointer",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        transition: "all 0.2s ease"
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.background = "#D60000";
+                        e.currentTarget.style.color = "#fff";
+                        e.currentTarget.style.borderColor = "#D60000";
+                        e.currentTarget.style.boxShadow = "0 2px 8px rgba(214,0,0,0.25)";
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.background = "rgba(214,0,0,0.04)";
+                        e.currentTarget.style.color = "#D60000";
+                        e.currentTarget.style.borderColor = "rgba(214,0,0,0.15)";
+                        e.currentTarget.style.boxShadow = "none";
+                      }}
                     >
-                      <Trash2 size={12} />
+                      <Trash2 size={13} />
                     </button>
                   </div>
                 </div>

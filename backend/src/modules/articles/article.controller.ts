@@ -230,12 +230,44 @@ export async function getHeadlines(req: Request, res: Response, next: NextFuncti
 export async function getTrending(req: Request, res: Response, next: NextFunction) {
   try {
     const limit = parseInt(req.query.limit as string) || 5;
-    const articles = await prisma.article.findMany({
-      where: { isTrending: true, status: 'PUBLISHED' },
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    let articles = await prisma.article.findMany({
+      where: {
+        status: 'PUBLISHED',
+        publishedAt: { gte: sevenDaysAgo }
+      },
       select: articleSelect,
       orderBy: { views: 'desc' },
       take: limit,
     });
+
+    // Fallback ke 30 hari jika artikel kurang dari limit agar widget tidak kosong
+    if (articles.length < limit) {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      articles = await prisma.article.findMany({
+        where: {
+          status: 'PUBLISHED',
+          publishedAt: { gte: thirtyDaysAgo }
+        },
+        select: articleSelect,
+        orderBy: { views: 'desc' },
+        take: limit,
+      });
+    }
+
+    // Fallback akhir ke sepanjang waktu jika masih kurang
+    if (articles.length < limit) {
+      articles = await prisma.article.findMany({
+        where: { status: 'PUBLISHED' },
+        select: articleSelect,
+        orderBy: { views: 'desc' },
+        take: limit,
+      });
+    }
+
     res.json({ success: true, data: articles });
   } catch (error) {
     next(error);

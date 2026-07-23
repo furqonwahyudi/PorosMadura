@@ -55,12 +55,13 @@ export function mapBackendArticleToFrontend(art: any): Article {
 
 export const api = {
   // Articles
-  async getArticles(params: { category?: string; subCategory?: string; page?: number; limit?: number } = {}) {
+  async getArticles(params: { category?: string; subCategory?: string; page?: number; limit?: number; isEditorChoice?: boolean } = {}) {
     const searchParams = new URLSearchParams();
     if (params.category) searchParams.append('category', params.category);
     if (params.subCategory) searchParams.append('subCategory', params.subCategory);
     if (params.page) searchParams.append('page', String(params.page));
     if (params.limit) searchParams.append('limit', String(params.limit));
+    if (params.isEditorChoice !== undefined) searchParams.append('isEditorChoice', String(params.isEditorChoice));
 
     const res = await fetchAPI(`/api/articles?${searchParams.toString()}`);
     return {
@@ -146,6 +147,17 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(data),
     });
+    return res.data;
+  },
+
+  // Market & Financial Rates
+  async getMarketRates() {
+    const res = await fetchAPI('/api/market/rates');
+    return res.data;
+  },
+
+  async getMarketSettings() {
+    const res = await fetchAPI('/api/market/settings');
     return res.data;
   },
 };

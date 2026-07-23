@@ -138,6 +138,8 @@ export default function PortalCategory({
               price={marketRates.usd?.price ?? null} 
               change={marketRates.usd?.change ?? null} 
               status={marketRates.usd?.status ?? "stable"} 
+              prefix="Rp "
+              isInteger={true}
             />
           </div>
 

@@ -3,7 +3,7 @@
  * Base URL dari env: VITE_API_URL (default: http://localhost:3000)
  */
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
 function getToken(): string | null {
   return localStorage.getItem("admin_token");
