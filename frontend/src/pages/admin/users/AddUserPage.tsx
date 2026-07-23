@@ -195,12 +195,11 @@ export default function AddUserPage() {
                 cursor: "pointer"
               }}
             >
-              <option value="Super Admin">Super Admin</option>
-              <option value="Pemimpin Redaksi">Pemimpin Redaksi</option>
-              <option value="Editor">Editor</option>
-              <option value="Reporter">Reporter</option>
-              <option value="Kontributor">Kontributor</option>
-              <option value="Sales">Sales/Marketing</option>
+              <option value="SUPER_ADMIN">Super Admin</option>
+              <option value="ADMIN">Admin</option>
+              <option value="EDITOR">Editor</option>
+              <option value="REPORTER">Reporter</option>
+              <option value="CONTRIBUTOR">Kontributor</option>
             </select>
           </div>
         </div>

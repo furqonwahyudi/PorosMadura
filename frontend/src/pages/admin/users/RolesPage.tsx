@@ -1,34 +1,42 @@
-import React, { useState } from "react";
-import { Shield, Save, CheckCircle, HelpCircle } from "lucide-react";
-import { useDialog } from "../../../context/DialogContext";
+import React from "react";
+import { Shield, HelpCircle, Info, Check, X } from "lucide-react";
 
-type Role = "Super Admin" | "Pemimpin Redaksi" | "Editor" | "Reporter" | "Kontributor" | "Sales";
+type Role = "SUPER_ADMIN" | "ADMIN" | "EDITOR" | "REPORTER" | "CONTRIBUTOR";
 type Permission = "create_post" | "publish_post" | "edit_others_post" | "delete_post" | "manage_comments" | "manage_ads" | "manage_seo" | "manage_settings";
 
-const INITIAL_MATRIX: Record<Role, Record<Permission, boolean>> = {
-  "Super Admin": {
+interface RoleInfo {
+  name: string;
+  desc: string;
+}
+
+const ROLE_DETAILS: Record<Role, RoleInfo> = {
+  SUPER_ADMIN: { name: "Super Admin", desc: "Akses sistem penuh tanpa batasan (Otoritas Tertinggi)" },
+  ADMIN: { name: "Admin", desc: "Mengelola konten, iklan, komentar, optimasi SEO, dan konfigurasi portal" },
+  EDITOR: { name: "Editor", desc: "Menulis, mengedit tulisan jurnalis lain, mengelola komentar, dan menerbitkan berita" },
+  REPORTER: { name: "Reporter", desc: "Menulis draf berita secara mandiri (butuh persetujuan Editor untuk publish)" },
+  CONTRIBUTOR: { name: "Kontributor", desc: "Menyumbang draf artikel/opini dari luar redaksi" }
+};
+
+const STATIC_MATRIX: Record<Role, Record<Permission, boolean>> = {
+  SUPER_ADMIN: {
     create_post: true, publish_post: true, edit_others_post: true, delete_post: true,
     manage_comments: true, manage_ads: true, manage_seo: true, manage_settings: true
   },
-  "Pemimpin Redaksi": {
+  ADMIN: {
     create_post: true, publish_post: true, edit_others_post: true, delete_post: true,
-    manage_comments: true, manage_ads: false, manage_seo: true, manage_settings: true
+    manage_comments: true, manage_ads: true, manage_seo: true, manage_settings: true
   },
-  "Editor": {
+  EDITOR: {
     create_post: true, publish_post: true, edit_others_post: true, delete_post: false,
     manage_comments: true, manage_ads: false, manage_seo: false, manage_settings: false
   },
-  "Reporter": {
+  REPORTER: {
     create_post: true, publish_post: false, edit_others_post: false, delete_post: false,
     manage_comments: false, manage_ads: false, manage_seo: false, manage_settings: false
   },
-  "Kontributor": {
+  CONTRIBUTOR: {
     create_post: true, publish_post: false, edit_others_post: false, delete_post: false,
     manage_comments: false, manage_ads: false, manage_seo: false, manage_settings: false
-  },
-  "Sales": {
-    create_post: false, publish_post: false, edit_others_post: false, delete_post: false,
-    manage_comments: false, manage_ads: true, manage_seo: false, manage_settings: false
   }
 };
 
@@ -44,131 +52,109 @@ const PERMISSION_LABELS: Record<Permission, { label: string; desc: string }> = {
 };
 
 export default function RolesPage() {
-  const { showToast } = useDialog();
-  const [matrix, setMatrix] = useState<Record<Role, Record<Permission, boolean>>>(INITIAL_MATRIX);
-  const [saved, setSaved] = useState(false);
-
-  const togglePermission = (role: Role, perm: Permission) => {
-    if (role === "Super Admin") return; // Super Admin permissions cannot be modified
-    setMatrix(prev => ({
-      ...prev,
-      [role]: {
-        ...prev[role],
-        [perm]: !prev[role][perm]
-      }
-    }));
-  };
-
-  const handleSave = () => {
-    setSaved(true);
-    showToast("Matriks konfigurasi RBAC berhasil diperbarui!", "success");
-    setTimeout(() => setSaved(false), 2000);
-  };
-
-  const roles: Role[] = ["Super Admin", "Pemimpin Redaksi", "Editor", "Reporter", "Kontributor", "Sales"];
+  const roles: Role[] = ["SUPER_ADMIN", "ADMIN", "EDITOR", "REPORTER", "CONTRIBUTOR"];
   const permissions: Permission[] = ["create_post", "publish_post", "edit_others_post", "delete_post", "manage_comments", "manage_ads", "manage_seo", "manage_settings"];
 
   return (
     <div style={{ padding: "24px", display: "flex", flexDirection: "column", gap: 20 }} className="animate-fade-in">
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--text-primary)", margin: 0, letterSpacing: -0.5 }}>
-            Role-Based Access Control (RBAC) Matrices
-          </h1>
-          <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: "4px 0 0" }}>
-            Atur tingkat otorisasi hak izin akses tindakan sistem untuk setiap tingkatan role CMS
-          </p>
-        </div>
-        <button
-          onClick={handleSave}
-          style={{
-            display: "flex", alignItems: "center", gap: 7, padding: "8px 16px",
-            background: saved ? "var(--green)" : "var(--brand)", border: "none", borderRadius: 8,
-            cursor: "pointer", color: "#fff", fontSize: 13, fontWeight: 600,
-            transition: "background 0.3s"
-          }}
-        >
-          {saved ? <><CheckCircle size={15} /> Tersimpan!</> : <><Save size={15} /> Simpan RBAC Matrix</>}
-        </button>
+      <div>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--text-primary)", margin: 0, letterSpacing: -0.5 }}>
+          Role-Based Access Control (RBAC) Matrices
+        </h1>
+        <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: "4px 0 0" }}>
+          Panduan otorisasi hak izin akses tindakan sistem untuk setiap tingkatan Peran (Role) di Poros Madura
+        </p>
+      </div>
+
+      {/* Info Alert Box */}
+      <div style={{
+        display: "flex", gap: 12, padding: "12px 16px", background: "var(--blue-subtle)",
+        border: "1px solid var(--blue-border)", borderRadius: 10, alignItems: "center"
+      }}>
+        <Info size={18} style={{ color: "var(--blue)", flexShrink: 0 }} />
+        <span style={{ fontSize: 12.5, color: "var(--blue)", fontWeight: 500 }}>
+          Informasi: Matriks di bawah ini bersifat tetap (Read-only) sesuai konfigurasi sistem keamanan server Poros Madura untuk menjaga stabilitas hak akses redaksi.
+        </span>
       </div>
 
       {/* Grid Matrix Table */}
-      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, overflow: "hidden" }}>
-        {/* Table header */}
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "180px repeat(8, 1fr)",
-          gap: 12, padding: "12px 16px",
-          background: "var(--bg-subtle)", borderBottom: "1px solid var(--border)",
-          alignItems: "center"
-        }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-            CMS Roles
-          </span>
-          {permissions.map(perm => (
-            <span
-              key={perm}
-              style={{
-                fontSize: 10, fontWeight: 700, color: "var(--text-tertiary)",
-                textTransform: "uppercase", letterSpacing: "0.04em",
-                textAlign: "center", cursor: "help"
-              }}
-              title={PERMISSION_LABELS[perm].desc}
-            >
-              {PERMISSION_LABELS[perm].label}
+      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, overflowX: "auto" }}>
+        <div style={{ minWidth: 1000 }}>
+          {/* Table header */}
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "220px repeat(8, 1fr)",
+            gap: 12, padding: "12px 16px",
+            background: "var(--bg-subtle)", borderBottom: "1px solid var(--border)",
+            alignItems: "center"
+          }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              CMS Roles
             </span>
+            {permissions.map(perm => (
+              <span
+                key={perm}
+                style={{
+                  fontSize: 10, fontWeight: 700, color: "var(--text-tertiary)",
+                  textTransform: "uppercase", letterSpacing: "0.04em",
+                  textAlign: "center", cursor: "help"
+                }}
+                title={PERMISSION_LABELS[perm].desc}
+              >
+                {PERMISSION_LABELS[perm].label}
+              </span>
+            ))}
+          </div>
+
+          {/* Roles rows */}
+          {roles.map((role, rIdx) => (
+            <div
+              key={role}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "220px repeat(8, 1fr)",
+                gap: 12, padding: "16px 16px",
+                borderBottom: rIdx < roles.length - 1 ? "1px solid var(--border)" : "none",
+                alignItems: "center"
+              }}
+            >
+              {/* Role Header */}
+              <div>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
+                  {ROLE_DETAILS[role].name}
+                </span>
+                <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: "2px 0 0" }}>
+                  {ROLE_DETAILS[role].desc}
+                </p>
+              </div>
+
+              {/* Permission columns */}
+              {permissions.map(perm => {
+                const active = STATIC_MATRIX[role][perm];
+                return (
+                  <div key={perm} style={{ display: "flex", justifyContent: "center" }}>
+                    {active ? (
+                      <div style={{
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        width: 22, height: 22, borderRadius: "50%", background: "var(--green-subtle)", color: "var(--green)"
+                      }}>
+                        <Check size={14} strokeWidth={3} />
+                      </div>
+                    ) : (
+                      <div style={{
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        width: 22, height: 22, borderRadius: "50%", background: "var(--red-subtle)", color: "var(--red)"
+                      }}>
+                        <X size={14} strokeWidth={3} />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           ))}
         </div>
-
-        {/* Roles rows */}
-        {roles.map((role, rIdx) => (
-          <div
-            key={role}
-            style={{
-              display: "grid",
-              gridTemplateColumns: "180px repeat(8, 1fr)",
-              gap: 12, padding: "16px 16px",
-              borderBottom: rIdx < roles.length - 1 ? "1px solid var(--border)" : "none",
-              alignItems: "center"
-            }}
-          >
-            {/* Role Header */}
-            <div>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>{role}</span>
-              <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: "2px 0 0" }}>
-                {role === "Super Admin" ? "Akses sistem penuh tanpa batas" : `Otorisasi kustom untuk ${role}`}
-              </p>
-            </div>
-
-            {/* Permission columns */}
-            {permissions.map(perm => {
-              const active = matrix[role][perm];
-              const isSuper = role === "Super Admin";
-              return (
-                <div key={perm} style={{ display: "flex", justifyContent: "center" }}>
-                  <div
-                    onClick={() => togglePermission(role, perm)}
-                    style={{
-                      width: 40, height: 22, borderRadius: 99,
-                      background: active ? "var(--brand)" : "var(--bg-muted)",
-                      position: "relative", transition: "background 0.2s",
-                      cursor: isSuper ? "not-allowed" : "pointer",
-                      opacity: isSuper ? 0.7 : 1
-                    }}
-                  >
-                    <div style={{
-                      position: "absolute", top: 3, left: active ? 21 : 3,
-                      width: 16, height: 16, borderRadius: "50%",
-                      background: "#fff", transition: "left 0.2s",
-                      boxShadow: "0 1px 4px rgba(0,0,0,0.25)"
-                    }} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ))}
       </div>
 
       {/* Permission Explanations / Help list */}
@@ -178,9 +164,9 @@ export default function RolesPage() {
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <HelpCircle size={15} style={{ color: "var(--text-secondary)" }} />
-          <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>Daftar Penjelasan Hak Akses</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>Daftar Penjelasan Hak Izin Akses</span>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} className="mobile-one-col">
           {permissions.map(perm => (
             <div key={perm} style={{ fontSize: 12 }}>
               <strong style={{ color: "var(--text-primary)" }}>{PERMISSION_LABELS[perm].label}</strong>
