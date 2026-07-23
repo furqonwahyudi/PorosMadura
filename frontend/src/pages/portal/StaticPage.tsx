@@ -1,10 +1,12 @@
 import React from "react";
 import { useParams, useNavigate, useOutletContext } from "react-router-dom";
-import { Shield, Users, HelpCircle, FileText, Phone, Mail, MapPin, ChevronLeft, Send, CheckCircle2 } from "lucide-react";
+import { Shield, Users, HelpCircle, FileText, Phone, Mail, MapPin, ChevronLeft, Send, CheckCircle2, Rss, Loader2 } from "lucide-react";
 
 interface PortalContext {
   lang: "ID" | "EN";
 }
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 export default function StaticPage() {
   const { pageSlug } = useParams<{ pageSlug: string }>();
@@ -12,9 +14,128 @@ export default function StaticPage() {
   const navigate = useNavigate();
   const [contactSubmitted, setContactSubmitted] = React.useState(false);
 
+  const [settings, setSettings] = React.useState<any>(null);
+  const [loadingSettings, setLoadingSettings] = React.useState(true);
+
+  // RSS dynamic states
+  const [categories, setCategories] = React.useState<any[]>([]);
+  const [loadingCategories, setLoadingCategories] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [expandedCards, setExpandedCards] = React.useState<Record<string, boolean>>({ latest: true });
+  const [toastMsg, setToastMsg] = React.useState<string | null>(null);
+
   // Scroll to top on mount or slug change
   React.useEffect(() => {
     window.scrollTo(0, 0);
+  }, [pageSlug]);
+
+  React.useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        setLoadingSettings(true);
+        const res = await fetch(`${API_URL}/api/settings`);
+        const json = await res.json();
+        if (json && json.success) {
+          setSettings(json.data);
+        }
+      } catch (err) {
+        console.error("Failed to load settings in static page", err);
+      } finally {
+        setLoadingSettings(false);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  // Fetch categories dynamic for RSS
+  React.useEffect(() => {
+    if (pageSlug === "rss") {
+      const fetchCategories = async () => {
+        try {
+          setLoadingCategories(true);
+          const res = await fetch(`${API_URL}/api/categories`);
+          const json = await res.json();
+          if (json && json.success) {
+            const list: any[] = [];
+            // Flatten categories (root + children)
+            json.data.forEach((cat: any) => {
+              list.push({ id: cat.id, name: cat.name, slug: cat.slug });
+              if (cat.children && cat.children.length > 0) {
+                cat.children.forEach((child: any) => {
+                  list.push({ id: child.id, name: `${cat.name} > ${child.name}`, slug: child.slug });
+                });
+              }
+            });
+            setCategories(list);
+          }
+        } catch (err) {
+          console.error("Failed to load categories in RSS page", err);
+        } finally {
+          setLoadingCategories(false);
+        }
+      };
+      fetchCategories();
+    }
+  }, [pageSlug]);
+
+  // Client-side SEO update
+  React.useEffect(() => {
+    if (pageSlug === "rss") {
+      document.title = "RSS Feed Sindikasi Berita Resmi - Poros Madura";
+
+      let metaDesc = document.querySelector('meta[name="description"]');
+      if (!metaDesc) {
+        metaDesc = document.createElement('meta');
+        metaDesc.setAttribute('name', 'description');
+        document.head.appendChild(metaDesc);
+      }
+      metaDesc.setAttribute('content', 'RSS (Really Simple Syndication) memungkinkan pembaca menerima berita terbaru Poros Madura secara otomatis melalui aplikasi RSS Reader maupun layanan agregasi berita.');
+
+      // Canonical link
+      let canonical = document.querySelector('link[rel="canonical"]');
+      if (!canonical) {
+        canonical = document.createElement('link');
+        canonical.setAttribute('rel', 'canonical');
+        document.head.appendChild(canonical);
+      }
+      canonical.setAttribute('href', window.location.href);
+
+      // Open Graph Tags
+      const ogMeta = [
+        { property: 'og:title', content: 'RSS Feed Resmi - Poros Madura' },
+        { property: 'og:description', content: 'Sindikasi berita terbaru Poros Madura secara real-time via RSS Reader.' },
+        { property: 'og:type', content: 'website' },
+        { property: 'og:url', content: window.location.href },
+        { property: 'og:image', content: `${window.location.origin}/logo.png` }
+      ];
+
+      ogMeta.forEach(meta => {
+        let el = document.querySelector(`meta[property="${meta.property}"]`);
+        if (!el) {
+          el = document.createElement('meta');
+          el.setAttribute('property', meta.property);
+          document.head.appendChild(el);
+        }
+        el.setAttribute('content', meta.content);
+      });
+
+      // Twitter Cards
+      const twitterMeta = [
+        { name: 'twitter:card', content: 'summary' },
+        { name: 'twitter:title', content: 'RSS Feed Resmi - Poros Madura' },
+        { name: 'twitter:description', content: 'Sindikasi berita terbaru Poros Madura secara real-time via RSS Reader.' }
+      ];
+
+      twitterMeta.forEach(meta => {
+        let el = document.querySelector(`meta[name="${meta.name}"]`);
+        if (!el) {
+          el = document.createElement('meta');
+          el.setAttribute('name', meta.name);
+          document.head.appendChild(el);
+        }
+        el.setAttribute('content', meta.content);
+      });
+    }
   }, [pageSlug]);
 
   const handleContactSubmit = (e: React.FormEvent) => {
@@ -25,6 +146,161 @@ export default function StaticPage() {
 
   // Content Registry
   const getPageContent = () => {
+    if (pageSlug && settings?.staticPages?.[pageSlug]) {
+      const customPage = settings.staticPages[pageSlug];
+      
+      const renderContent = (rawContent: string) => {
+        if (!rawContent) return null;
+        if (rawContent.includes("<") && rawContent.includes(">")) {
+          return (
+            <>
+              <style>{`
+                .static-html-content h1 { font-size: 1.5rem; font-weight: 800; color: #1e293b; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+                .static-html-content h2 { font-size: 1.25rem; font-weight: 700; color: #1e293b; margin-top: 1.25rem; margin-bottom: 0.75rem; }
+                .static-html-content h3 { font-size: 1.1rem; font-weight: 700; color: #1e293b; margin-top: 1rem; margin-bottom: 0.5rem; }
+                .static-html-content p { margin-bottom: 1rem; color: #374151; line-height: 1.7; }
+                .static-html-content ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+                .static-html-content ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+                .static-html-content li { color: #374151; }
+                .static-html-content a { color: #0D2B5C; text-decoration: underline; font-weight: 600; }
+                .static-html-content a:hover { color: #1E40AF; }
+                .static-html-content strong { font-weight: 700; color: #1f2937; }
+              `}</style>
+              <div 
+                className="static-html-content text-gray-700 leading-relaxed text-sm font-sans" 
+                dangerouslySetInnerHTML={{ __html: rawContent }} 
+              />
+            </>
+          );
+        }
+        return (
+          <div className="space-y-4 text-gray-700 leading-relaxed text-sm font-sans">
+            {rawContent.split("\n").map((para: string, i: number) => (
+              <p key={i}>{para}</p>
+            ))}
+          </div>
+        );
+      };
+
+      const getIcon = (slug: string) => {
+        switch (slug) {
+          case "about": return <FileText className="text-[#0D2B5C]" size={28} />;
+          case "editorial-board": return <Users className="text-[#0D2B5C]" size={28} />;
+          case "cyber-media-guidelines": return <Shield className="text-[#0D2B5C]" size={28} />;
+          case "rss": return <Rss className="text-[#0D2B5C]" size={28} />;
+          case "privacy-policy": return <HelpCircle className="text-[#0D2B5C]" size={28} />;
+          case "dispute-contact":
+          case "kontak": return <Phone className="text-[#0D2B5C]" size={28} />;
+          default: return <FileText className="text-[#0D2B5C]" size={28} />;
+        }
+      };
+
+      if (pageSlug === "dispute-contact" || pageSlug === "kontak") {
+        return {
+          title: customPage.title,
+          subtitle: customPage.subtitle,
+          icon: getIcon(pageSlug),
+          content: (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 font-sans">
+              <div className="lg:col-span-7 bg-slate-50 border border-slate-100 rounded-2xl p-5 sm:p-6">
+                {contactSubmitted ? (
+                  <div className="flex flex-col items-center justify-center py-10 text-center animate-fade-in">
+                    <CheckCircle2 size={48} className="text-green-600 mb-4" />
+                    <h4 className="font-bold text-slate-800 text-sm mb-1">
+                      {lang === "ID" ? "Pesan Berhasil Terkirim!" : "Message Sent Successfully!"}
+                    </h4>
+                    <p className="text-xs text-gray-500 max-w-sm">
+                      {lang === "ID" 
+                        ? "Terima kasih. Pesan Anda telah diterima oleh meja redaksi. Kami akan segera menghubungi Anda kembali."
+                        : "Thank you. Your message has been received. We will contact you back shortly."}
+                    </p>
+                  </div>
+                ) : (
+                  <form onSubmit={handleContactSubmit} className="flex flex-col gap-4">
+                    <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider border-b pb-2 border-slate-200">
+                      {lang === "ID" ? "Kirim Pesan Ke Redaksi" : "Send Message to Editorial Team"}
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Nama Lengkap</label>
+                        <input required type="text" className="w-full bg-white border border-slate-200 px-3 py-2 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0D2B5C]" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Email</label>
+                        <input required type="email" className="w-full bg-white border border-slate-200 px-3 py-2 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0D2B5C]" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Subjek</label>
+                      <input required type="text" className="w-full bg-white border border-slate-200 px-3 py-2 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0D2B5C]" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Isi Pengaduan / Pesan</label>
+                      <textarea required rows={5} className="w-full bg-white border border-slate-200 px-3 py-2 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0D2B5C] resize-none" />
+                    </div>
+                    <button type="submit" className="bg-[#0D2B5C] hover:bg-[#1E40AF] text-white py-2.5 px-4 rounded-xl text-xs font-bold transition-colors cursor-pointer self-start flex items-center gap-1.5 mt-2">
+                      <Send size={12} />
+                      <span>{lang === "ID" ? "Kirim Pesan" : "Send Message"}</span>
+                    </button>
+                  </form>
+                )}
+              </div>
+              <div className="lg:col-span-5 flex flex-col gap-6">
+                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 flex flex-col gap-4">
+                  <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider border-b pb-2 border-slate-200">
+                    {lang === "ID" ? "Info Kontak Redaksi" : "Editorial Contact Info"}
+                  </h4>
+                  {renderContent(customPage.content)}
+                </div>
+              </div>
+            </div>
+          )
+        };
+      }
+
+      if (pageSlug === "rss") {
+        return {
+          title: customPage.title,
+          subtitle: customPage.subtitle,
+          icon: getIcon(pageSlug),
+          content: (
+            <div className="flex flex-col gap-6 text-gray-700 text-sm font-sans leading-relaxed">
+              {renderContent(customPage.content)}
+              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 flex flex-col gap-3">
+                <label className="block text-[10px] font-bold text-gray-500 uppercase">
+                  {lang === "ID" ? "URL RSS Feed Resmi" : "Official RSS Feed URL"}
+                </label>
+                <div className="flex gap-2">
+                  <input 
+                    readOnly 
+                    type="text" 
+                    value={`${window.location.origin}/api/rss`} 
+                    className="flex-1 bg-white border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs font-mono text-slate-800 focus:outline-none"
+                  />
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/api/rss`);
+                      alert(lang === "ID" ? "Link RSS disalin ke clipboard!" : "RSS Link copied to clipboard!");
+                    }}
+                    className="bg-[#0D2B5C] hover:bg-[#1E40AF] text-white px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                  >
+                    <span>{lang === "ID" ? "Salin Link" : "Copy Link"}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )
+        };
+      }
+
+      return {
+        title: customPage.title,
+        subtitle: customPage.subtitle,
+        icon: getIcon(pageSlug),
+        content: renderContent(customPage.content)
+      };
+    }
+
     switch (pageSlug) {
       case "about":
         return {
@@ -150,7 +426,7 @@ export default function StaticPage() {
 
               {/* 1. Ruang Lingkup */}
               <div className="border border-slate-100 rounded-xl p-4 sm:p-5">
-                <h4 className="font-bold text-slate-850 text-sm mb-3">1. Ruang Lingkup</h4>
+                <h4 className="font-bold text-slate-800 text-sm mb-3">1. Ruang Lingkup</h4>
                 <div className="flex flex-col gap-3 pl-2">
                   <div className="flex gap-2">
                     <span className="font-bold text-slate-800 shrink-0">a.</span>
@@ -169,7 +445,7 @@ export default function StaticPage() {
 
               {/* 2. Verifikasi dan keberimbangan berita */}
               <div className="border border-slate-100 rounded-xl p-4 sm:p-5">
-                <h4 className="font-bold text-slate-850 text-sm mb-3">2. Verifikasi dan keberimbangan berita</h4>
+                <h4 className="font-bold text-slate-800 text-sm mb-3">2. Verifikasi dan keberimbangan berita</h4>
                 <div className="flex flex-col gap-3 pl-2">
                   <div className="flex gap-2">
                     <span className="font-bold text-slate-800 shrink-0">a.</span>
@@ -200,7 +476,7 @@ export default function StaticPage() {
 
               {/* 3. Isi Buatan Pengguna */}
               <div className="border border-slate-100 rounded-xl p-4 sm:p-5">
-                <h4 className="font-bold text-slate-850 text-sm mb-3">3. Isi Buatan Pengguna (User Generated Content)</h4>
+                <h4 className="font-bold text-slate-800 text-sm mb-3">3. Isi Buatan Pengguna (User Generated Content)</h4>
                 <div className="flex flex-col gap-3 pl-2">
                   <div className="flex gap-2">
                     <span className="font-bold text-slate-800 shrink-0">a.</span>
@@ -246,7 +522,7 @@ export default function StaticPage() {
 
               {/* 4. Ralat, Koreksi, dan Hak Jawab */}
               <div className="border border-slate-100 rounded-xl p-4 sm:p-5">
-                <h4 className="font-bold text-slate-850 text-sm mb-3">4. Ralat, Koreksi, dan Hak Jawab</h4>
+                <h4 className="font-bold text-slate-800 text-sm mb-3">4. Ralat, Koreksi, dan Hak Jawab</h4>
                 <div className="flex flex-col gap-3 pl-2">
                   <div className="flex gap-2">
                     <span className="font-bold text-slate-800 shrink-0">a.</span>
@@ -267,7 +543,7 @@ export default function StaticPage() {
                       <div className="pl-4 mt-2 flex flex-col gap-2 text-gray-600 text-xs sm:text-[13px]">
                         <p>1) Tanggung jawab media siber pembuat berita terbatas pada berita yang dipublikasikan di media siber tersebut atau media siber yang berada di bawah otoritas teknisnya;</p>
                         <p>2) Koreksi berita yang dilakukan oleh sebuah media siber, juga harus dilakukan oleh media siber lain yang mengutip berita dari media siber yang dikoreksi itu;</p>
-                        <p>3) Media yang menyebarluaskan berita dari sebuah media siber dan tidak melakukan koreksi atas berita sesuai yang dilakukan oleh media siber pemilik dan atau pembuat berita tersebut, bertanggung jawab penuh atas semua akibat hukum dari berita yang tidak dikoreksinya itu.</p>
+                        <p>3) Media yang menyebarluaskan berita dari sebuah media siber and tidak melakukan koreksi atas berita sesuai yang dilakukan oleh media siber pemilik dan atau pembuat berita tersebut, bertanggung jawab penuh atas semua akibat hukum dari berita yang tidak dikoreksinya itu.</p>
                       </div>
                     </div>
                   </div>
@@ -280,7 +556,7 @@ export default function StaticPage() {
 
               {/* 5. Pencabutan Berita */}
               <div className="border border-slate-100 rounded-xl p-4 sm:p-5">
-                <h4 className="font-bold text-slate-850 text-sm mb-3">5. Pencabutan Berita</h4>
+                <h4 className="font-bold text-slate-800 text-sm mb-3">5. Pencabutan Berita</h4>
                 <div className="flex flex-col gap-3 pl-2">
                   <div className="flex gap-2">
                     <span className="font-bold text-slate-800 shrink-0">a.</span>
@@ -299,7 +575,7 @@ export default function StaticPage() {
 
               {/* 6. Iklan */}
               <div className="border border-slate-100 rounded-xl p-4 sm:p-5">
-                <h4 className="font-bold text-slate-850 text-sm mb-3">6. Iklan</h4>
+                <h4 className="font-bold text-slate-800 text-sm mb-3">6. Iklan</h4>
                 <div className="flex flex-col gap-3 pl-2">
                   <div className="flex gap-2">
                     <span className="font-bold text-slate-800 shrink-0">a.</span>
@@ -314,19 +590,19 @@ export default function StaticPage() {
 
               {/* 7. Hak Cipta */}
               <div className="border border-slate-100 rounded-xl p-4 sm:p-5">
-                <h4 className="font-bold text-slate-850 text-sm mb-3">7. Hak Cipta</h4>
+                <h4 className="font-bold text-slate-800 text-sm mb-3">7. Hak Cipta</h4>
                 <p className="pl-2">Media siber wajib menghormati hak cipta sebagaimana diatur dalam peraturan perundang-undangan yang berlaku.</p>
               </div>
 
               {/* 8. Pencantuman Pedoman */}
               <div className="border border-slate-100 rounded-xl p-4 sm:p-5">
-                <h4 className="font-bold text-slate-850 text-sm mb-3">8. Pencantuman Pedoman</h4>
+                <h4 className="font-bold text-slate-800 text-sm mb-3">8. Pencantuman Pedoman</h4>
                 <p className="pl-2">Media siber wajib mencantumkan Pedoman Pemberitaan Media Siber ini di medianya secara terang dan jelas.</p>
               </div>
 
               {/* 9. Sengketa */}
               <div className="border border-slate-100 rounded-xl p-4 sm:p-5">
-                <h4 className="font-bold text-slate-850 text-sm mb-3">9. Sengketa</h4>
+                <h4 className="font-bold text-slate-800 text-sm mb-3">9. Sengketa</h4>
                 <p className="pl-2">Penilaian akhir atas sengketa mengenai pelaksanaan Pedoman Pemberitaan Media Siber ini diselesaikan oleh Dewan Pers.</p>
               </div>
 
@@ -336,8 +612,261 @@ export default function StaticPage() {
             </div>
           )
         };
+      case "rss": {
+        const mainFeedUrl = `${window.location.origin}/feed`;
+        const filteredCats = categories.filter(cat => 
+          cat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          cat.slug.toLowerCase().includes(searchQuery.toLowerCase())
+        );
 
-      case "privacy-policy":
+        const handleCopy = (url: string, name: string) => {
+          navigator.clipboard.writeText(url);
+          setToastMsg(`Link RSS ${name} disalin ke clipboard!`);
+          setTimeout(() => setToastMsg(null), 3000);
+        };
+
+        const handleCopyAll = () => {
+          const allUrls = [
+            `Feed Utama: ${mainFeedUrl}`,
+            ...categories.map(cat => `${cat.name}: ${window.location.origin}/category/${cat.slug}/feed`)
+          ].join("\n");
+          navigator.clipboard.writeText(allUrls);
+          setToastMsg("Semua link RSS disalin ke clipboard!");
+          setTimeout(() => setToastMsg(null), 3000);
+        };
+
+        const handleExpandAll = () => {
+          const states: Record<string, boolean> = { latest: true };
+          categories.forEach(cat => {
+            states[cat.slug] = true;
+          });
+          setExpandedCards(states);
+        };
+
+        const handleCollapseAll = () => {
+          setExpandedCards({});
+        };
+
+        const toggleCard = (key: string) => {
+          setExpandedCards(prev => ({
+            ...prev,
+            [key]: !prev[key]
+          }));
+        };
+
+        return {
+          title: lang === "ID" ? "RSS Feed & Sindikasi Berita" : "RSS Feed & News Syndicate",
+          subtitle: lang === "ID" ? "Langganan Sindikasi Berita Poros Madura" : "Poros Madura News Syndicate Subscription",
+          icon: <Rss className="text-[#D71920]" size={28} />,
+          content: (
+            <div className="flex flex-col gap-8 text-gray-700 text-sm font-sans leading-relaxed relative">
+              {/* Toast Notification */}
+              {toastMsg && (
+                <div className="fixed bottom-6 right-6 bg-[#0D2B5C] dark:bg-[#1E40AF] text-white text-xs px-4 py-3 rounded-xl shadow-xl flex items-center gap-2 border border-slate-700/50 z-50 animate-bounce">
+                  <CheckCircle2 size={16} className="text-orange-500" />
+                  <span>{toastMsg}</span>
+                </div>
+              )}
+
+              {/* Penjelasan Singkat */}
+              <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-6">
+                <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed font-light">
+                  RSS (Really Simple Syndication) memungkinkan pembaca menerima berita terbaru Poros Madura secara otomatis melalui aplikasi RSS Reader maupun layanan agregasi berita.
+                </p>
+              </div>
+
+              {/* Panduan dan Ketentuan Penggunaan (Grid 2 Kolom) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white border border-slate-150 rounded-2xl p-5 shadow-xs">
+                  <h4 className="font-extrabold text-slate-800 text-sm mb-3 uppercase tracking-wider flex items-center gap-2">
+                    <CheckCircle2 className="text-[#D71920]" size={16} />
+                    Cara Menggunakan RSS
+                  </h4>
+                  <ul className="list-decimal pl-5 text-xs text-gray-600 flex flex-col gap-2 font-light">
+                    <li>Salin URL Feed yang Anda butuhkan di bawah ini.</li>
+                    <li>Tempel ke aplikasi RSS Reader.</li>
+                    <li>Berita akan diperbarui otomatis setiap ada artikel baru.</li>
+                  </ul>
+                </div>
+
+                <div className="bg-white border border-slate-150 rounded-2xl p-5 shadow-xs">
+                  <h4 className="font-extrabold text-slate-800 text-sm mb-3 uppercase tracking-wider flex items-center gap-2">
+                    <Shield className="text-[#D71920]" size={16} />
+                    Ketentuan Penggunaan
+                  </h4>
+                  <p className="text-xs text-gray-500 font-light leading-relaxed">
+                    Seluruh konten RSS merupakan milik Poros Madura. Penggunaan RSS diperbolehkan untuk membaca dan agregasi berita. Dilarang melakukan republication penuh tanpa izin tertulis dari Poros Madura.
+                  </p>
+                </div>
+              </div>
+
+              {/* Feed Controls (Search, Copy All, Expand, Collapse) */}
+              <div className="flex flex-col sm:flex-row gap-4 items-center justify-between border-t border-slate-100 pt-6">
+                {/* Search Bar */}
+                <div className="relative w-full sm:max-w-xs">
+                  <input 
+                    type="text" 
+                    placeholder="Cari kategori feed..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0D2B5C] pl-8"
+                  />
+                  <span className="absolute left-2.5 top-3 text-gray-400 text-xs">🔍</span>
+                </div>
+
+                {/* Batch Action Buttons */}
+                <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-end">
+                  <button 
+                    onClick={handleCopyAll}
+                    className="bg-[#0D2B5C] hover:bg-[#1E40AF] text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-all cursor-pointer shadow-sm hover:shadow"
+                  >
+                    Copy All Feed URLs
+                  </button>
+                  <button 
+                    onClick={handleExpandAll}
+                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-2 rounded-xl transition-all cursor-pointer"
+                  >
+                    Expand All
+                  </button>
+                  <button 
+                    onClick={handleCollapseAll}
+                    className="bg-slate-150 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-2 rounded-xl transition-all cursor-pointer"
+                  >
+                    Collapse All
+                  </button>
+                </div>
+              </div>
+
+              {/* Feeds List */}
+              <div className="flex flex-col gap-4">
+                {/* ── 1. Feed Utama (Latest News) ── */}
+                <div className="border border-slate-150 rounded-2xl overflow-hidden transition-all shadow-xs hover:border-[#D71920]/40">
+                  <div 
+                    onClick={() => toggleCard("latest")}
+                    className="bg-slate-50/50 p-4 flex items-center justify-between cursor-pointer hover:bg-slate-50"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-orange-100 rounded-xl text-orange-600 shrink-0">
+                        <Rss size={18} />
+                      </div>
+                      <div>
+                        <h4 className="font-extrabold text-slate-800 text-sm">Feed Utama (Latest News)</h4>
+                        <span className="text-[10px] text-gray-400 font-mono">{mainFeedUrl}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400 select-none">
+                        {expandedCards["latest"] ? "▲" : "▼"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {expandedCards["latest"] && (
+                    <div className="p-4 border-t border-slate-100 bg-white flex flex-col gap-3">
+                      <p className="text-xs text-gray-500 font-light">
+                        Sindikasi berita utama terlengkap dari Poros Madura. Dapatkan update real-time langsung dari seluruh kategori berita dalam satu feed terpadu.
+                      </p>
+                      <div className="flex gap-2 w-full mt-1">
+                        <input 
+                          readOnly 
+                          type="text" 
+                          value={mainFeedUrl} 
+                          className="flex-1 bg-slate-50 border border-slate-200 px-3 py-2 rounded-lg text-xs font-mono text-slate-800 focus:outline-none"
+                        />
+                        <button 
+                          onClick={() => handleCopy(mainFeedUrl, "Feed Utama")}
+                          className="bg-[#0D2B5C] hover:bg-[#1E40AF] text-white px-3 py-2 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                        >
+                          Copy
+                        </button>
+                        <a 
+                          href={mainFeedUrl} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center text-center font-bold"
+                        >
+                          Open
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* ── 2. Feed Kategori (Dinamis dari Database) ── */}
+                {loadingCategories ? (
+                  <div className="flex items-center justify-center py-10 text-gray-400 gap-2">
+                    <Loader2 className="animate-spin text-[#0D2B5C]" size={20} />
+                    <span className="text-xs">Memuat daftar kategori...</span>
+                  </div>
+                ) : filteredCats.length === 0 ? (
+                  <div className="text-center py-10 text-gray-400 text-xs font-light">
+                    Tidak ditemukan kategori feed yang cocok dengan pencarian Anda.
+                  </div>
+                ) : (
+                  filteredCats.map(cat => {
+                    const catFeedUrl = `${window.location.origin}/category/${cat.slug}/feed`;
+                    const isExpanded = expandedCards[cat.slug] || false;
+
+                    return (
+                      <div key={cat.id} className="border border-slate-150 rounded-2xl overflow-hidden transition-all shadow-xs hover:border-[#D71920]/40">
+                        <div 
+                          onClick={() => toggleCard(cat.slug)}
+                          className="bg-slate-50/50 p-4 flex items-center justify-between cursor-pointer hover:bg-slate-50"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="p-2.5 bg-orange-50 rounded-xl text-orange-500 shrink-0">
+                              <Rss size={18} />
+                            </div>
+                            <div>
+                              <h4 className="font-extrabold text-slate-800 text-sm">Feed Kategori: {cat.name}</h4>
+                              <span className="text-[10px] text-gray-400 font-mono">{catFeedUrl}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-400 select-none">
+                              {isExpanded ? "▲" : "▼"}
+                            </span>
+                          </div>
+                        </div>
+
+                        {isExpanded && (
+                          <div className="p-4 border-t border-slate-100 bg-white flex flex-col gap-3">
+                            <p className="text-xs text-gray-500 font-light">
+                              Sindikasi berita khusus untuk kategori <strong>{cat.name}</strong> di Poros Madura. Berlangganan feed ini jika Anda hanya ingin memantau topik ini secara spesifik.
+                            </p>
+                            <div className="flex gap-2 w-full mt-1">
+                              <input 
+                                readOnly 
+                                type="text" 
+                                value={catFeedUrl} 
+                                className="flex-1 bg-slate-50 border border-slate-200 px-3 py-2 rounded-lg text-xs font-mono text-slate-800 focus:outline-none"
+                              />
+                              <button 
+                                onClick={() => handleCopy(catFeedUrl, `Kategori ${cat.name}`)}
+                                className="bg-[#0D2B5C] hover:bg-[#1E40AF] text-white px-3 py-2 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                              >
+                                Copy
+                              </button>
+                              <a 
+                                href={catFeedUrl} 
+                                target="_blank" 
+                                rel="noreferrer"
+                                className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center text-center font-bold"
+                              >
+                                Open
+                              </a>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          )
+        };
+      }
         return {
           title: lang === "ID" ? "Kebijakan Privasi" : "Privacy Policy",
           subtitle: lang === "ID" ? "Perlindungan Data & Informasi Pengunjung" : "Data Protection & Reader Information",
@@ -471,6 +1000,15 @@ export default function StaticPage() {
         };
     }
   };
+
+  if (loadingSettings) {
+    return (
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 bg-[#FAFAFB] flex flex-col items-center justify-center min-h-[300px] text-gray-400 gap-3">
+        <Loader2 className="animate-spin text-[#0D2B5C]" size={28} />
+        <span className="text-xs font-sans">Memuat halaman...</span>
+      </main>
+    );
+  }
 
   const { title, subtitle, icon, content } = getPageContent();
 

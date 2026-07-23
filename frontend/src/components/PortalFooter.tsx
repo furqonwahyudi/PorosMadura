@@ -12,6 +12,26 @@ export default function PortalFooter({ lang }: PortalFooterProps) {
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [dbCategories, setDbCategories] = useState<any[]>([]);
+
+  React.useEffect(() => {
+    let active = true;
+    const loadCategories = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api/categories`);
+        const json = await res.json();
+        if (json && json.success && active) {
+          setDbCategories(json.data);
+        }
+      } catch (err) {
+        console.error("Gagal memuat kategori footer:", err);
+      }
+    };
+    loadCategories();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,31 +106,41 @@ export default function PortalFooter({ lang }: PortalFooterProps) {
               {lang === "ID" ? "Kategori Utama" : "Top Categories"}
             </h4>
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-gray-400">
-              {/* Daerah */}
-              <Link to="/bangkalan" className="hover:text-white transition-colors">Bangkalan</Link>
-              <Link to="/sampang" className="hover:text-white transition-colors">Sampang</Link>
-              <Link to="/pamekasan" className="hover:text-white transition-colors">Pamekasan</Link>
-              <Link to="/sumenep" className="hover:text-white transition-colors">Sumenep</Link>
+              {dbCategories.length > 0 ? (
+                dbCategories.map(c => (
+                  <Link key={c.id} to={`/${c.slug}`} className="hover:text-white transition-colors">
+                    {c.name}
+                  </Link>
+                ))
+              ) : (
+                <>
+                  {/* Daerah */}
+                  <Link to="/bangkalan" className="hover:text-white transition-colors">Bangkalan</Link>
+                  <Link to="/sampang" className="hover:text-white transition-colors">Sampang</Link>
+                  <Link to="/pamekasan" className="hover:text-white transition-colors">Pamekasan</Link>
+                  <Link to="/sumenep" className="hover:text-white transition-colors">Sumenep</Link>
 
-              {/* Nasional */}
-              <Link to="/politik" className="hover:text-white transition-colors">Politik</Link>
-              <Link to="/pemerintahan" className="hover:text-white transition-colors">Pemerintahan</Link>
-              <Link to="/hukum" className="hover:text-white transition-colors">Hukum</Link>
-              <Link to="/kriminal" className="hover:text-white transition-colors">Kriminal</Link>
-              <Link to="/pendidikan" className="hover:text-white transition-colors">Pendidikan</Link>
-              <Link to="/kesehatan" className="hover:text-white transition-colors">Kesehatan</Link>
-              <Link to="/ekonomi" className="hover:text-white transition-colors">Ekonomi</Link>
-              <Link to="/olahraga" className="hover:text-white transition-colors">Olahraga</Link>
+                  {/* Nasional */}
+                  <Link to="/politik" className="hover:text-white transition-colors">Politik</Link>
+                  <Link to="/pemerintahan" className="hover:text-white transition-colors">Pemerintahan</Link>
+                  <Link to="/hukum" className="hover:text-white transition-colors">Hukum</Link>
+                  <Link to="/kriminal" className="hover:text-white transition-colors">Kriminal</Link>
+                  <Link to="/pendidikan" className="hover:text-white transition-colors">Pendidikan</Link>
+                  <Link to="/kesehatan" className="hover:text-white transition-colors">Kesehatan</Link>
+                  <Link to="/ekonomi" className="hover:text-white transition-colors">Ekonomi</Link>
+                  <Link to="/olahraga" className="hover:text-white transition-colors">Olahraga</Link>
 
-              {/* Rubrik & Lainnya */}
-              <Link to="/teknologi" className="hover:text-white transition-colors">Teknologi</Link>
-              <Link to="/otomotif" className="hover:text-white transition-colors">Otomotif</Link>
-              <Link to="/lifestyle" className="hover:text-white transition-colors">Lifestyle</Link>
-              <Link to="/budaya" className="hover:text-white transition-colors">Budaya</Link>
-              <Link to="/wisata" className="hover:text-white transition-colors">Wisata</Link>
-              <Link to="/kuliner" className="hover:text-white transition-colors">Kuliner</Link>
-              <Link to="/hiburan" className="hover:text-white transition-colors">Hiburan</Link>
-              <Link to="/opini" className="hover:text-white transition-colors">Opini</Link>
+                  {/* Rubrik & Lainnya */}
+                  <Link to="/teknologi" className="hover:text-white transition-colors">Teknologi</Link>
+                  <Link to="/otomotif" className="hover:text-white transition-colors">Otomotif</Link>
+                  <Link to="/lifestyle" className="hover:text-white transition-colors">Lifestyle</Link>
+                  <Link to="/budaya" className="hover:text-white transition-colors">Budaya</Link>
+                  <Link to="/wisata" className="hover:text-white transition-colors">Wisata</Link>
+                  <Link to="/kuliner" className="hover:text-white transition-colors">Kuliner</Link>
+                  <Link to="/hiburan" className="hover:text-white transition-colors">Hiburan</Link>
+                  <Link to="/opini" className="hover:text-white transition-colors">Opini</Link>
+                </>
+              )}
             </div>
           </div>
 

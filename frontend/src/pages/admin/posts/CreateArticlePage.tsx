@@ -44,6 +44,11 @@ export default function CreateArticlePage() {
   const [featuredImage, setFeaturedImage] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
+  const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
+  const [showTagSuggestions, setShowTagSuggestions] = useState(false);
+  const [focusedSuggestionIndex, setFocusedSuggestionIndex] = useState(-1);
+  const tagContainerRef = useRef<HTMLDivElement>(null);
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [activeMediaTab, setActiveMediaTab] = useState<"upload" | "library">("library");
   const [selectedMediaUrl, setSelectedMediaUrl] = useState<string>("");
@@ -350,13 +355,87 @@ export default function CreateArticlePage() {
     setCurrentBlock("P");
   };
 
-  const addTag = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && tagInput.trim()) {
-      e.preventDefault();
-      if (!selectedTags.includes(tagInput.trim())) {
-        setSelectedTags([...selectedTags, tagInput.trim()]);
+  // Load available tags for autocomplete
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        const res = await adminApi.get<{ success: boolean; data: { name: string }[] }>("/api/tags?limit=250&onlyPublished=true");
+        if (res && res.success) {
+          setAvailableTags(res.data.map(t => t.name));
+        }
+      } catch (err) {
+        console.error("Gagal mengambil daftar tag:", err);
       }
-      setTagInput("");
+    };
+    fetchTags();
+  }, []);
+
+  // Filter tag suggestions based on input
+  useEffect(() => {
+    if (tagInput.trim()) {
+      const match = availableTags.filter(tag => 
+        tag.toLowerCase().includes(tagInput.toLowerCase().trim()) && 
+        !selectedTags.includes(tag)
+      );
+      setTagSuggestions(match);
+      setShowTagSuggestions(match.length > 0);
+      setFocusedSuggestionIndex(-1);
+    } else {
+      setTagSuggestions([]);
+      setShowTagSuggestions(false);
+      setFocusedSuggestionIndex(-1);
+    }
+  }, [tagInput, availableTags, selectedTags]);
+
+  // Handle outside clicks to close tag suggestions
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (tagContainerRef.current && !tagContainerRef.current.contains(event.target as Node)) {
+        setShowTagSuggestions(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectTagSuggestion = (tag: string) => {
+    const trimmed = tag.trim();
+    if (trimmed && !selectedTags.includes(trimmed)) {
+      setSelectedTags([...selectedTags, trimmed]);
+      if (!availableTags.includes(trimmed)) {
+        setAvailableTags(prev => [...prev, trimmed]);
+      }
+    }
+    setTagInput("");
+    setShowTagSuggestions(false);
+    setFocusedSuggestionIndex(-1);
+  };
+
+  const handleTagInputKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowDown" && tagSuggestions.length > 0) {
+      e.preventDefault();
+      setFocusedSuggestionIndex(prev => 
+        prev < tagSuggestions.length - 1 ? prev + 1 : prev
+      );
+    } else if (e.key === "ArrowUp" && tagSuggestions.length > 0) {
+      e.preventDefault();
+      setFocusedSuggestionIndex(prev => (prev > 0 ? prev - 1 : -1));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (focusedSuggestionIndex >= 0 && focusedSuggestionIndex < tagSuggestions.length) {
+        selectTagSuggestion(tagSuggestions[focusedSuggestionIndex]);
+      } else if (tagInput.trim()) {
+        const trimmed = tagInput.trim();
+        if (!selectedTags.includes(trimmed)) {
+          setSelectedTags([...selectedTags, trimmed]);
+          if (!availableTags.includes(trimmed)) {
+            setAvailableTags(prev => [...prev, trimmed]);
+          }
+        }
+        setTagInput("");
+      }
+    } else if (e.key === "Escape") {
+      setShowTagSuggestions(false);
     }
   };
 
@@ -808,18 +887,49 @@ export default function CreateArticlePage() {
                     </span>
                   ))}
                 </div>
-                <input
-                  type="text"
-                  placeholder="Ketik tag dan tekan Enter..."
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={addTag}
-                  style={{
-                    width: "100%", padding: "7px 10px", borderRadius: 8,
-                    border: "1px solid var(--border)", background: "var(--bg-subtle)",
-                    color: "var(--text-primary)", fontSize: 12.5, outline: "none",
-                  }}
-                />
+                <div ref={tagContainerRef} style={{ position: "relative" }}>
+                  <input
+                    type="text"
+                    placeholder="Ketik tag dan tekan Enter..."
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={handleTagInputKeyDown}
+                    onFocus={() => {
+                      if (tagSuggestions.length > 0) setShowTagSuggestions(true);
+                    }}
+                    style={{
+                      width: "100%", padding: "7px 10px", borderRadius: 8,
+                      border: "1px solid var(--border)", background: "var(--bg-subtle)",
+                      color: "var(--text-primary)", fontSize: 12.5, outline: "none",
+                    }}
+                  />
+                  {showTagSuggestions && tagSuggestions.length > 0 && (
+                    <div style={{
+                      position: "absolute", top: "100%", left: 0, right: 0,
+                      maxHeight: 200, overflowY: "auto", background: "var(--surface-raised)",
+                      border: "1px solid var(--border)", borderRadius: 8,
+                      boxShadow: "var(--shadow-md)", zIndex: 9999,
+                      marginTop: 4, padding: "4px 0"
+                    }}>
+                      {tagSuggestions.map((tag, idx) => (
+                        <div
+                          key={`tag-suggest-${tag}`}
+                          onClick={() => selectTagSuggestion(tag)}
+                          onMouseEnter={() => setFocusedSuggestionIndex(idx)}
+                          style={{
+                            padding: "6px 12px", fontSize: 12, cursor: "pointer",
+                            background: focusedSuggestionIndex === idx ? "var(--bg-muted)" : "transparent",
+                            color: focusedSuggestionIndex === idx ? "var(--brand)" : "var(--text-primary)",
+                            fontWeight: focusedSuggestionIndex === idx ? 600 : 400,
+                            transition: "all 0.1s"
+                          }}
+                        >
+                          {tag}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Slug */}

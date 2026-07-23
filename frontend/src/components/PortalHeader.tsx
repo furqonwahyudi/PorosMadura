@@ -56,74 +56,169 @@ export default function PortalHeader({
     };
   }, []);
 
-  const menuItems = [
-    { name: { ID: "BERANDA", EN: "HOME" }, category: null },
-    {
-      name: { ID: "DAERAH", EN: "REGIONS" },
-      isWrapper: true,
-      category: null,
-      subItems: [
-        { name: "Bangkalan", category: "Bangkalan" },
-        { name: "Sampang", category: "Sampang" },
-        { name: "Pamekasan", category: "Pamekasan" },
-        { name: "Sumenep", category: "Sumenep" },
-      ]
-    },
-    {
-      name: { ID: "NASIONAL", EN: "NATIONAL" },
-      isWrapper: true,
-      category: null,
-      subItems: [
-        { name: "Politik", category: "Politik" },
-        { name: "Pemerintahan", category: "Pemerintahan" },
-        { name: "Hukum", category: "Hukum" },
-        { name: "Kriminal", category: "Kriminal" },
-        { name: "Pendidikan", category: "Pendidikan" },
-        { name: "Kesehatan", category: "Kesehatan" },
-        { name: "Ekonomi", category: "Ekonomi" },
-      ]
-    },
-    { name: { ID: "OLAHRAGA", EN: "SPORTS" }, category: "Olahraga" },
-    { name: { ID: "TEKNOLOGI", EN: "TECHNOLOGY" }, category: "Teknologi" },
-    { name: { ID: "OTOMOTIF", EN: "AUTOMOTIVE" }, category: "Otomotif" },
-    {
-      name: { ID: "LAINNYA", EN: "OTHERS" },
-      isWrapper: true,
-      category: null,
-      subItems: [
-        { name: "Lifestyle", category: "Lifestyle" },
-        { name: "Budaya", category: "Budaya" },
-        { name: "Wisata", category: "Wisata" },
-        { name: "Kuliner", category: "Kuliner" },
-        { name: "Hiburan", category: "Hiburan" },
-        { name: "Opini", category: "Opini" },
-      ]
-    }
-  ];
+  const [dbCategories, setDbCategories] = useState<any[]>([]);
 
-  const mobileFlatCategories = [
-    { name: { ID: "BERANDA", EN: "HOME" }, category: null },
-    { name: { ID: "Bangkalan", EN: "Bangkalan" }, category: "Bangkalan" },
-    { name: { ID: "Sampang", EN: "Sampang" }, category: "Sampang" },
-    { name: { ID: "Pamekasan", EN: "Pamekasan" }, category: "Pamekasan" },
-    { name: { ID: "Sumenep", EN: "Sumenep" }, category: "Sumenep" },
-    { name: { ID: "Politik", EN: "Politics" }, category: "Politik" },
-    { name: { ID: "Pemerintahan", EN: "Government" }, category: "Pemerintahan" },
-    { name: { ID: "Hukum", EN: "Law" }, category: "Hukum" },
-    { name: { ID: "Kriminal", EN: "Crime" }, category: "Kriminal" },
-    { name: { ID: "Pendidikan", EN: "Education" }, category: "Pendidikan" },
-    { name: { ID: "Kesehatan", EN: "Health" }, category: "Kesehatan" },
-    { name: { ID: "Ekonomi", EN: "Economy" }, category: "Ekonomi" },
-    { name: { ID: "Olahraga", EN: "Sports" }, category: "Olahraga" },
-    { name: { ID: "Teknologi", EN: "Technology" }, category: "Teknologi" },
-    { name: { ID: "Otomotif", EN: "Automotive" }, category: "Otomotif" },
-    { name: { ID: "Lifestyle", EN: "Lifestyle" }, category: "Lifestyle" },
-    { name: { ID: "Budaya", EN: "Culture" }, category: "Budaya" },
-    { name: { ID: "Wisata", EN: "Tourism" }, category: "Wisata" },
-    { name: { ID: "Kuliner", EN: "Culinary" }, category: "Kuliner" },
-    { name: { ID: "Hiburan", EN: "Entertainment" }, category: "Hiburan" },
-    { name: { ID: "Opini", EN: "Opinion" }, category: "Opini" }
-  ];
+  useEffect(() => {
+    let active = true;
+    const loadCategories = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api/categories`);
+        const json = await res.json();
+        if (json && json.success && active) {
+          setDbCategories(json.data);
+        }
+      } catch (err) {
+        console.error("Gagal memuat kategori:", err);
+      }
+    };
+    loadCategories();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Dynamically map menuItems from database categories
+  const menuItems = React.useMemo(() => {
+    if (dbCategories.length === 0) {
+      return [
+        { name: { ID: "BERANDA", EN: "HOME" }, category: null },
+        {
+          name: { ID: "DAERAH", EN: "REGIONS" },
+          isWrapper: true,
+          category: null,
+          subItems: [
+            { name: "Bangkalan", category: "Bangkalan" },
+            { name: "Sampang", category: "Sampang" },
+            { name: "Pamekasan", category: "Pamekasan" },
+            { name: "Sumenep", category: "Sumenep" },
+          ]
+        },
+        {
+          name: { ID: "NASIONAL", EN: "NATIONAL" },
+          isWrapper: true,
+          category: null,
+          subItems: [
+            { name: "Politik", category: "Politik" },
+            { name: "Pemerintahan", category: "Pemerintahan" },
+            { name: "Hukum", category: "Hukum" },
+            { name: "Kriminal", category: "Kriminal" },
+            { name: "Pendidikan", category: "Pendidikan" },
+            { name: "Kesehatan", category: "Kesehatan" },
+            { name: "Ekonomi", category: "Ekonomi" },
+          ]
+        },
+        { name: { ID: "OLAHRAGA", EN: "SPORTS" }, category: "Olahraga" },
+        { name: { ID: "TEKNOLOGI", EN: "TECHNOLOGY" }, category: "Teknologi" },
+        { name: { ID: "OTOMOTIF", EN: "AUTOMOTIVE" }, category: "Otomotif" },
+        {
+          name: { ID: "LAINNYA", EN: "OTHERS" },
+          isWrapper: true,
+          category: null,
+          subItems: [
+            { name: "Lifestyle", category: "Lifestyle" },
+            { name: "Budaya", category: "Budaya" },
+            { name: "Wisata", category: "Wisata" },
+            { name: "Kuliner", category: "Kuliner" },
+            { name: "Hiburan", category: "Hiburan" },
+            { name: "Opini", category: "Opini" },
+          ]
+        }
+      ];
+    }
+
+    const daerahSlugs = ["bangkalan", "sampang", "pamekasan", "sumenep"];
+    const nasionalSlugs = ["politik", "pemerintahan", "hukum", "kriminal", "pendidikan", "kesehatan", "ekonomi"];
+    const rootSlugs = ["olahraga", "teknologi", "otomotif"];
+
+    const daerahCats = dbCategories.filter(c => daerahSlugs.includes(c.slug.toLowerCase()));
+    const nasionalCats = dbCategories.filter(c => nasionalSlugs.includes(c.slug.toLowerCase()));
+    const rootCats = dbCategories.filter(c => rootSlugs.includes(c.slug.toLowerCase()));
+    
+    const classifiedSlugs = [...daerahSlugs, ...nasionalSlugs, ...rootSlugs];
+    const lainnyaCats = dbCategories.filter(c => !classifiedSlugs.includes(c.slug.toLowerCase()));
+
+    const items = [
+      { name: { ID: "BERANDA", EN: "HOME" }, category: null }
+    ];
+
+    if (daerahCats.length > 0) {
+      items.push({
+        name: { ID: "DAERAH", EN: "REGIONS" },
+        isWrapper: true,
+        category: null,
+        subItems: daerahCats.map(c => ({ name: c.name, category: c.name }))
+      });
+    }
+
+    if (nasionalCats.length > 0) {
+      items.push({
+        name: { ID: "NASIONAL", EN: "NATIONAL" },
+        isWrapper: true,
+        category: null,
+        subItems: nasionalCats.map(c => ({ name: c.name, category: c.name }))
+      });
+    }
+
+    rootCats.forEach(c => {
+      items.push({
+        name: { ID: c.name.toUpperCase(), EN: c.name.toUpperCase() },
+        category: c.name
+      });
+    });
+
+    if (lainnyaCats.length > 0) {
+      items.push({
+        name: { ID: "LAINNYA", EN: "OTHERS" },
+        isWrapper: true,
+        category: null,
+        subItems: lainnyaCats.map(c => ({ name: c.name, category: c.name }))
+      });
+    }
+
+    return items;
+  }, [dbCategories]);
+
+  // Dynamically map mobileFlatCategories from database categories
+  const mobileFlatCategories = React.useMemo(() => {
+    if (dbCategories.length === 0) {
+      return [
+        { name: { ID: "BERANDA", EN: "HOME" }, category: null },
+        { name: { ID: "Bangkalan", EN: "Bangkalan" }, category: "Bangkalan" },
+        { name: { ID: "Sampang", EN: "Sampang" }, category: "Sampang" },
+        { name: { ID: "Pamekasan", EN: "Pamekasan" }, category: "Pamekasan" },
+        { name: { ID: "Sumenep", EN: "Sumenep" }, category: "Sumenep" },
+        { name: { ID: "Politik", EN: "Politics" }, category: "Politik" },
+        { name: { ID: "Pemerintahan", EN: "Government" }, category: "Pemerintahan" },
+        { name: { ID: "Hukum", EN: "Law" }, category: "Hukum" },
+        { name: { ID: "Kriminal", EN: "Crime" }, category: "Kriminal" },
+        { name: { ID: "Pendidikan", EN: "Education" }, category: "Pendidikan" },
+        { name: { ID: "Kesehatan", EN: "Health" }, category: "Kesehatan" },
+        { name: { ID: "Ekonomi", EN: "Economy" }, category: "Ekonomi" },
+        { name: { ID: "Olahraga", EN: "Sports" }, category: "Olahraga" },
+        { name: { ID: "Teknologi", EN: "Technology" }, category: "Teknologi" },
+        { name: { ID: "Otomotif", EN: "Automotive" }, category: "Otomotif" },
+        { name: { ID: "Lifestyle", EN: "Lifestyle" }, category: "Lifestyle" },
+        { name: { ID: "Budaya", EN: "Culture" }, category: "Budaya" },
+        { name: { ID: "Wisata", EN: "Tourism" }, category: "Wisata" },
+        { name: { ID: "Kuliner", EN: "Culinary" }, category: "Kuliner" },
+        { name: { ID: "Hiburan", EN: "Entertainment" }, category: "Hiburan" },
+        { name: { ID: "Opini", EN: "Opinion" }, category: "Opini" }
+      ];
+    }
+
+    const flat = [
+      { name: { ID: "BERANDA", EN: "HOME" }, category: null }
+    ];
+
+    dbCategories.forEach(c => {
+      flat.push({
+        name: { ID: c.name, EN: c.name },
+        category: c.name
+      });
+    });
+
+    return flat;
+  }, [dbCategories]);
 
   // Live clock
   useEffect(() => {

@@ -1,5 +1,5 @@
 import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useParams } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { DialogProvider } from "./context/DialogContext";
@@ -84,6 +84,8 @@ export default function App() {
             <Route path="/" element={<PortalLayout />}>
               <Route index element={<HomePage />} />
               <Route path="search" element={<SearchPage />} />
+              <Route path="feed" element={<RssRedirect />} />
+              <Route path="category/:slug/feed" element={<RssCategoryRedirect />} />
               <Route path="pages/:pageSlug" element={<StaticPage />} />
               <Route path=":categorySlug/:slug" element={<ArticlePage />} />
               <Route path=":categorySlug" element={<CategoryPage />} />
@@ -164,4 +166,23 @@ export default function App() {
       </AdminAuthProvider>
     </QueryClientProvider>
   );
+}
+
+function RssRedirect() {
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+  React.useEffect(() => {
+    window.location.replace(`${API_URL}/feed`);
+  }, [API_URL]);
+  return null;
+}
+
+function RssCategoryRedirect() {
+  const { slug } = useParams<{ slug: string }>();
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+  React.useEffect(() => {
+    if (slug) {
+      window.location.replace(`${API_URL}/category/${slug}/feed`);
+    }
+  }, [slug, API_URL]);
+  return null;
 }

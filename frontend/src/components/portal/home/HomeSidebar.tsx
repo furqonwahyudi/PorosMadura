@@ -437,26 +437,6 @@ export default function HomeSidebar({
           const firstArt = displayList[0];
           const remainingArts = displayList.slice(1);
 
-          const mockTimesID = [
-            "6 menit yang lalu",
-            "13 menit yang lalu",
-            "28 menit yang lalu",
-            "36 menit yang lalu",
-            "50 menit yang lalu"
-          ];
-
-          const mockTimesEN = [
-            "6 minutes ago",
-            "13 minutes ago",
-            "28 minutes ago",
-            "36 minutes ago",
-            "50 minutes ago"
-          ];
-
-          const getRelativeTime = (idx: number) => {
-            return lang === "ID" ? mockTimesID[idx] : mockTimesEN[idx];
-          };
-
           const fallbackImages = [
             "https://images.unsplash.com/photo-1511556532299-8f662fc26c06?auto=format&fit=crop&w=800&q=80",
             "https://images.unsplash.com/photo-1506157786151-b8491531f063?auto=format&fit=crop&w=800&q=80",
@@ -488,7 +468,7 @@ export default function HomeSidebar({
                     {firstArt.title}
                   </h5>
                   <span className="text-[10px] text-gray-300 mt-2 font-mono">
-                    {getRelativeTime(0)}
+                    {formatDate(firstArt.publishedAt || firstArt.createdAt, lang)}
                   </span>
                 </div>
               </div>
@@ -507,7 +487,7 @@ export default function HomeSidebar({
                       {art.title}
                     </h5>
                     <span className="text-[10px] text-gray-400 font-mono mt-1">
-                      {getRelativeTime(idx + 1)}
+                      {formatDate(art.publishedAt || art.createdAt, lang)}
                     </span>
                   </div>
                 ))}

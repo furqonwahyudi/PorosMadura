@@ -16,6 +16,7 @@ export async function getTags(req: Request, res: Response, next: NextFunction) {
     const limit = parseInt(req.query.limit as string) || 20;
     const search = req.query.q as string || '';
     const skip = (page - 1) * limit;
+    const onlyPublished = req.query.onlyPublished === 'true';
 
     const whereClause: any = {};
     if (search) {
@@ -23,6 +24,16 @@ export async function getTags(req: Request, res: Response, next: NextFunction) {
         { name: { contains: search, mode: 'insensitive' } },
         { slug: { contains: search, mode: 'insensitive' } },
       ];
+    }
+
+    if (onlyPublished) {
+      whereClause.articles = {
+        some: {
+          article: {
+            status: 'PUBLISHED'
+          }
+        }
+      };
     }
 
     const [tags, total] = await Promise.all([
