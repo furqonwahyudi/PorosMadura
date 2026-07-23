@@ -411,9 +411,9 @@ export default function PortalCategory({
               <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <span className={`text-[10px] font-black uppercase tracking-widest ${catTheme.text}`}>
                   {lang === "ID" ? "KANAL POROS" : "POROS CHANNEL"}
-                  {selectedSubCategory && <span className="ml-1 opacity-70">â€¢ {selectedCategory.toUpperCase()}</span>}
+                  {selectedSubCategory && <span className="ml-1 opacity-70">{"\u2022"} {selectedCategory.toUpperCase()}</span>}
                 </span>
-                <span className="text-gray-300 text-xs">â€¢</span>
+                <span className="text-gray-300 text-xs">{"\u2022"}</span>
                 <span className="text-[10px] text-gray-500 font-mono flex items-center gap-1">
                   <Activity size={10} />
                   {filteredArticles.length} {lang === "ID" ? "Artikel Aktif" : "Active Articles"}
@@ -453,7 +453,7 @@ export default function PortalCategory({
               onClick={() => setSelectedTag(null)}
               className="text-xs font-bold text-red-600 hover:text-red-700 cursor-pointer bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-full transition-colors"
             >
-              {lang === "ID" ? "Hapus Filter" : "Clear Filter"} âœ•
+              {lang === "ID" ? "Hapus Filter" : "Clear Filter"} {"\u2716"}
             </button>
           </div>
         )}
@@ -501,7 +501,7 @@ export default function PortalCategory({
                       {/* Metadata */}
                       <div className="flex items-center gap-2 text-[10px] text-gray-400 font-mono">
                         <span className="flex items-center gap-1"><Calendar size={11} /> {formatDate(spotlightArticle.publishDate, lang)}</span>
-                        <span>â€¢</span>
+                        <span>{"\u2022"}</span>
                         <span className="text-slate-500">Oleh: {spotlightArticle.author}</span>
                       </div>
                       
@@ -780,7 +780,7 @@ export default function PortalCategory({
                         </h5>
                         <div className="flex gap-2 text-[9px] text-gray-400 font-mono mt-1">
                           <span>{formatDate(art.publishDate, lang)}</span>
-                          <span>â€¢</span>
+                          <span>{"\u2022"}</span>
                           <span className="flex items-center gap-0.5"><Eye size={10} /> {art.views}</span>
                         </div>
                       </div>
@@ -868,7 +868,7 @@ export default function PortalCategory({
                 onClick={() => setSelectedPhoto(null)} 
                 className="absolute top-4 right-4 text-white bg-black/60 rounded-full p-2 hover:bg-black cursor-pointer"
               >
-                âœ•
+                {"\u2716"}
               </button>
             </div>
           </div>

@@ -11,6 +11,7 @@ import HomePage from "./pages/portal/HomePage";
 import CategoryPage from "./pages/portal/CategoryPage";
 import ArticlePage from "./pages/portal/ArticlePage";
 import SearchPage from "./pages/portal/SearchPage";
+import StaticPage from "./pages/portal/StaticPage";
 
 // Admin
 import AdminGuard from "./components/admin/layout/AdminGuard";
@@ -83,6 +84,7 @@ export default function App() {
             <Route path="/" element={<PortalLayout />}>
               <Route index element={<HomePage />} />
               <Route path="search" element={<SearchPage />} />
+              <Route path="pages/:pageSlug" element={<StaticPage />} />
               <Route path=":categorySlug/:slug" element={<ArticlePage />} />
               <Route path=":categorySlug" element={<CategoryPage />} />
             </Route>

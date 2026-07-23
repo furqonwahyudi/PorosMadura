@@ -68,8 +68,13 @@ export default function PortalHome({
   const [activeKesehatanSlide, setActiveKesehatanSlide] = useState(0);
   const [slideDirection, setSlideDirection] = useState<"left" | "right">("right");
   const [activeTab, setActiveTab] = useState<"populer" | "dibaca" | "dibagikan">("populer");
-  const [pollVoted, setPollVoted] = useState(false);
-  const [pollVotes, setPollVotes] = useState({ yes: 78, no: 22 });
+  const [pollVoted, setPollVoted] = useState(() => {
+    return localStorage.getItem("poros_poll_voted") === "true";
+  });
+  const [pollVotes, setPollVotes] = useState(() => {
+    const saved = localStorage.getItem("poros_poll_votes");
+    return saved ? JSON.parse(saved) : { yes: 780, no: 220 };
+  });
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [visibleRecentCount, setVisibleRecentCount] = useState(20);
   const [recentPage, setRecentPage] = useState(1);
@@ -223,6 +228,30 @@ export default function PortalHome({
     return filteredArticles.slice((recentPage - 1) * ITEMS_PER_PAGE, recentPage * ITEMS_PER_PAGE);
   }, [filteredArticles, recentPage]);
 
+  // Dynamically calculate top 5 most popular tags from loaded articles
+  const popularTags = useMemo(() => {
+    const counts: Record<string, number> = {};
+    articles.forEach(art => {
+      if (art.tags && Array.isArray(art.tags)) {
+        art.tags.forEach(tag => {
+          const t = tag.trim().toLowerCase();
+          if (t) {
+            counts[t] = (counts[t] || 0) + 1;
+          }
+        });
+      }
+    });
+    const sortedTags = Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .map(entry => entry[0]);
+
+    if (sortedTags.length > 0) {
+      return sortedTags.slice(0, 5);
+    }
+    // Fallback if no tags in database
+    return ["pamekasan", "sumenep", "sampang", "bangkalan", "ekonomi"];
+  }, [articles]);
+
   // Rotator effect for top headline slider - Select 5 newest articles chronically
   const headlineArticles = useMemo(() => {
     const sorted = [...filteredArticles].sort(
@@ -277,11 +306,14 @@ export default function PortalHome({
 
   const handleVote = (option: "yes" | "no") => {
     if (pollVoted) return;
-    setPollVotes(prev => ({
-      ...prev,
-      [option]: prev[option] + 1
-    }));
+    const nextVotes = {
+      ...pollVotes,
+      [option]: pollVotes[option] + 1
+    };
+    setPollVotes(nextVotes);
     setPollVoted(true);
+    localStorage.setItem("poros_poll_voted", "true");
+    localStorage.setItem("poros_poll_votes", JSON.stringify(nextVotes));
   };
 
   if (loading && articles.length === 0) {
@@ -424,7 +456,7 @@ export default function PortalHome({
                 onClick={() => setSelectedTag(null)}
                 className="text-xs font-bold text-red-600 hover:text-red-700 cursor-pointer bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-full transition-colors"
               >
-                {lang === "ID" ? "Hapus Filter" : "Clear Filter"} âœ•
+                {lang === "ID" ? "Hapus Filter" : "Clear Filter"} {"\u2716"}
               </button>
             </div>
           )}
@@ -461,7 +493,7 @@ export default function PortalHome({
                 onClick={onSearchClear}
                 className="text-xs font-bold text-red-600 hover:text-red-700 cursor-pointer bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-full transition-colors"
               >
-                {lang === "ID" ? "Hapus Pencarian" : "Clear Search"} âœ•
+                {lang === "ID" ? "Hapus Pencarian" : "Clear Search"} {"\u2716"}
               </button>
             </div>
           )}
@@ -752,7 +784,7 @@ export default function PortalHome({
                     {onCategorySelect && (
                       <button 
                         onClick={() => {
-                          onCategorySelect("Berita", "Politik");
+                          onCategorySelect("Politik");
                           window.scrollTo({ top: 0, behavior: "smooth" });
                         }}
                         className="text-[10px] sm:text-xs font-semibold text-gray-600 hover:text-[#0a3a8e] flex items-center gap-0.5 transition-colors group cursor-pointer"
@@ -1473,13 +1505,7 @@ export default function PortalHome({
               {lang === "ID" ? "Tag Terpopuler" : "Popular Tags"}
             </h4>
             <div className="flex flex-col gap-4.5 pl-0.5">
-              {[
-                "piala dunia 2026",
-                "juara bola 2026",
-                "amerika serikat",
-                "motogp belanda",
-                "restoran legendaris"
-              ].map((tag) => (
+              {popularTags.map((tag) => (
                 <div 
                   key={tag}
                   onClick={() => {
@@ -1652,26 +1678,6 @@ export default function PortalHome({
               const firstArt = displayList[0];
               const remainingArts = displayList.slice(1);
 
-              const mockTimesID = [
-                "6 menit yang lalu",
-                "13 menit yang lalu",
-                "28 menit yang lalu",
-                "36 menit yang lalu",
-                "50 menit yang lalu"
-              ];
-
-              const mockTimesEN = [
-                "6 minutes ago",
-                "13 minutes ago",
-                "28 minutes ago",
-                "36 minutes ago",
-                "50 minutes ago"
-              ];
-
-              const getRelativeTime = (idx: number) => {
-                return lang === "ID" ? mockTimesID[idx] : mockTimesEN[idx];
-              };
-
               const fallbackImages = [
                 "https://images.unsplash.com/photo-1511556532299-8f662fc26c06?auto=format&fit=crop&w=800&q=80",
                 "https://images.unsplash.com/photo-1506157786151-b8491531f063?auto=format&fit=crop&w=800&q=80",
@@ -1701,7 +1707,7 @@ export default function PortalHome({
                         {firstArt.title}
                       </h5>
                       <span className="text-[10px] text-gray-300 mt-2 font-mono">
-                        {getRelativeTime(0)}
+                        {formatDate(firstArt.publishDate, lang)}
                       </span>
                     </div>
                   </Link>
@@ -1717,7 +1723,7 @@ export default function PortalHome({
                           {art.title}
                         </h5>
                         <span className="text-[10px] text-gray-400 font-mono mt-1">
-                          {getRelativeTime(idx + 1)}
+                          {formatDate(art.publishDate, lang)}
                         </span>
                       </Link>
                     ))}
@@ -1737,47 +1743,53 @@ export default function PortalHome({
               Apakah Anda setuju dengan pemanfaatan AI (Kecerdasan Buatan) untuk menyederhanakan layanan publik di tingkat kelurahan?
             </h5>
 
-            {pollVoted ? (
-              <div className="flex flex-col gap-3">
-                <div>
-                  <div className="flex justify-between text-xs font-bold mb-1">
-                    <span>Setuju (Sangat Relevan)</span>
-                    <span>{pollVotes.yes}%</span>
+            {(() => {
+              const totalPoll = pollVotes.yes + pollVotes.no;
+              const yesPercent = totalPoll > 0 ? Math.round((pollVotes.yes / totalPoll) * 100) : 0;
+              const noPercent = totalPoll > 0 ? 100 - yesPercent : 0;
+
+              return pollVoted ? (
+                <div className="flex flex-col gap-3">
+                  <div>
+                    <div className="flex justify-between text-xs font-bold mb-1">
+                      <span>Setuju (Sangat Relevan)</span>
+                      <span>{yesPercent}%</span>
+                    </div>
+                    <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
+                      <div className="h-full bg-[#D71920]" style={{ width: `${yesPercent}%` }} />
+                    </div>
                   </div>
-                  <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
-                    <div className="h-full bg-[#D71920]" style={{ width: `${pollVotes.yes}%` }} />
+                  <div>
+                    <div className="flex justify-between text-xs font-bold mb-1">
+                      <span>Tidak Setuju / Perlu Kajian</span>
+                      <span>{noPercent}%</span>
+                    </div>
+                    <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
+                      <div className="h-full bg-red-400" style={{ width: `${noPercent}%` }} />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[10px] text-gray-300 mt-2">
+                    <CheckCircle2 size={12} className="text-[#D71920]" />
+                    <span>Suara Anda telah direkam. Terima kasih!</span>
                   </div>
                 </div>
-                <div>
-                  <div className="flex justify-between text-xs font-bold mb-1">
-                    <span>Tidak Setuju / Perlu Kajian</span>
-                    <span>{pollVotes.no}%</span>
-                  </div>
-                  <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
-                    <div className="h-full bg-red-400" style={{ width: `${pollVotes.no}%` }} />
-                  </div>
+              ) : (
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => handleVote("yes")}
+                    className="flex-1 bg-[#D71920] text-white font-bold py-2 rounded-lg text-xs hover:scale-[1.02] transition-transform cursor-pointer"
+                  >
+                    Setuju
+                  </button>
+                  <button 
+                    onClick={() => handleVote("no")}
+                    className="flex-1 bg-white/15 text-white border border-white/20 font-bold py-2 rounded-lg text-xs hover:bg-white/25 cursor-pointer"
+                  >
+                    Tidak Setuju
+                  </button>
                 </div>
-                <div className="flex items-center gap-1.5 text-[10px] text-gray-300 mt-2">
-                  <CheckCircle2 size={12} className="text-[#D71920]" />
-                  <span>Suara Anda telah direkam. Terima kasih!</span>
-                </div>
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => handleVote("yes")}
-                  className="flex-1 bg-[#D71920] text-white font-bold py-2 rounded-lg text-xs hover:scale-[1.02] transition-transform cursor-pointer"
-                >
-                  Setuju
-                </button>
-                <button 
-                  onClick={() => handleVote("no")}
-                  className="flex-1 bg-white/15 text-white border border-white/20 font-bold py-2 rounded-lg text-xs hover:bg-white/25 cursor-pointer"
-                >
-                  Tidak Setuju
-                </button>
-              </div>
-            )}
+              );
+            })()}
           </div>
 
           {/* Dynamic Sidebar Bottom Ad Slot */}
@@ -1813,7 +1825,7 @@ export default function PortalHome({
               onClick={() => setSelectedPhoto(null)} 
               className="absolute top-4 right-4 text-white bg-black/60 rounded-full p-2 hover:bg-black cursor-pointer"
             >
-              âœ•
+              {"\u2716"}
             </button>
           </div>
         </div>

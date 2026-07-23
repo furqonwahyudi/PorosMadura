@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { Send, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Award, ShieldCheck, Rss } from "lucide-react";
 import logoPutihUrl from "@/Logo_Type_trans_Putih.png";
 import suramaduUrl from "@/suramadu.png";
@@ -51,25 +52,31 @@ export default function PortalFooter({ lang }: PortalFooterProps) {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
           
-          {/* Column 1: Brand Intro */}
+          {/* Column 1: Brand Info Links */}
           <div className="flex flex-col gap-4">
             <img src={logoPutihUrl} alt="Poros Madura" className="h-10 sm:h-12 w-auto object-contain self-start" />
-            <p className="text-gray-400 text-xs leading-relaxed">
-              {lang === "ID" 
-                ? "Poros Madura adalah media portal berita digital nasional berkomitmen menyajikan kebenaran informasi terpercaya, aktual, akurat, tajam, serta menjunjung tinggi pilar jurnalisme berdaulat."
-                : "Poros Madura is a national digital news portal committed to presenting trustworthy, actual, accurate, and sharp information, upholding the pillars of sovereign journalism."
-              }
-            </p>
-            {/* Quality Badges */}
-            <div className="flex gap-4 mt-2">
-              <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                <ShieldCheck size={16} className="text-[#D71920]" />
-                <span>Dewan Pers Terverifikasi</span>
-              </div>
-              <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                <Award size={16} className="text-[#D71920]" />
-                <span>Google News Ready</span>
-              </div>
+            <div className="flex flex-col gap-2.5 text-xs text-gray-400 font-sans mt-2">
+              <Link to="/pages/about" className="hover:text-white transition-colors">
+                {lang === "ID" ? "Tentang Kami" : "About Us"}
+              </Link>
+              <Link to="/pages/editorial-board" className="hover:text-white transition-colors">
+                {lang === "ID" ? "Susunan Redaksi" : "Editorial Board"}
+              </Link>
+              <Link to="/pages/cyber-media-guidelines" className="hover:text-white transition-colors">
+                {lang === "ID" ? "Pedoman Media Siber" : "Cyber Media Guidelines"}
+              </Link>
+              <Link to="/pages/dispute-contact" className="hover:text-white transition-colors">
+                {lang === "ID" ? "Kontak Kami" : "Contact Us"}
+              </Link>
+              <Link to="/pages/privacy-policy" className="hover:text-white transition-colors">
+                {lang === "ID" ? "Kebijakan Privasi" : "Privacy Policy"}
+              </Link>
+              <Link to="/pages/rss" className="hover:text-white transition-colors">
+                RSS
+              </Link>
+              <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                Sitemap
+              </a>
             </div>
           </div>
 
@@ -78,15 +85,32 @@ export default function PortalFooter({ lang }: PortalFooterProps) {
             <h4 className="text-sm font-bold tracking-wider uppercase text-[#D71920] mb-5">
               {lang === "ID" ? "Kategori Utama" : "Top Categories"}
             </h4>
-            <div className="grid grid-cols-2 gap-2 text-xs text-gray-400">
-              <a href="#" className="hover:text-white transition-colors">Politik</a>
-              <a href="#" className="hover:text-white transition-colors">Nasional</a>
-              <a href="#" className="hover:text-white transition-colors">Ekonomi</a>
-              <a href="#" className="hover:text-white transition-colors">Teknologi</a>
-              <a href="#" className="hover:text-white transition-colors">Olahraga</a>
-              <a href="#" className="hover:text-white transition-colors">Lifestyle</a>
-              <a href="#" className="hover:text-white transition-colors">Kesehatan</a>
-              <a href="#" className="hover:text-white transition-colors">Opini</a>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-gray-400">
+              {/* Daerah */}
+              <Link to="/bangkalan" className="hover:text-white transition-colors">Bangkalan</Link>
+              <Link to="/sampang" className="hover:text-white transition-colors">Sampang</Link>
+              <Link to="/pamekasan" className="hover:text-white transition-colors">Pamekasan</Link>
+              <Link to="/sumenep" className="hover:text-white transition-colors">Sumenep</Link>
+
+              {/* Nasional */}
+              <Link to="/politik" className="hover:text-white transition-colors">Politik</Link>
+              <Link to="/pemerintahan" className="hover:text-white transition-colors">Pemerintahan</Link>
+              <Link to="/hukum" className="hover:text-white transition-colors">Hukum</Link>
+              <Link to="/kriminal" className="hover:text-white transition-colors">Kriminal</Link>
+              <Link to="/pendidikan" className="hover:text-white transition-colors">Pendidikan</Link>
+              <Link to="/kesehatan" className="hover:text-white transition-colors">Kesehatan</Link>
+              <Link to="/ekonomi" className="hover:text-white transition-colors">Ekonomi</Link>
+              <Link to="/olahraga" className="hover:text-white transition-colors">Olahraga</Link>
+
+              {/* Rubrik & Lainnya */}
+              <Link to="/teknologi" className="hover:text-white transition-colors">Teknologi</Link>
+              <Link to="/otomotif" className="hover:text-white transition-colors">Otomotif</Link>
+              <Link to="/lifestyle" className="hover:text-white transition-colors">Lifestyle</Link>
+              <Link to="/budaya" className="hover:text-white transition-colors">Budaya</Link>
+              <Link to="/wisata" className="hover:text-white transition-colors">Wisata</Link>
+              <Link to="/kuliner" className="hover:text-white transition-colors">Kuliner</Link>
+              <Link to="/hiburan" className="hover:text-white transition-colors">Hiburan</Link>
+              <Link to="/opini" className="hover:text-white transition-colors">Opini</Link>
             </div>
           </div>
 
@@ -156,26 +180,12 @@ export default function PortalFooter({ lang }: PortalFooterProps) {
             <span>&copy; {new Date().getFullYear()} POROS MADURA. All Rights Reserved. Terdaftar di Dewan Pers.</span>
           </div>
 
-          {/* Social icons & SEO Links */}
-          <div className="flex flex-wrap items-center gap-6">
-            <div className="flex items-center gap-3">
-              <a href="#" className="hover:text-white transition-colors"><Facebook size={16} /></a>
-              <a href="#" className="hover:text-white transition-colors"><Instagram size={16} /></a>
-              <a href="#" className="hover:text-white transition-colors"><Twitter size={16} /></a>
-              <a href="#" className="hover:text-white transition-colors"><Youtube size={16} /></a>
-            </div>
-            
-            <span className="text-white/20">|</span>
-
-            <div className="flex gap-4">
-              <a href="#" className="hover:text-white transition-colors flex items-center gap-1">
-                <Rss size={12} />
-                <span>RSS</span>
-              </a>
-              <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Sitemap XML</a>
-              <a href="#" className="hover:text-white transition-colors">Pedoman Redaksi</a>
-              <a href="#" className="hover:text-white transition-colors">Siber Rule</a>
-            </div>
+          {/* Social icons */}
+          <div className="flex items-center gap-3">
+            <a href="#" className="hover:text-white transition-colors"><Facebook size={16} /></a>
+            <a href="#" className="hover:text-white transition-colors"><Instagram size={16} /></a>
+            <a href="#" className="hover:text-white transition-colors"><Twitter size={16} /></a>
+            <a href="#" className="hover:text-white transition-colors"><Youtube size={16} /></a>
           </div>
         </div>
       </div>
