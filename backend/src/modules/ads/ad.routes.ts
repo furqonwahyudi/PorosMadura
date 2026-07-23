@@ -5,7 +5,8 @@ import {
   createAd, updateAd, deleteAd,
   getAds, getAdvertisers, createAdvertiser,
   updateAdvertiser, deleteAdvertiser, getCampaigns,
-  createCampaign, updateCampaign, deleteCampaign
+  createCampaign, updateCampaign, deleteCampaign,
+  getPublicAdSlots, getActiveAds
 } from './ad.controller';
 import { authenticate, authorize } from '../../middleware/auth';
 
@@ -13,6 +14,8 @@ const router = Router();
 
 // === PUBLIC ROUTES ===
 router.get('/slot/:slug', getAdForSlot);
+router.get('/slots/public', getPublicAdSlots);
+router.get('/active', getActiveAds);
 router.post('/:id/impression', recordImpression);
 router.post('/:id/click', recordClick);
 

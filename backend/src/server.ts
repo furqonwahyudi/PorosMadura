@@ -55,6 +55,39 @@ async function main() {
       logger.warn('Schema DDL migration notice:', e.message);
     }
 
+    // Ensure floating skyscraper slots exist in database
+    try {
+      await prisma.adSlot.upsert({
+        where: { slug: 'floating-left-skyscraper' },
+        update: {},
+        create: {
+          name: 'Floating Left Skyscraper',
+          slug: 'floating-left-skyscraper',
+          size: '160x600',
+          type: 'FLOATING' as any,
+          page: 'all',
+          floating: true,
+          isActive: true,
+        }
+      });
+      await prisma.adSlot.upsert({
+        where: { slug: 'floating-right-skyscraper' },
+        update: {},
+        create: {
+          name: 'Floating Right Skyscraper',
+          slug: 'floating-right-skyscraper',
+          size: '160x600',
+          type: 'FLOATING' as any,
+          page: 'all',
+          floating: true,
+          isActive: true,
+        }
+      });
+      logger.info('✅ Floating skyscraper ad slots verified');
+    } catch (e: any) {
+      logger.warn('Failed to verify floating skyscraper slots:', e.message);
+    }
+
     app.listen(PORT, () => {
       logger.info(`🚀 Poros Madura API berjalan di http://localhost:${PORT}`);
       logger.info(`📝 Environment: ${process.env.NODE_ENV}`);

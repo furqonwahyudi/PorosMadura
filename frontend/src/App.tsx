@@ -59,7 +59,6 @@ import AdvertisementsPage from "./pages/admin/ads/AdvertisementsPage";
 import CampaignsPage from "./pages/admin/ads/CampaignsPage";
 import AdvertisersPage from "./pages/admin/ads/AdvertisersPage";
 import PricingPage from "./pages/admin/ads/PricingPage";
-import ScheduledAdsPage from "./pages/admin/ads/ScheduledAdsPage";
 import AdsReportsPage from "./pages/admin/ads/AdsReportsPage";
 import AdsSettingsPage from "./pages/admin/ads/AdsSettingsPage";
 
@@ -143,7 +142,6 @@ export default function App() {
                 <Route path="/admin/ads/campaigns" element={<CampaignsPage />} />
                 <Route path="/admin/ads/advertisers" element={<AdvertisersPage />} />
                 <Route path="/admin/ads/pricing" element={<PricingPage />} />
-                <Route path="/admin/ads/scheduled" element={<ScheduledAdsPage />} />
                 <Route path="/admin/ads/reports" element={<AdsReportsPage />} />
                 <Route path="/admin/ads/settings" element={<AdsSettingsPage />} />
 

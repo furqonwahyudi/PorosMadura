@@ -114,6 +114,8 @@ async function main() {
     { name: 'Related News Banner', slug: 'related-news-banner', size: '728x90', type: 'DISPLAY' as any, page: 'artikel' },
     { name: 'Footer Billboard', slug: 'footer-billboard', size: '970x250', type: 'DISPLAY' as any, page: 'artikel' },
     { name: 'Footer Banner', slug: 'footer-banner', size: '728x90', type: 'DISPLAY' as any, page: 'artikel' },
+    { name: 'Floating Left Skyscraper', slug: 'floating-left-skyscraper', size: '160x600', type: 'FLOATING' as any, page: 'all', floating: true },
+    { name: 'Floating Right Skyscraper', slug: 'floating-right-skyscraper', size: '160x600', type: 'FLOATING' as any, page: 'all', floating: true },
   ];
 
   for (const slot of adSlots) {

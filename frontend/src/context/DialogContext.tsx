@@ -26,6 +26,15 @@ interface DialogContextType {
     options?: { type?: "confirm" | "danger"; confirmText?: string; cancelText?: string }
   ) => void;
   showToast: (message: string, type?: "success" | "warning" | "error" | "info") => void;
+  confirm: (options: {
+    message: string;
+    onConfirm: () => void;
+    title?: string;
+    type?: "confirm" | "danger";
+    confirmText?: string;
+    cancelText?: string;
+  }) => void;
+  toast: (type: "success" | "warning" | "error" | "info", message: string) => void;
 }
 
 const DialogContext = createContext<DialogContextType | undefined>(undefined);
@@ -73,6 +82,25 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
     setToasts((prev) => [...prev, { id, message, type }]);
   };
 
+  const confirm = (opts: {
+    message: string;
+    onConfirm: () => void;
+    title?: string;
+    type?: "confirm" | "danger";
+    confirmText?: string;
+    cancelText?: string;
+  }) => {
+    showConfirm(opts.message, opts.onConfirm, opts.title, {
+      type: opts.type,
+      confirmText: opts.confirmText,
+      cancelText: opts.cancelText,
+    });
+  };
+
+  const toast = (type: "success" | "warning" | "error" | "info" = "success", message: string = "") => {
+    showToast(message, type);
+  };
+
   const handleClose = () => {
     setIsOpen(false);
     if (options?.onCancel) {
@@ -81,7 +109,7 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <DialogContext.Provider value={{ showAlert, showConfirm, showToast }}>
+    <DialogContext.Provider value={{ showAlert, showConfirm, showToast, confirm, toast }}>
       {children}
 
       {/* Toast Notification Container */}

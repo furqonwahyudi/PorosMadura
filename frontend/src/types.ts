@@ -71,6 +71,7 @@ export interface AdSlot {
   type: "display" | "native" | "video" | "popup" | "interstitial" | "floating";
   page: string;
   status: "active" | "inactive";
+  isActive?: boolean;
   priority: number;
   lazyLoad: boolean;
   sticky: boolean;

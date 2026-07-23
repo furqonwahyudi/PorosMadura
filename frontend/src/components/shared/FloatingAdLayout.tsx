@@ -148,8 +148,8 @@ export default function FloatingAdLayout({ children, page, category }: FloatingA
     return allowed.includes("all") || allowed.includes(page.trim().toLowerCase());
   };
 
-  const showLeft  = floatingActive && leftSlot?.status  === "active" && pageMatches(leftSlot);
-  const showRight = floatingActive && rightSlot?.status === "active" && pageMatches(rightSlot);
+  const showLeft  = floatingActive && leftSlot?.isActive && pageMatches(leftSlot);
+  const showRight = floatingActive && rightSlot?.isActive && pageMatches(rightSlot);
 
   // ── Skyscraper renderer ────────────────────────────────────────────────────
   // NO close button — premium slot, always visible

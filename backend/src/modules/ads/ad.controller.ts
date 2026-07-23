@@ -12,7 +12,7 @@ export async function getAdForSlot(req: Request, res: Response, next: NextFuncti
 
     const ads = await prisma.ad.findMany({
       where: {
-        slot: { slug },
+        slot: { slug, isActive: true },
         status: 'ACTIVE',
         startDate: { lte: now },
         endDate: { gte: now },
@@ -188,5 +188,55 @@ export async function deleteCampaign(req: AuthRequest, res: Response, next: Next
   try {
     await prisma.campaign.delete({ where: { id: req.params.id } });
     res.json({ success: true, message: 'Kampanye berhasil dihapus' });
+  } catch (error) { next(error); }
+}
+
+export async function getPublicAdSlots(req: Request, res: Response, next: NextFunction) {
+  try {
+    const slots = await prisma.adSlot.findMany({
+      orderBy: { name: 'asc' }
+    });
+    res.json({ success: true, data: slots });
+  } catch (error) { next(error); }
+}
+
+export async function getActiveAds(req: Request, res: Response, next: NextFunction) {
+  try {
+    const now = new Date();
+    const ads = await prisma.ad.findMany({
+      where: {
+        status: 'ACTIVE',
+        startDate: { lte: now },
+        endDate: { gte: now },
+      },
+      include: {
+        slot: true,
+      }
+    });
+    
+    // Format output to match frontend Ad type
+    const formattedAds = ads.map(ad => ({
+      id: ad.id,
+      name: ad.name,
+      title: ad.title,
+      landingUrl: ad.landingUrl,
+      targetBlank: ad.targetBlank,
+      altText: ad.altText,
+      format: ad.format.toLowerCase(),
+      htmlCode: ad.htmlCode,
+      scriptCode: ad.scriptCode,
+      priority: ad.priority,
+      status: ad.status.toLowerCase(),
+      startDate: ad.startDate.toISOString().split('T')[0],
+      endDate: ad.endDate.toISOString().split('T')[0],
+      schedule: ad.schedule,
+      targetDevice: ad.targetDevice.toLowerCase(),
+      targetPages: ad.targetPages,
+      slotSlug: ad.slot.slug,
+      imageDesktop: ad.imageDesktop,
+      imageMobile: ad.imageMobile,
+    }));
+
+    res.json({ success: true, data: formattedAds });
   } catch (error) { next(error); }
 }

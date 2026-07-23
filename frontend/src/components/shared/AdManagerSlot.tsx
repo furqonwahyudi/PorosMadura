@@ -24,7 +24,7 @@ export default function AdManagerSlot({ slug, page, category, paragraphIndex }: 
     const slotObj = adSlots.find(s => s.slug === slug);
     setSlotInfo(slotObj || null);
 
-    if (slotObj && slotObj.status === "inactive") {
+    if (slotObj && !slotObj.isActive) {
       setAd(null);
       return;
     }
@@ -87,7 +87,7 @@ export default function AdManagerSlot({ slug, page, category, paragraphIndex }: 
   };
 
   if (isClosed) return null;
-  if (!slotInfo || slotInfo.status === "inactive") return null;
+  if (!slotInfo || !slotInfo.isActive) return null;
 
   // Page-match guard: hide entire slot (even placeholder) if this page is not configured
   if (slotInfo.page) {

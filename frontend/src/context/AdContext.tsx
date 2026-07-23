@@ -35,46 +35,62 @@ export const AdProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const [loading, setLoading] = useState(true);
 
   const loadAdSystemData = async () => {
-    // Provide mock active slots so placeholders render on frontend
-    setAdSlots([
-      { id: "1", slug: "header-banner", name: "Header Banner", size: "468x60", type: "display", page: "all", status: "active", priority: 1, lazyLoad: false, sticky: false, floating: false, closeButton: false, responsive: true },
-      { id: "2", slug: "top-leaderboard", name: "Top Leaderboard", size: "970x90", type: "display", page: "all", status: "active", priority: 1, lazyLoad: false, sticky: false, floating: false, closeButton: false, responsive: true },
-      { id: "3", slug: "article-top-leaderboard", name: "Article Top", size: "728x90", type: "display", page: "all", status: "active", priority: 1, lazyLoad: false, sticky: false, floating: false, closeButton: false, responsive: true },
-      { id: "4", slug: "sidebar-rectangle-1", name: "Sidebar 1", size: "300x250", type: "display", page: "all", status: "active", priority: 1, lazyLoad: true, sticky: true, floating: false, closeButton: false, responsive: true },
-      { id: "5", slug: "sidebar-rectangle-2", name: "Sidebar 2", size: "300x250", type: "display", page: "all", status: "active", priority: 1, lazyLoad: true, sticky: false, floating: false, closeButton: false, responsive: true },
-      { id: "6", slug: "article-bottom-leaderboard", name: "Article Bottom", size: "728x90", type: "display", page: "all", status: "active", priority: 1, lazyLoad: true, sticky: false, floating: false, closeButton: false, responsive: true },
-      { id: "7", slug: "floating-left-skyscraper", name: "Floating Left", size: "160x600", type: "floating", page: "all", status: "active", priority: 1, lazyLoad: false, sticky: true, floating: true, closeButton: false, responsive: true, isPremium: true, reserveLayout: true },
-      { id: "8", slug: "floating-right-skyscraper", name: "Floating Right", size: "160x600", type: "floating", page: "all", status: "active", priority: 1, lazyLoad: false, sticky: true, floating: true, closeButton: false, responsive: true, isPremium: true, reserveLayout: true },
-      
-      // Slugs newly discovered from grep
-      { id: "9", slug: "category-banner", name: "Category Banner", size: "970x90", type: "display", page: "all", status: "active", priority: 1 },
-      { id: "10", slug: "sidebar-top", name: "Sidebar Top", size: "300x250", type: "display", page: "all", status: "active", priority: 1 },
-      { id: "11", slug: "sidebar-middle", name: "Sidebar Middle", size: "300x250", type: "display", page: "all", status: "active", priority: 1 },
-      { id: "12", slug: "sidebar-bottom", name: "Sidebar Bottom", size: "300x250", type: "display", page: "all", status: "active", priority: 1 },
-      { id: "13", slug: "sidebar-sticky", name: "Sidebar Sticky", size: "300x600", type: "display", page: "all", status: "active", priority: 1, sticky: true },
-      { id: "14", slug: "in-feed-1", name: "In Feed 1", size: "300x250", type: "display", page: "all", status: "active", priority: 1 },
-      { id: "15", slug: "in-feed-2", name: "In Feed 2", size: "300x250", type: "display", page: "all", status: "active", priority: 1 },
-      { id: "16", slug: "homepage-banner-atas", name: "Homepage Banner Atas", size: "970x90", type: "display", page: "all", status: "active", priority: 1 },
-      { id: "17", slug: "hero-banner", name: "Hero Banner", size: "728x90", type: "display", page: "all", status: "active", priority: 1 },
-      { id: "18", slug: "homepage-banner-tengah", name: "Homepage Banner Tengah", size: "728x250", type: "display", page: "all", status: "active", priority: 1 },
-      { id: "19", slug: "mobile-in-feed-banner", name: "Mobile In Feed Banner", size: "320x100", type: "display", page: "all", status: "active", priority: 1 },
-      { id: "20", slug: "in-feed-3", name: "In Feed 3", size: "728x90", type: "display", page: "all", status: "active", priority: 1 },
-      { id: "21", slug: "in-feed-4", name: "In Feed 4", size: "728x90", type: "display", page: "all", status: "active", priority: 1 },
-      { id: "22", slug: "homepage-banner-bawah", name: "Homepage Banner Bawah", size: "970x90", type: "display", page: "all", status: "active", priority: 1 },
-      { id: "23", slug: "breaking-news-banner", name: "Breaking News Banner", size: "728x90", type: "display", page: "all", status: "active", priority: 1 },
-      { id: "24", slug: "in-article-1", name: "In Article 1", size: "728x90", type: "display", page: "all", status: "active", priority: 1 },
-      { id: "25", slug: "in-article-2", name: "In Article 2", size: "728x90", type: "display", page: "all", status: "active", priority: 1 },
-      { id: "26", slug: "in-article-3", name: "In Article 3", size: "728x90", type: "display", page: "all", status: "active", priority: 1 },
-      { id: "27", slug: "in-article-4", name: "In Article 4", size: "728x90", type: "display", page: "all", status: "active", priority: 1 },
-      { id: "28", slug: "video-banner", name: "Video Banner", size: "300x250", type: "display", page: "all", status: "active", priority: 1 },
-      { id: "29", slug: "related-news-banner", name: "Related News Banner", size: "300x250", type: "display", page: "all", status: "active", priority: 1 },
-      { id: "30", slug: "footer-billboard", name: "Footer Billboard", size: "970x250", type: "display", page: "all", status: "active", priority: 1 },
-      { id: "31", slug: "footer-banner", name: "Footer Banner", size: "970x90", type: "display", page: "all", status: "active", priority: 1 },
-      { id: "32", slug: "top-billboard", name: "Top Billboard", size: "970x250", type: "display", page: "all", status: "active", priority: 1 },
-      { id: "33", slug: "popup-interstitial", name: "Popup Interstitial", size: "300x250", type: "popup", page: "all", status: "active", priority: 1 },
-      { id: "34", slug: "mobile-anchor-banner", name: "Mobile Anchor Banner", size: "320x50", type: "display", page: "all", status: "active", priority: 1, sticky: true }
-    ] as AdSlot[]);
-    setLoading(false);
+    setLoading(true);
+    try {
+      const apiOrigin = import.meta.env.VITE_API_URL || "";
+      const [slotsRes, adsRes] = await Promise.all([
+        fetch(`${apiOrigin}/api/ads/slots/public`).then(r => r.json()),
+        fetch(`${apiOrigin}/api/ads/active`).then(r => r.json())
+      ]);
+
+      if (slotsRes && slotsRes.success) {
+        setAdSlots(slotsRes.data);
+      }
+      if (adsRes && adsRes.success) {
+        setAds(adsRes.data);
+      }
+    } catch (err) {
+      console.error("Gagal memuat data sistem iklan secara dinamis, menggunakan fallback static:", err);
+      // Provide mock active slots as fallback so placeholders render on frontend
+      setAdSlots([
+        { id: "1", slug: "header-banner", name: "Header Banner", size: "468x60", type: "display", page: "all", isActive: true, priority: 1, lazyLoad: false, sticky: false, floating: false, closeButton: false, responsive: true },
+        { id: "2", slug: "top-leaderboard", name: "Top Leaderboard", size: "970x90", type: "display", page: "all", isActive: true, priority: 1, lazyLoad: false, sticky: false, floating: false, closeButton: false, responsive: true },
+        { id: "3", slug: "article-top-leaderboard", name: "Article Top", size: "728x90", type: "display", page: "all", isActive: true, priority: 1, lazyLoad: false, sticky: false, floating: false, closeButton: false, responsive: true },
+        { id: "4", slug: "sidebar-rectangle-1", name: "Sidebar 1", size: "300x250", type: "display", page: "all", isActive: true, priority: 1, lazyLoad: true, sticky: true, floating: false, closeButton: false, responsive: true },
+        { id: "5", slug: "sidebar-rectangle-2", name: "Sidebar 2", size: "300x250", type: "display", page: "all", isActive: true, priority: 1, lazyLoad: true, sticky: false, floating: false, closeButton: false, responsive: true },
+        { id: "6", slug: "article-bottom-leaderboard", name: "Article Bottom", size: "728x90", type: "display", page: "all", isActive: true, priority: 1, lazyLoad: true, sticky: false, floating: false, closeButton: false, responsive: true },
+        { id: "7", slug: "floating-left-skyscraper", name: "Floating Left", size: "160x600", type: "floating", page: "all", isActive: true, priority: 1, lazyLoad: false, sticky: true, floating: true, closeButton: false, responsive: true, isPremium: true, reserveLayout: true },
+        { id: "8", slug: "floating-right-skyscraper", name: "Floating Right", size: "160x600", type: "floating", page: "all", isActive: true, priority: 1, lazyLoad: false, sticky: true, floating: true, closeButton: false, responsive: true, isPremium: true, reserveLayout: true },
+        { id: "9", slug: "category-banner", name: "Category Banner", size: "970x90", type: "display", page: "all", isActive: true, priority: 1 },
+        { id: "10", slug: "sidebar-top", name: "Sidebar Top", size: "300x250", type: "display", page: "all", isActive: true, priority: 1 },
+        { id: "11", slug: "sidebar-middle", name: "Sidebar Middle", size: "300x250", type: "display", page: "all", isActive: true, priority: 1 },
+        { id: "12", slug: "sidebar-bottom", name: "Sidebar Bottom", size: "300x250", type: "display", page: "all", isActive: true, priority: 1 },
+        { id: "13", slug: "sidebar-sticky", name: "Sidebar Sticky", size: "300x600", type: "display", page: "all", isActive: true, priority: 1, sticky: true },
+        { id: "14", slug: "in-feed-1", name: "In Feed 1", size: "300x250", type: "display", page: "all", isActive: true, priority: 1 },
+        { id: "15", slug: "in-feed-2", name: "In Feed 2", size: "300x250", type: "display", page: "all", isActive: true, priority: 1 },
+        { id: "16", slug: "homepage-banner-atas", name: "Homepage Banner Atas", size: "970x90", type: "display", page: "all", isActive: true, priority: 1 },
+        { id: "17", slug: "hero-banner", name: "Hero Banner", size: "728x90", type: "display", page: "all", isActive: true, priority: 1 },
+        { id: "18", slug: "homepage-banner-tengah", name: "Homepage Banner Tengah", size: "728x250", type: "display", page: "all", isActive: true, priority: 1 },
+        { id: "19", slug: "mobile-in-feed-banner", name: "Mobile In Feed Banner", size: "320x100", type: "display", page: "all", isActive: true, priority: 1 },
+        { id: "20", slug: "in-feed-3", name: "In Feed 3", size: "728x90", type: "display", page: "all", isActive: true, priority: 1 },
+        { id: "21", slug: "in-feed-4", name: "In Feed 4", size: "728x90", type: "display", page: "all", isActive: true, priority: 1 },
+        { id: "22", slug: "homepage-banner-bawah", name: "Homepage Banner Bawah", size: "970x90", type: "display", page: "all", isActive: true, priority: 1 },
+        { id: "23", slug: "breaking-news-banner", name: "Breaking News Banner", size: "728x90", type: "display", page: "all", isActive: true, priority: 1 },
+        { id: "24", slug: "in-article-1", name: "In Article 1", size: "728x90", type: "display", page: "all", isActive: true, priority: 1 },
+        { id: "25", slug: "in-article-2", name: "In Article 2", size: "728x90", type: "display", page: "all", isActive: true, priority: 1 },
+        { id: "26", slug: "in-article-3", name: "In Article 3", size: "728x90", type: "display", page: "all", isActive: true, priority: 1 },
+        { id: "27", slug: "in-article-4", name: "In Article 4", size: "728x90", type: "display", page: "all", isActive: true, priority: 1 },
+        { id: "28", slug: "video-banner", name: "Video Banner", size: "300x250", type: "display", page: "all", isActive: true, priority: 1 },
+        { id: "29", slug: "related-news-banner", name: "Related News Banner", size: "300x250", type: "display", page: "all", isActive: true, priority: 1 },
+        { id: "30", slug: "footer-billboard", name: "Footer Billboard", size: "970x250", type: "display", page: "all", isActive: true, priority: 1 },
+        { id: "31", slug: "footer-banner", name: "Footer Banner", size: "970x90", type: "display", page: "all", isActive: true, priority: 1 },
+        { id: "32", slug: "top-billboard", name: "Top Billboard", size: "970x250", type: "display", page: "all", isActive: true, priority: 1 },
+        { id: "33", slug: "popup-interstitial", name: "Popup Interstitial", size: "300x250", type: "popup", page: "all", isActive: true, priority: 1 },
+        { id: "34", slug: "mobile-anchor-banner", name: "Mobile Anchor Banner", size: "320x50", type: "display", page: "all", isActive: true, priority: 1, sticky: true }
+      ] as any[]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -96,7 +112,7 @@ export const AdProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   ): Ad | null => {
     // 0. Verify slot exists, is active, and configured for this page
     const slot = adSlots.find(s => s.slug === slotSlug);
-    if (!slot || slot.status === "inactive") return null;
+    if (!slot || slot.isActive === false) return null;
     if (slot.page) {
       const allowedSlotPages = slot.page.split(",").map(p => p.trim().toLowerCase());
       const currentPageNorm = currentPage.trim().toLowerCase();

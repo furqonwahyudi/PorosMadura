@@ -101,7 +101,6 @@ const NAV: NavItem[] = [
       { id: "campaigns", label: "Campaigns", icon: <Briefcase size={14} />, path: "/admin/ads/campaigns" },
       { id: "advertisers", label: "Advertisers", icon: <Users size={14} />, path: "/admin/ads/advertisers" },
       { id: "pricing", label: "Pricing Setup", icon: <DollarSign size={14} />, path: "/admin/ads/pricing" },
-      { id: "scheduled-ads", label: "Scheduled Ads", icon: <CalendarClock size={14} />, path: "/admin/ads/scheduled" },
       { id: "ad-reports", label: "Reports", icon: <FileBarChart size={14} />, path: "/admin/ads/reports" },
       { id: "global-settings", label: "Global Settings", icon: <Settings size={14} />, path: "/admin/ads/settings" },
     ],

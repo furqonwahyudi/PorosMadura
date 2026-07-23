@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminApi } from "../../../lib/adminApi";
 import { useDialog } from "../../../context/DialogContext";
@@ -245,7 +246,7 @@ export default function AdSlotsPage() {
       )}
 
       {/* Modal Add / Edit Slot */}
-      {(showAddModal || editingSlot) && (
+      {(showAddModal || editingSlot) && createPortal(
         <div style={{
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)",
           display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000,
@@ -296,6 +297,8 @@ export default function AdSlotsPage() {
                     <option value="NATIVE">Native Ad</option>
                     <option value="POPUP">Popup / Interstitial</option>
                     <option value="STICKY">Sticky Anchor</option>
+                    <option value="FLOATING">Floating Skyscraper</option>
+                    <option value="VIDEO">Video Ad</option>
                   </select>
                 </div>
               </div>
@@ -336,11 +339,12 @@ export default function AdSlotsPage() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal View Slot Detail */}
-      {viewingSlot && (
+      {viewingSlot && createPortal(
         <div style={{
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)",
           display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000,
@@ -406,7 +410,8 @@ export default function AdSlotsPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
