@@ -19,6 +19,7 @@ import commentRoutes from './modules/comments/comment.routes';
 import searchRoutes from './modules/search/search.routes';
 import tagRoutes from './modules/tags/tag.routes';
 import marketRoutes from './modules/market/market.routes';
+import rbacRoutes from './modules/rbac/rbac.routes';
 
 const app = express();
 
@@ -88,6 +89,7 @@ app.use('/api/comments', commentRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/tags', tagRoutes);
 app.use('/api/market', marketRoutes);
+app.use('/api/rbac', rbacRoutes);
 
 // Helper to generate RSS XML
 async function generateRssXml(title: string, description: string, link: string, feedUrl: string, categoryIds?: string[]) {

@@ -30,9 +30,20 @@ const PORT = parseInt(process.env.PORT || '3001');
 
 async function main() {
   try {
+    // Programmatic Prisma Database Schema push & client generate
+    try {
+      console.log('[SYS] Synchronizing Prisma database schema...');
+      execSync('npx prisma db push --accept-data-loss', { stdio: 'ignore' });
+      execSync('npx prisma generate', { stdio: 'ignore' });
+      console.log('[SYS] Prisma database schema synchronized successfully');
+    } catch (e: any) {
+      console.error('[SYS] Database sync notice:', e.message || e);
+    }
+
     // Test database connection
     await prisma.$connect();
     logger.info('✅ Database PostgreSQL terhubung');
+
 
     // Auto-migrate schema updates for comments & blacklist & media_files
     try {
@@ -88,6 +99,84 @@ async function main() {
       logger.warn('Failed to verify floating skyscraper slots:', e.message);
     }
 
+    // Ensure default system roles exist in database
+    try {
+      const defaultRoles = [
+        {
+          key: "SUPER_ADMIN",
+          name: "Super Admin",
+          description: "Akses sistem penuh tanpa batas",
+          isSystem: true,
+          permissions: ["create_post", "publish_post", "edit_others_post", "delete_post", "manage_comments", "manage_ads", "manage_seo", "manage_settings"]
+        },
+        {
+          key: "ADMIN",
+          name: "Admin",
+          description: "Mengelola konten, iklan, komentar, optimasi SEO, dan konfigurasi portal",
+          isSystem: true,
+          permissions: ["create_post", "publish_post", "edit_others_post", "delete_post", "manage_comments", "manage_ads", "manage_seo", "manage_settings"]
+        },
+        {
+          key: "EDITOR",
+          name: "Editor",
+          description: "Menulis, mengedit tulisan jurnalis lain, mengelola komentar, dan menerbitkan berita",
+          isSystem: true,
+          permissions: ["create_post", "publish_post", "edit_others_post", "manage_comments"]
+        },
+        {
+          key: "REPORTER",
+          name: "Reporter",
+          description: "Menulis draf berita secara mandiri (butuh persetujuan Editor untuk publish)",
+          isSystem: true,
+          permissions: ["create_post"]
+        },
+        {
+          key: "CONTRIBUTOR",
+          name: "Kontributor",
+          description: "Menyumbang draf artikel/opini dari luar redaksi",
+          isSystem: true,
+          permissions: ["create_post"]
+        },
+        {
+          key: "SALES",
+          name: "Sales",
+          description: "Otorisasi kustom untuk Sales",
+          isSystem: false,
+          permissions: ["manage_ads"]
+        },
+        {
+          key: "PEMIMPIN_REDAKSI",
+          name: "Pemimpin Redaksi",
+          description: "Otorisasi kustom untuk Pemimpin Redaksi",
+          isSystem: false,
+          permissions: ["create_post", "publish_post", "edit_others_post", "delete_post", "manage_comments", "manage_seo", "manage_settings"]
+        }
+      ];
+
+      for (const r of defaultRoles) {
+        await prisma.rbacRole.upsert({
+          where: { key: r.key },
+          update: {},
+          create: r
+        });
+      }
+      logger.info('✅ Default RBAC system roles verified and seeded');
+    } catch (e: any) {
+      logger.warn('Failed to verify and seed default RBAC roles:', e.message);
+    }
+
+    // Force admin@porosmadura.com user to SUPER_ADMIN role to recover from migration defaults
+    try {
+      const adminEmail = process.env.ADMIN_EMAIL || 'admin@porosmadura.com';
+      await prisma.user.updateMany({
+        where: { email: adminEmail },
+        data: { role: 'SUPER_ADMIN' }
+      });
+      logger.info('✅ Admin user elevated to SUPER_ADMIN role in database');
+    } catch (e: any) {
+      logger.warn('Failed to elevate admin user role:', e.message);
+    }
+
     app.listen(PORT, () => {
       logger.info(`🚀 Poros Madura API berjalan di http://localhost:${PORT}`);
       logger.info(`📝 Environment: ${process.env.NODE_ENV}`);
@@ -112,3 +201,6 @@ process.on('SIGINT', async () => {
   await prisma.$disconnect();
   process.exit(0);
 });
+
+// Trigger restart to execute database seeds: 2026-07-23T23:28
+

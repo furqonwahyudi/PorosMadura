@@ -230,3 +230,14 @@ export interface AuditLog {
   role: string;
   action: string;
 }
+
+export interface RbacRole {
+  id: string;
+  name: string;
+  key: string;
+  description: string;
+  permissions: string[];
+  isSystem: boolean;
+  createdAt: string;
+  updatedAt: string;
+}

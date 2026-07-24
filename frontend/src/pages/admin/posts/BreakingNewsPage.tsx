@@ -10,6 +10,8 @@ import {
   Edit2,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 
 interface Article {
@@ -31,6 +33,7 @@ export default function BreakingNewsPage() {
   const { showConfirm, showToast } = useDialog();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
   const limit = 15;
 
   // Fetch articles with isBreaking = true
@@ -64,13 +67,22 @@ export default function BreakingNewsPage() {
   const totalPages = articleData?.pagination?.totalPages || 1;
   const articles = articleData?.data || [];
 
+  const toggleSort = () => {
+    setSortOrder(prev => prev === "desc" ? "asc" : "desc");
+  };
+
   // Dummy data for when API fails
   const dummyArticles: Article[] = [
     { id: "1", title: "BREAKING: Gempa Bumi 5.8 SR Guncang Wilayah Madura Timur", slug: "gempa-madura-timur", image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=100&h=70&fit=crop", createdAt: "2026-07-19T08:30:00Z", publishedAt: "2026-07-19T08:30:00Z", views: 12450, isBreaking: true, status: "PUBLISHED", category: { id: "1", name: "Daerah" }, author: { name: "Super Admin" } },
     { id: "2", title: "BREAKING: Jembatan Suramadu Ditutup Sementara untuk Perbaikan Darurat", slug: "suramadu-ditutup", image: "https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?w=100&h=70&fit=crop", createdAt: "2026-07-19T07:15:00Z", publishedAt: "2026-07-19T07:15:00Z", views: 8720, isBreaking: true, status: "PUBLISHED", category: { id: "2", name: "Bangkalan" }, author: { name: "Ahmad Syafi'i" } },
   ];
 
-  const displayArticles = articles.length > 0 ? articles : dummyArticles;
+  const rawArticles = articles.length > 0 ? articles : dummyArticles;
+  const displayArticles = [...rawArticles].sort((a, b) => {
+    const dateA = new Date(a.publishedAt || a.createdAt).getTime();
+    const dateB = new Date(b.publishedAt || b.createdAt).getTime();
+    return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
+  });
   const displayTotal = total || dummyArticles.length;
 
   const formatDate = (dateStr: string) => {
@@ -143,7 +155,24 @@ export default function BreakingNewsPage() {
                 <th style={{ padding: "10px 16px", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "left" }}>Artikel</th>
                 <th style={{ padding: "10px 16px", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "left" }}>Author</th>
                 <th style={{ padding: "10px 16px", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "left" }}>Kategori</th>
-                <th style={{ padding: "10px 16px", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "left" }}>Dipublikasi</th>
+                <th
+                  onClick={toggleSort}
+                  style={{
+                    padding: "10px 16px", fontSize: 10, fontWeight: 600,
+                    color: "var(--text-tertiary)", textTransform: "uppercase",
+                    letterSpacing: "0.05em", textAlign: "left",
+                    cursor: "pointer", userSelect: "none",
+                    whiteSpace: "nowrap",
+                  }}
+                  title={sortOrder === "desc" ? "Urutkan: Terlama dulu" : "Urutkan: Terbaru dulu"}
+                >
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                    Dipublikasi
+                    {sortOrder === "desc"
+                      ? <ChevronDown size={11} style={{ opacity: 0.7 }} />
+                      : <ChevronUp size={11} style={{ opacity: 0.7 }} />}
+                  </span>
+                </th>
                 <th style={{ padding: "10px 16px", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "right" }}>Views</th>
                 <th style={{ padding: "10px 16px", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "center" }}>Aksi</th>
               </tr>

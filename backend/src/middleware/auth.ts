@@ -12,7 +12,7 @@ export interface AuthRequest extends Request {
   };
 }
 
-export function authenticate(req: AuthRequest, _res: Response, next: NextFunction) {
+export async function authenticate(req: AuthRequest, _res: Response, next: NextFunction) {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -22,11 +22,21 @@ export function authenticate(req: AuthRequest, _res: Response, next: NextFunctio
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
 
+    // Always re-fetch role from database to ensure latest permissions are used
+    const dbUser = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: { id: true, email: true, name: true, role: true, isActive: true }
+    });
+
+    if (!dbUser || !dbUser.isActive) {
+      return next(new AppError('Akun tidak aktif atau tidak ditemukan', 401));
+    }
+
     req.user = {
-      id: decoded.id,
-      email: decoded.email,
-      role: decoded.role,
-      name: decoded.name,
+      id: dbUser.id,
+      email: dbUser.email,
+      role: dbUser.role,
+      name: dbUser.name,
     };
 
     next();
@@ -50,5 +60,36 @@ export function authorize(...roles: string[]) {
       return next(new AppError('Tidak memiliki izin untuk aksi ini', 403));
     }
     next();
+  };
+}
+
+export function authorizePermission(permission: string) {
+  return async (req: AuthRequest, _res: Response, next: NextFunction) => {
+    try {
+      if (!req.user) {
+        return next(new AppError('Tidak terautentikasi', 401));
+      }
+
+      // SUPER_ADMIN bypass
+      if (req.user.role === 'SUPER_ADMIN') {
+        return next();
+      }
+
+      const roleObj = await prisma.rbacRole.findUnique({
+        where: { key: req.user.role }
+      });
+
+      if (!roleObj) {
+        return next(new AppError('Tidak memiliki izin untuk aksi ini (Role tidak ditemukan)', 403));
+      }
+
+      if (!roleObj.permissions.includes(permission)) {
+        return next(new AppError('Tidak memiliki izin untuk aksi ini', 403));
+      }
+
+      next();
+    } catch (error) {
+      next(error);
+    }
   };
 }

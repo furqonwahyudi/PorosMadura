@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { adminApi } from "../../../lib/adminApi";
 import { UserPlus, Key, Mail, Shield, User, ArrowLeft, Check, AlertCircle, Loader2 } from "lucide-react";
 
@@ -13,6 +13,43 @@ export default function AddUserPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+
+  // Dynamic role options fetched from database
+  const [roleOptions, setRoleOptions] = useState<{key: string; name: string}[]>([
+    { key: "SUPER_ADMIN", name: "Super Admin" },
+    { key: "ADMIN", name: "Admin" },
+    { key: "EDITOR", name: "Editor" },
+    { key: "REPORTER", name: "Reporter" },
+    { key: "CONTRIBUTOR", name: "Kontributor" },
+  ]);
+
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const res: any = await adminApi.get("/api/rbac");
+        if (res?.success) {
+          const data: {key: string; name: string}[] = res.data.map((r: any) => ({
+            key: r.key,
+            name: r.name
+          }));
+
+          // Sort: SUPER_ADMIN first, then system roles, then custom roles
+          data.sort((a, b) => {
+            if (a.key === 'SUPER_ADMIN') return -1;
+            if (b.key === 'SUPER_ADMIN') return 1;
+            return a.name.localeCompare(b.name, 'id');
+          });
+
+          setRoleOptions(data);
+          // Set default role to first option (SUPER_ADMIN)
+          if (data.length > 0) setRole(data[0].key);
+        }
+      } catch (err: any) {
+        console.error("Gagal memuat list role:", err.message);
+      }
+    };
+    fetchRoles();
+  }, []);
 
   const generatePassword = () => {
     const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
@@ -41,11 +78,12 @@ export default function AddUserPage() {
     setLoading(true);
     try {
       const fullName = lastName ? `${firstName} ${lastName}`.trim() : firstName.trim();
+
       await adminApi.post("/api/users", {
         name: fullName,
         email,
         password,
-        role
+        role  // role sudah berupa string valid dari DB, tidak perlu fallback
       });
 
       setSuccess(true);
@@ -195,11 +233,9 @@ export default function AddUserPage() {
                 cursor: "pointer"
               }}
             >
-              <option value="SUPER_ADMIN">Super Admin</option>
-              <option value="ADMIN">Admin</option>
-              <option value="EDITOR">Editor</option>
-              <option value="REPORTER">Reporter</option>
-              <option value="CONTRIBUTOR">Kontributor</option>
+              {roleOptions.map(opt => (
+                <option key={opt.key} value={opt.key}>{opt.name}</option>
+              ))}
             </select>
           </div>
         </div>

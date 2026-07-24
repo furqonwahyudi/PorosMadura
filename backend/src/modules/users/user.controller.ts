@@ -1,4 +1,4 @@
-﻿import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcrypt';
 import { prisma } from '../../config/database';
 import { AppError } from '../../middleware/errorHandler';
@@ -9,7 +9,7 @@ const userSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   name: z.string().min(2),
-  role: z.enum(['SUPER_ADMIN', 'ADMIN', 'EDITOR', 'REPORTER', 'CONTRIBUTOR']).optional(),
+  role: z.string().min(1).optional(), // Dynamic roles from rbac_roles table — not hardcoded enum
   bio: z.string().optional(),
 });
 

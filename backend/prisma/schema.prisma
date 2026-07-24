@@ -6,13 +6,6 @@ datasource db {
   provider = "postgresql"
 }
 
-enum Role {
-  SUPER_ADMIN
-  ADMIN
-  EDITOR
-  REPORTER
-  CONTRIBUTOR
-}
 
 enum ArticleStatus {
   DRAFT
@@ -69,7 +62,7 @@ model User {
   email       String    @unique
   password    String
   name        String
-  role        Role      @default(REPORTER)
+  role        String    @default("REPORTER")
   avatar      String?
   bio         String?
   isActive    Boolean   @default(true)
@@ -83,6 +76,19 @@ model User {
   refreshTokens      RefreshToken[]
 
   @@map("users")
+}
+
+model RbacRole {
+  id          String   @id @default(uuid())
+  name        String
+  key         String   @unique
+  description String?
+  permissions String[] @default([])
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("rbac_roles")
 }
 
 model RefreshToken {

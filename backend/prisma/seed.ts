@@ -30,7 +30,7 @@ async function main() {
 
   const admin = await prisma.user.upsert({
     where: { email: process.env.ADMIN_EMAIL || 'admin@porosmadura.com' },
-    update: {},
+    update: { role: 'SUPER_ADMIN' }, // Ensure role stays SUPER_ADMIN on re-seed
     create: {
       email: process.env.ADMIN_EMAIL || 'admin@porosmadura.com',
       password: hashedPassword,
