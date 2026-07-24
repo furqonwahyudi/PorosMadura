@@ -108,23 +108,79 @@ export default function CreateArticlePage() {
   // Input Link Berita States & Scraper Handler
   const [newsLink, setNewsLink] = useState("");
   const [isScraping, setIsScraping] = useState(false);
+  const [scrapingStep, setScrapingStep] = useState("");
 
   const handleScrapeLink = async () => {
     if (!newsLink.trim()) {
-      showToast("Silakan masukkan link berita terlebih dahulu!", "warning");
+      showToast("URL tidak boleh kosong", "error");
       return;
     }
-    setIsScraping(true);
+    
+    // Validasi URL
     try {
-      const res = await adminApi.post<any>("/api/articles/scrape", { url: newsLink });
+      const parsedUrl = new URL(newsLink.trim());
+      if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+        throw new Error();
+      }
+    } catch {
+      showToast("URL tidak valid", "error");
+      return;
+    }
+
+    setIsScraping(true);
+    setScrapingStep("Mengambil artikel...");
+
+    // Simulasi loading progress modern berdasarkan waktu estimasi proses
+    const delays = [
+      { text: "Membersihkan halaman...", ms: 2000 },
+      { text: "Menganalisis fakta...", ms: 4500 },
+      { text: "Menulis artikel...", ms: 8000 },
+      { text: "Mengoptimasi SEO...", ms: 14000 },
+    ];
+
+    const timeoutIds: NodeJS.Timeout[] = [];
+    delays.forEach(d => {
+      const id = setTimeout(() => {
+        setScrapingStep(currentStep => {
+          if (currentStep !== "" && currentStep !== "Mengisi editor..." && currentStep !== "Selesai.") {
+            return d.text;
+          }
+          return currentStep;
+        });
+      }, d.ms);
+      timeoutIds.push(id);
+    });
+
+    try {
+      const res = await adminApi.post<any>("/api/articles/generate-ai-news", { url: newsLink.trim() });
+      
+      // Bersihkan timer
+      timeoutIds.forEach(clearTimeout);
+
       if (res.success && res.data) {
+        setScrapingStep("Mengisi editor...");
+        
+        // Auto fill fields
         setValue("title", res.data.title || "");
         setValue("excerpt", res.data.excerpt || "");
         setEditorHtml(res.data.content || "");
         if (editorRef.current) {
           editorRef.current.innerHTML = res.data.content || "";
         }
-        // update text area heights
+        
+        if (res.data.categoryId) {
+          setValue("categoryId", res.data.categoryId);
+        }
+        
+        setMetaTitle(res.data.title || "");
+        setMetaDescription(res.data.metaDescription || "");
+        setFocusKeyword(res.data.focusKeyword || "");
+        
+        if (res.data.tags && res.data.tags.length > 0) {
+          setSelectedTags(res.data.tags);
+        }
+
+        // Sesuaikan tinggi textarea
         setTimeout(() => {
           const titleEl = document.querySelector("textarea[placeholder='Article title...']") as HTMLTextAreaElement;
           const excerptEl = document.querySelector("textarea[placeholder='Write a compelling lead paragraph...']") as HTMLTextAreaElement;
@@ -137,44 +193,21 @@ export default function CreateArticlePage() {
             excerptEl.style.height = excerptEl.scrollHeight + "px";
           }
         }, 100);
+
+        setScrapingStep("Selesai.");
+        showToast("Artikel berhasil digenerate menggunakan AI!", "success");
       } else {
-        throw new Error("Gagal mengambil data dari URL");
+        throw new Error(res.message || "Gagal membuat artikel. Silakan coba lagi.");
       }
     } catch (err: any) {
-      console.warn("API Scrape error, falling back to mock parser:", err);
-      // Fallback/offline mock content parsing simulation
-      let title = "Artikel Hasil Impor Link Otomatis";
-      let excerpt = "Ini adalah lead paragraph dari berita yang diimpor menggunakan link khusus.";
-      let content = "<p>Ini adalah isi artikel hasil simulasi impor link berita. Konten dan informasi penting di dalamnya telah berhasil disarikan secara otomatis ke dalam rich text editor ini.</p><p>Anda dapat mengedit dan menyunting bagian judul, lead paragraph, maupun body artikel secara manual untuk merapikan hasil impor.</p>";
-      
-      try {
-        const urlObj = new URL(newsLink);
-        const domain = urlObj.hostname.replace("www.", "");
-        title = `Kabar Terkini Dari Portal ${domain.toUpperCase()}`;
-        excerpt = `Ringkasan berita utama yang diimpor dari tautan eksternal ${newsLink}.`;
-        content = `<p>Artikel ini diimpor secara otomatis dari <strong>${domain}</strong>.</p><p>Layanan impor berita kami mendeteksi artikel dengan topik terkait. Silakan baca dan lakukan editorial sebelum mempublikasikannya.</p>`;
-      } catch {}
-
-      setValue("title", title);
-      setValue("excerpt", excerpt);
-      setEditorHtml(content);
-      if (editorRef.current) {
-        editorRef.current.innerHTML = content;
-      }
-      setTimeout(() => {
-        const titleEl = document.querySelector("textarea[placeholder='Article title...']") as HTMLTextAreaElement;
-        const excerptEl = document.querySelector("textarea[placeholder='Write a compelling lead paragraph...']") as HTMLTextAreaElement;
-        if (titleEl) {
-          titleEl.style.height = "auto";
-          titleEl.style.height = titleEl.scrollHeight + "px";
-        }
-        if (excerptEl) {
-          excerptEl.style.height = "auto";
-          excerptEl.style.height = excerptEl.scrollHeight + "px";
-        }
-      }, 100);
+      timeoutIds.forEach(clearTimeout);
+      console.error("AI news generation error:", err);
+      showToast(err.message || "Gagal membuat artikel. Silakan coba lagi.", "error");
     } finally {
-      setIsScraping(false);
+      setTimeout(() => {
+        setIsScraping(false);
+        setScrapingStep("");
+      }, 1500);
     }
   };
 
@@ -733,8 +766,86 @@ export default function CreateArticlePage() {
                     onMouseEnter={(e) => { if (!isScraping) e.currentTarget.style.background = "var(--brand-hover)"; }}
                     onMouseLeave={(e) => { if (!isScraping) e.currentTarget.style.background = "var(--brand)"; }}
                   >
-                    {isScraping ? "Mendapatkan Data..." : "Gaskeun"}
+                    {isScraping ? "Generating..." : "Gaskeun"}
                   </button>
+
+                  {/* Progress Checklist Modern */}
+                  {isScraping && (
+                    <div style={{
+                      marginTop: 10,
+                      padding: "12px 14px",
+                      background: "var(--bg-subtle)",
+                      border: "1px solid var(--border)",
+                      borderRadius: 8,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 8,
+                      boxShadow: "var(--shadow-sm)",
+                    }}>
+                      {[
+                        "Mengambil artikel...",
+                        "Membersihkan halaman...",
+                        "Menganalisis fakta...",
+                        "Menulis artikel...",
+                        "Mengoptimasi SEO...",
+                        "Mengisi editor...",
+                        "Selesai."
+                      ].map((step, idx) => {
+                        const steps = [
+                          "Mengambil artikel...",
+                          "Membersihkan halaman...",
+                          "Menganalisis fakta...",
+                          "Menulis artikel...",
+                          "Mengoptimasi SEO...",
+                          "Mengisi editor...",
+                          "Selesai."
+                        ];
+                        const currentStepIdx = steps.indexOf(scrapingStep);
+                        const isCompleted = idx < currentStepIdx || scrapingStep === "Selesai.";
+                        const isActive = idx === currentStepIdx && scrapingStep !== "Selesai.";
+                        
+                        return (
+                          <div key={idx} style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            opacity: isActive ? 1 : isCompleted ? 0.8 : 0.4,
+                            transition: "all 0.2s ease"
+                          }}>
+                            {isCompleted ? (
+                              <CheckCircle2 size={12} style={{ color: "var(--green)", flexShrink: 0 }} />
+                            ) : isActive ? (
+                              <div className="animate-spin" style={{
+                                width: 10,
+                                height: 10,
+                                borderRadius: "50%",
+                                border: "1.5px solid var(--brand)",
+                                borderTopColor: "transparent",
+                                flexShrink: 0
+                              }} />
+                            ) : (
+                              <div style={{
+                                width: 4,
+                                height: 4,
+                                borderRadius: "50%",
+                                background: "var(--text-tertiary)",
+                                marginLeft: 3,
+                                marginRight: 3,
+                                flexShrink: 0
+                              }} />
+                            )}
+                            <span style={{
+                              fontSize: 11,
+                              fontWeight: isActive ? 600 : 400,
+                              color: isActive ? "var(--brand)" : "var(--text-secondary)",
+                            }}>
+                              {step}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
 

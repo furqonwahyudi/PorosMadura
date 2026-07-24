@@ -189,6 +189,14 @@ async function main() {
 
 main(); // Start server - tags registered
 
+process.on('uncaughtException', (error) => {
+  logger.error('CRITICAL UNCAUGHT EXCEPTION:', error);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('CRITICAL UNHANDLED REJECTION:', reason);
+});
+
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   logger.info('SIGTERM diterima. Menutup server...');

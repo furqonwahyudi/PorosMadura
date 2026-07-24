@@ -4,6 +4,8 @@ import { AppError } from '../../middleware/errorHandler';
 import { AuthRequest } from '../../middleware/auth';
 import { z } from 'zod';
 import slugify from '../../utils/slugify';
+import { validateUrl, scrapeHtml, generateNewsFromFacts } from './aiGenerator';
+
 
 const articleSchema = z.object({
   title: z.string().min(5, 'Judul minimal 5 karakter'),
@@ -559,4 +561,95 @@ export async function scrapeArticle(req: Request, res: Response, next: NextFunct
     next(error);
   }
 }
+
+export async function generateAiNews(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { url } = req.body;
+    if (!url || url.trim() === "") {
+      throw new AppError('URL tidak boleh kosong', 400);
+    }
+    if (!validateUrl(url)) {
+      throw new AppError('URL tidak valid', 400);
+    }
+
+    // Step 2 & 3: Scraping & Cleaning HTML
+    let html = '';
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+          'Referer': 'https://www.google.com/',
+        },
+        signal: AbortSignal.timeout(15000),
+      });
+      if (response.status === 403 || response.status === 401) {
+        throw new AppError('Website tidak dapat diproses (akses ditolak).', 400);
+      }
+      if (!response.ok) {
+        throw new AppError(`Website mengembalikan status ${response.status}.`, 400);
+      }
+      html = await response.text();
+    } catch (err: any) {
+      if (err instanceof AppError) throw err;
+      if (err.name === 'TimeoutError') {
+        throw new AppError('Waktu pengambilan artikel habis (timeout). Coba URL lain.', 400);
+      }
+      throw new AppError('Tidak dapat mengambil isi artikel: ' + (err.message || 'koneksi gagal'), 400);
+    }
+
+    let scraped;
+    try {
+      scraped = scrapeHtml(html, url);
+      if (!scraped.body || scraped.body.length < 50) {
+        throw new Error();
+      }
+    } catch (err) {
+      throw new AppError('Tidak dapat mengambil isi artikel.', 400);
+    }
+
+    // Step 4 & 5: AI extract facts & rewrite article
+    let aiArticle;
+    try {
+      aiArticle = await generateNewsFromFacts(scraped);
+    } catch (err: any) {
+      if (err instanceof AppError) throw err;
+      throw new AppError(err.message || 'Gagal membuat artikel. Silakan coba lagi.', err.status || 500);
+    }
+
+    // Match category with database
+    const dbCategories = await prisma.category.findMany();
+    let matchedCategoryId = '';
+    if (aiArticle.category) {
+      const matched = dbCategories.find(
+        cat => cat.name.toLowerCase() === aiArticle.category.toLowerCase() ||
+               cat.slug.toLowerCase() === aiArticle.category.toLowerCase()
+      );
+      if (matched) {
+        matchedCategoryId = matched.id;
+      }
+    }
+
+    res.json({
+      success: true,
+      data: {
+        title: aiArticle.seoTitle,
+        excerpt: aiArticle.lead,
+        content: aiArticle.content,
+        slug: aiArticle.slug,
+        metaTitle: aiArticle.seoTitle,
+        metaDescription: aiArticle.metaDescription,
+        focusKeyword: aiArticle.focusKeyword,
+        categoryId: matchedCategoryId,
+        tags: aiArticle.tags
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 

@@ -5,7 +5,7 @@ import {
   incrementView, incrementRead, incrementShare,
   createArticle, updateArticle, deleteArticle,
   publishArticle, archiveArticle, scrapeArticle,
-  getArticleById,
+  getArticleById, generateAiNews
 } from './article.controller';
 import { authenticate, authorize } from '../../middleware/auth';
 
@@ -26,6 +26,7 @@ router.post('/:slug/share', incrementShare);
 // === ADMIN ROUTES ===
 router.get('/detail/:id', authenticate, getArticleById);
 router.post('/scrape', authenticate, scrapeArticle);
+router.post('/generate-ai-news', authenticate, generateAiNews);
 router.post('/', authenticate, authorize('SUPER_ADMIN', 'ADMIN', 'EDITOR', 'REPORTER'), createArticle);
 router.put('/:id', authenticate, authorize('SUPER_ADMIN', 'ADMIN', 'EDITOR'), updateArticle);
 router.delete('/:id', authenticate, authorize('SUPER_ADMIN', 'ADMIN'), deleteArticle);
