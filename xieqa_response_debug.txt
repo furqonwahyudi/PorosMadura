@@ -1,0 +1,18 @@
+=== RAW RESPONSE ===
+```json
+{
+  "seoTitle": "Pidato Menlu Retno Marsudi di OKI Tegaskan Posisi Indonesia Atas Gaza",
+  "lead": "Menteri Luar Negeri Republik Indonesia Retno Marsudi menyampaikan pidato tegas dalam pertemuan luar biasa Organisasi Kerja Sama Islam (OKI) di Jeddah untuk merespons krisis kemanusiaan di Gaza. Indonesia mengutuk keras agresi militer Israel serta mendesak penanganan cepat atas kondisi darurat yang menimpa warga sipil Palestina.",
+  "content": "<h2>Kronologi Kejadian</h2><p>Menteri Luar Negeri Republik Indonesia Retno Marsudi semula mendampingi Presiden RI menghadiri Forum Belt and Road di Beijing. Namun, atas instruksi langsung dari Presiden, beliau
+
+=== PARSED RESULT ===
+{
+  "seoTitle": "Pidato Menlu Retno Marsudi di OKI Tegaskan Posisi Indonesia Atas Gaza",
+  "lead": "Menteri Luar Negeri Republik Indonesia Retno Marsudi menyampaikan pidato tegas dalam pertemuan luar biasa Organisasi Kerja Sama Islam (OKI) di Jeddah untuk merespons krisis kemanusiaan di Gaza. Indonesia mengutuk keras agresi militer Israel serta mendesak penanganan cepat atas kondisi darurat yang menimpa warga sipil Palestina.",
+  "content": "",
+  "slug": "",
+  "metaDescription": "",
+  "focusKeyword": "",
+  "category": "",
+  "tags": []
+}

@@ -206,9 +206,16 @@ export default function ArticleView({ article, onBack, lang, onSelectArticle }: 
           </div>
 
           {/* Title and Excerpts */}
-          <h1 className="text-xl sm:text-3xl font-bold text-gray-900 tracking-tight leading-snug mb-5">
+          <h1 className="text-xl sm:text-3xl font-bold text-gray-900 tracking-tight leading-snug mb-3">
             {article.title}
           </h1>
+
+          {/* Lead / Excerpt */}
+          {article.excerpt && (
+            <p className="text-sm sm:text-base text-gray-500 font-medium leading-relaxed mb-5 border-l-2 border-[#D71920] pl-3 italic">
+              {article.excerpt}
+            </p>
+          )}
 
           {/* Editorial Attributions */}
           <div className="flex flex-wrap items-center justify-between gap-4 border-t border-b border-gray-100 py-3.5 mb-6 text-xs text-gray-500">
@@ -257,16 +264,10 @@ export default function ArticleView({ article, onBack, lang, onSelectArticle }: 
 
           {/* Body content */}
           <article className="prose max-w-none text-gray-800 text-sm sm:text-base leading-relaxed space-y-4 mb-8">
-            {article.content.includes("<p>") || article.content.includes("</div>") || article.content.includes("<br>") ? (
-              // Jika konten mengandung HTML, lakukan splitting berdasarkan penutup tag paragraf/div agar layout tetap rapi
-              article.content.split(/<\/p>|<\/div>/).map(p => p.trim()).filter(Boolean).map((p, idx) => {
-                // Rekonstruksi tag penutup yang sesuai secara aman
-                let paragraphHtml = p;
-                if (p.startsWith("<p")) {
-                  paragraphHtml = p + "</p>";
-                } else if (p.startsWith("<div")) {
-                  paragraphHtml = p + "</div>";
-                }
+            {article.content.includes("<p>") || article.content.includes("</div>") || article.content.includes("<h2") || article.content.includes("<br>") ? (
+              // Split menggunakan lookahead agar memotong tepat sebelum tag pembuka baru.
+              // Ini menjaga keutuhan tag pembuka dan penutup (seperti <h2>...</h2> atau <p>...</p>)
+              article.content.split(/(?=<(?:p|div|h2|h3|blockquote|ol|ul)[^>]*>)/i).map(p => p.trim()).filter(Boolean).map((paragraphHtml, idx) => {
                 return (
                   <React.Fragment key={idx}>
                     <div dangerouslySetInnerHTML={{ __html: paragraphHtml }} className="mb-4" />

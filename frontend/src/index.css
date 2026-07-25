@@ -335,3 +335,29 @@
   animation: modalScaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
+/* ── Article Content Styles in Portal ── */
+article.prose h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #0f172a; /* Slate 900 */
+  margin: 1.75rem 0 0.75rem;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+}
+
+article.prose h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #1e293b; /* Slate 800 */
+  margin: 1.5rem 0 0.5rem;
+  line-height: 1.4;
+}
+
+article.prose p {
+  color: #334155; /* Slate 700 */
+  font-size: 1rem;
+  line-height: 1.75;
+  margin-bottom: 1.25rem;
+}
+
+

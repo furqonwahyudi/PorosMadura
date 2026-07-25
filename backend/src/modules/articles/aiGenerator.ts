@@ -1,3 +1,4 @@
+// AI Generator - Gemini & Xieqa provider support
 import { AppError } from '../../middleware/errorHandler';
 
 interface ScrapedData {
@@ -146,13 +147,76 @@ function cleanJsonResponse(text: string): string {
   return cleaned.trim();
 }
 
+function cleanArticleObject(article: GeneratedArticle): GeneratedArticle {
+  return {
+    seoTitle: cleanTextField(article.seoTitle),
+    lead: cleanTextField(article.lead),
+    content: cleanHtmlNewlines(article.content),
+    slug: cleanTextField(article.slug),
+    metaDescription: cleanTextField(article.metaDescription),
+    focusKeyword: cleanTextField(article.focusKeyword),
+    category: cleanTextField(article.category),
+    tags: Array.isArray(article.tags) ? article.tags.map(cleanTextField) : [],
+  };
+}
+
+function autoRepairTruncatedJson(text: string): string {
+  let trimmed = text.trim();
+  
+  if (trimmed.endsWith('}')) {
+    return trimmed;
+  }
+  
+  console.log('[AI:Repair] Mendeteksi JSON terpotong, mencoba memperbaiki...');
+  
+  const contentIndex = trimmed.indexOf('"content"');
+  if (contentIndex !== -1) {
+    const matchSeoTitle = trimmed.match(/"seoTitle"\s*:\s*"([^"]+)"/);
+    const matchLead = trimmed.match(/"lead"\s*:\s*"([^"]+)"/);
+    const matchContent = trimmed.match(/"content"\s*:\s*"([^"]*)$/);
+    
+    const seoTitle = matchSeoTitle ? matchSeoTitle[1] : "Judul Berita Auto";
+    const lead = matchLead ? matchLead[1] : "Ringkasan berita auto.";
+    let content = "";
+    
+    if (matchContent) {
+      content = matchContent[1];
+    } else {
+      const parts = trimmed.split(/"content"\s*:\s*"/);
+      if (parts.length > 1) {
+        content = parts[1];
+      }
+    }
+    
+    content = content.replace(/<[^>]*$/, ''); // hapus tag HTML menggantung di akhir
+    content += " ... (konten terpotong oleh server Xieqa)";
+    
+    const repairedJson = {
+      seoTitle: seoTitle,
+      lead: lead,
+      content: content,
+      slug: seoTitle.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-'),
+      metaDescription: lead.substring(0, 150),
+      focusKeyword: seoTitle.split(' ').slice(0, 3).join(' '),
+      category: "Politik",
+      tags: ["Poros Madura", "Berita Utama"]
+    };
+    
+    return JSON.stringify(repairedJson);
+  }
+  
+  return trimmed + '\n, "content": "Konten terpotong", "slug": "auto-slug", "metaDescription": "auto", "focusKeyword": "auto", "category": "Politik", "tags": [] }';
+}
+
 /**
  * Robust JSON parser that handles common issues from AI outputs
  */
 function robustJsonParse(text: string): GeneratedArticle {
+  const repairedText = autoRepairTruncatedJson(text);
+
   // First attempt: direct parse
   try {
-    return JSON.parse(text) as GeneratedArticle;
+    return cleanArticleObject(JSON.parse(repairedText) as GeneratedArticle);
   } catch {
     // Second attempt: fix unescaped quotes inside string values by using regex
     // to find and escape double quotes within HTML content
@@ -163,7 +227,7 @@ function robustJsonParse(text: string): GeneratedArticle {
         .replace(/=\"([^"]*)\"/g, '=&quot;$1&quot;')
         // also fix any remaining unescaped quotes that break JSON
         .replace(/([^\\])"([^,:{}\[\]]+)"(?=[^:,{}\[\]]*[<>])/g, '$1\\"$2\\"');
-      return JSON.parse(fixedText) as GeneratedArticle;
+      return cleanArticleObject(JSON.parse(fixedText) as GeneratedArticle);
     } catch {
       // Third attempt: extract fields manually using regex
       const extractField = (field: string): string => {
@@ -190,23 +254,38 @@ function robustJsonParse(text: string): GeneratedArticle {
         tags.push(...tagItems.map(t => t.replace(/"/g, '')));
       }
       
-      if (!seoTitle || !content || !slug) {
-        throw new Error('Tidak dapat mengurai JSON dari respons Gemini.');
-      }
-      
-      return { seoTitle, lead, content, slug, metaDescription, focusKeyword, category, tags };
+      const rawArticle = { seoTitle, lead, content, slug, metaDescription, focusKeyword, category, tags };
+      return cleanArticleObject(rawArticle);
     }
   }
 }
 
-/**
- * Calls Gemini API to generate the article using facts from the scraped news
- */
-export async function generateNewsFromFacts(scrapedData: ScrapedData): Promise<GeneratedArticle> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new AppError('GEMINI_API_KEY tidak ditemukan di file .env backend. Harap tambahkan API key Anda.', 500);
-  }
+function cleanHtmlNewlines(html: string): string {
+  if (!html) return html;
+  return html
+    .replace(/\\n/g, '') // Hapus literal \n (backslash + n)
+    .replace(/\r?\n/g, '') // Hapus raw newline characters agar editor HTML bersih
+    .replace(/\s+/g, ' ') // Rapikan spasi ganda
+    .trim();
+}
+
+function cleanTextField(text: string): string {
+  if (!text) return text;
+  return text
+    .replace(/\\n/g, ' ') // Ganti literal \n dengan spasi
+    .replace(/\r?\n/g, ' ') // Ganti raw newline dengan spasi
+    .replace(/\s+/g, ' ') // Rapikan spasi ganda
+    .trim();
+}
+function buildPrompt(scrapedData: ScrapedData, provider: 'gemini' | 'xieqa' = 'gemini'): { systemPrompt: string; userContent: string } {
+  const isXieqa = provider === 'xieqa';
+  const targetWordsText = isXieqa 
+    ? 'Panjang isi artikel (tidak termasuk judul, lead terpisah, slug, dsb) WAJIB memiliki panjang antara 300 hingga 450 kata. Kembangkan isi berita secara alami dengan tetap berpedoman pada fakta yang tersedia.'
+    : 'Panjang isi artikel (tidak termasuk judul, lead terpisah, slug, dsb) WAJIB memiliki panjang antara 800 hingga 1.300 kata. Target ideal: 900–1.100 kata. Artikel tidak boleh dipersingkat hanya karena artikel sumber pendek. Kembangkan isi berita secara alami dengan tetap berpedoman pada fakta yang tersedia.';
+
+  const contentSchemaText = isXieqa
+    ? 'string (Isi artikel lengkap menggunakan format tag HTML. Gunakan tag <h2> untuk judul bagian/headings seperti <h2>Kronologi Kejadian</h2>, <h2>Fakta Penting</h2>, dan tag <p> untuk paragraf. Ingat, total kata dalam tag-tag <p> di content ini wajib berkisar antara 300 s.d 450 kata!)'
+    : 'string (Isi artikel lengkap menggunakan format tag HTML. Gunakan tag <h2> untuk judul bagian/headings seperti <h2>Kronologi Kejadian</h2>, <h2>Fakta Penting</h2>, dan tag <p> untuk paragraf. Ingat, total kata dalam tag-tag <p> di content ini wajib berkisar antara 800 s.d 1300 kata!)';
 
   const systemPrompt = `
 Anda adalah Editor Senior Portal Berita Nasional, SEO News Writer, dan Wartawan Profesional.
@@ -243,26 +322,41 @@ Artikel harus:
 - informatif
 - SEO Friendly
 
-Gunakan struktur isi artikel:
-Lead (1 paragraf, ringkas, langsung menjelaskan inti berita)
-H2 Kronologi Kejadian
-(paragraf)
-(paragraf)
-H2 Fakta Penting
-(paragraf)
-(paragraf)
-H2 Pernyataan Resmi
-(paragraf)
-(paragraf)
-H2 Penutup
-(paragraf)
+Gunakan struktur isi artikel dengan MINIMAL 4 subjudul H2:
+- Lead (1 paragraf, ringkas, langsung menjelaskan inti berita — tulis sebagai <p> pertama sebelum H2 pertama)
+- <h2>Kronologi Kejadian</h2>
+- <h2>Fakta Penting</h2>
+- <h2>Pernyataan Resmi</h2>
+- <h2>Dampak dan Konteks</h2> (atau subjudul relevan lainnya)
+- <h2>Penutup</h2>
+Gunakan <h3> jika diperlukan untuk mengelompokkan sub-informasi di bawah H2.
 
-Aturan Paragraf & Kata:
-- Gunakan paragraf pendek. Maksimal 3 kalimat per paragraf.
+# PANJANG ARTIKEL — ATURAN WAJIB
+
+Artikel yang dihasilkan WAJIB memiliki panjang antara 800 hingga 1.300 kata.
+Target ideal: 900–1.100 kata.
+
+Artikel TIDAK BOLEH dipersingkat hanya karena artikel sumber pendek.
+Jika informasi sumber tidak cukup untuk mencapai 800 kata, kembangkan isi hanya dengan cara berikut:
+- memperjelas kronologi kejadian
+- menjelaskan latar belakang peristiwa berdasarkan informasi yang ada
+- menguraikan pernyataan narasumber secara lebih lengkap
+- memperjelas konteks kejadian
+- menjelaskan dampak atau implikasi yang didukung oleh fakta
+- menyusun transisi antarbagian agar alur berita lebih nyaman dibaca
+
+AI DILARANG KERAS:
+- menambahkan fakta baru
+- membuat asumsi
+- membuat opini pribadi
+- mengarang kutipan
+- mengubah data, angka, nama, lokasi, atau kronologi
+
+Aturan Paragraf:
+- Maksimal 3 kalimat per paragraf, paragraf pendek dan jelas.
 - Pastikan keyword utama muncul secara natural.
-- Jangan membuat fakta baru. Jangan mengurangi fakta penting. Jangan beropini. Jangan berhalusinasi.
-- Panjang isi artikel (tidak termasuk judul, lead terpisah, slug, dsb) WAJIB memiliki panjang antara 800 hingga 1.300 kata. Target ideal: 900–1.100 kata. Artikel tidak boleh dipersingkat hanya karena artikel sumber pendek. Kembangkan isi berita secara alami dengan tetap berpedoman pada fakta yang tersedia. 
-- Pengembangan isi hanya boleh dilakukan dengan cara: memperjelas kronologi kejadian, menjelaskan latar belakang peristiwa berdasarkan informasi yang ada, menguraikan pernyataan narasumber secara lebih lengkap, memperjelas konteks kejadian, menjelaskan dampak atau implikasi yang memang didukung oleh fakta, menyusun transisi antarbagian agar alur berita lebih nyaman dibaca.
+- ${targetWordsText}
+- Artikel harus terasa natural, informatif, dan nyaman dibaca — bukan bertele-tele hanya untuk mengejar jumlah kata.
 
 Pilih Kategori yang paling sesuai dari daftar kategori berikut saja:
 Bangkalan, Sampang, Pamekasan, Sumenep, Politik, Pemerintahan, Hukum, Kriminal, Pendidikan, Kesehatan, Ekonomi, Lifestyle, Budaya, Wisata, Kuliner, Hiburan, Opini, Olahraga, Teknologi, Otomotif.
@@ -273,7 +367,7 @@ Format hasil akhir WAJIB berupa JSON dengan schema berikut:
 {
   "seoTitle": "string (Judul SEO, maksimal 90 karakter, menarik, natural, mengandung keyword utama)",
   "lead": "string (Lead berita, 1 paragraf pendek, ringkas, menjelaskan inti berita)",
-  "content": "string (Isi artikel lengkap menggunakan format tag HTML. Gunakan tag <h2> untuk judul bagian/headings seperti <h2>Kronologi Kejadian</h2>, <h2>Fakta Penting</h2>, dan tag <p> untuk paragraf. Ingat, total kata dalam tag-tag <p> di content ini wajib berkisar antara 800 s.d 1300 kata!)",
+  "content": "${contentSchemaText}",
   "slug": "string (Slug SEO Friendly, lowercase, hanya huruf, angka dan tanda minus, contoh: polisi-amankan-tiga-pengedar-narkoba-proppo)",
   "metaDescription": "string (Meta Deskripsi SEO, 150-160 karakter)",
   "focusKeyword": "string (Kata kunci fokus utama)",
@@ -281,7 +375,7 @@ Format hasil akhir WAJIB berupa JSON dengan schema berikut:
   "tags": ["array of strings (tag, 5 s.d 10 tag)"]
 }
 
-PENTING: Pastikan semua tanda kutip ganda (double quotes) di dalam isi string (terutama di dalam tag-tag HTML di field "content") selalu di-escape dengan benar sebagai \\\". Seluruh response harus merupakan satu flat JSON objek yang valid.
+PENTING: Pastikan semua tanda kutip ganda (double quotes) di dalam isi string (terutama di dalam tag-tag HTML di field "content") selalu di-escape dengan benar as \\\". Seluruh response harus merupakan satu flat JSON objek yang valid.
 `;
 
   const userContent = `
@@ -296,6 +390,20 @@ URL Sumber: ${scrapedData.url}
 Isi Artikel Sumber:
 ${scrapedData.body}
 `;
+
+  return { systemPrompt, userContent };
+}
+
+/**
+ * Calls Gemini API to generate the article using facts from the scraped news
+ */
+export async function generateNewsFromFacts(scrapedData: ScrapedData): Promise<GeneratedArticle> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new AppError('GEMINI_API_KEY tidak ditemukan di file .env backend. Harap tambahkan API key Anda.', 500);
+  }
+
+  const { systemPrompt, userContent } = buildPrompt(scrapedData);
 
   // List of models to try in order (fallback if rate limited)
   // Ordered from lightest (less rate-limited) to most capable
@@ -408,3 +516,162 @@ ${scrapedData.body}
     503
   );
 }
+
+/**
+ * Calls Xieqa LLM API to generate the article (alternative provider)
+ * Strategy: Ask Xieqa only for plain HTML article text, then assemble full
+ * GeneratedArticle locally — avoids JSON truncation from Xieqa's token limit.
+ */
+export async function generateNewsFromFactsXieqa(scrapedData: ScrapedData): Promise<GeneratedArticle> {
+  const apiKey = process.env.XIEQA_API_KEY;
+  if (!apiKey) {
+    throw new AppError('XIEQA_API_KEY tidak ditemukan di file .env backend. Harap tambahkan API key Xieqa Anda.', 500);
+  }
+
+  // ── Step 1: Build a minimal prompt — ask only for HTML article content ──
+  const xieqaPrompt = `
+Anda adalah Editor Senior Portal Berita Nasional dan Wartawan Profesional Indonesia.
+Tugas Anda HANYA menulis isi artikel berita dalam format HTML.
+
+ATURAN WAJIB:
+- Bahasa jurnalistik Indonesia yang baku, profesional, dan natural.
+- Artikel ORIGINAL — bukan paraphrase kalimat per kalimat.
+- Gunakan MINIMAL 4 subjudul <h2>. Gunakan <h3> jika perlu.
+- Struktur wajib: <p>Lead</p> → <h2>Kronologi Kejadian</h2> → <h2>Fakta Penting</h2> → <h2>Pernyataan Resmi</h2> → <h2>Penutup</h2>
+- Paragraf pendek: maksimal 3 kalimat per paragraf.
+- JANGAN tulis JSON. JANGAN tulis markdown. JANGAN tulis kode. Hanya tulis HTML murni.
+
+PANJANG ARTIKEL — WAJIB 800–1.300 KATA:
+- Panjang artikel WAJIB antara 800 hingga 1.300 kata. Target ideal: 900–1.100 kata.
+- Jika fakta sumber sedikit, kembangkan dengan: memperjelas kronologi, menjelaskan latar belakang, menguraikan pernyataan narasumber, memperjelas konteks dan dampak.
+- Artikel harus memiliki kedalaman yang cukup untuk layak dipublikasikan sebagai berita utama di portal berita profesional.
+
+AI DILARANG KERAS:
+- Menambahkan fakta baru yang tidak ada di sumber
+- Membuat asumsi atau opini
+- Mengarang kutipan
+- Mengubah data, angka, nama, lokasi, atau kronologi
+- Mempersingkat artikel hanya karena sumber pendek
+
+Artikel Sumber:
+Judul: ${scrapedData.title}
+Media: ${scrapedData.media}
+Tanggal: ${scrapedData.date || 'Tidak diketahui'}
+
+Isi Sumber (gunakan fakta-fakta di bawah ini):
+${scrapedData.body.substring(0, 3000)}
+
+Sekarang tuliskan isi artikel berita HTML-nya (800–1.300 kata, minimal 4 H2):
+`.trim();
+
+  try {
+    console.log('[AI:Xieqa] Mengirim request ke Xieqa LLM (strategi 2-step)...');
+    const response = await fetch(
+      'https://xieqa.com/ai/llm/api/bot_api.php',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({ pesan: xieqaPrompt }),
+        signal: AbortSignal.timeout(120000),
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[AI:Xieqa] Request gagal:', errorText);
+      throw new Error(`Xieqa API gagal (${response.status}): ${errorText.substring(0, 300)}`);
+    }
+
+    const responseJson = await response.json();
+    const rawContent = responseJson?.choices?.[0]?.message?.content || '';
+
+    if (!rawContent || rawContent.trim().length < 20) {
+      console.error('[AI:Xieqa] Response kosong atau terlalu pendek:', rawContent);
+      throw new Error('Xieqa tidak mengembalikan konten artikel yang valid.');
+    }
+
+    console.log('[AI:Xieqa] Konten HTML diterima, menyusun artikel...');
+
+    // ── Step 2: Assemble GeneratedArticle locally without relying on Xieqa for JSON ──
+    const cleanContent = cleanHtmlNewlines(rawContent);
+
+    // Derive title from source (Xieqa won't write a good SEO title reliably)
+    const seoTitle = scrapedData.title.length <= 90
+      ? scrapedData.title
+      : scrapedData.title.substring(0, 87) + '...';
+
+    // Extract first <p> as lead if content starts with one, else use title
+    const leadMatch = cleanContent.match(/<p[^>]*>([\s\S]*?)<\/p>/i);
+    const lead = leadMatch
+      ? leadMatch[1].replace(/<[^>]+>/g, '').trim().substring(0, 400)
+      : scrapedData.title;
+
+    // Build slug from title
+    const slug = seoTitle
+      .toLowerCase()
+      .replace(/[àáâãäå]/g, 'a').replace(/[èéêë]/g, 'e')
+      .replace(/[ìíîï]/g, 'i').replace(/[òóôõö]/g, 'o')
+      .replace(/[ùúûü]/g, 'u').replace(/[ñ]/g, 'n')
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+
+    const metaDescription = lead.substring(0, 157) + (lead.length > 157 ? '...' : '');
+
+    // Detect category from title/body keywords
+    const titleLower = seoTitle.toLowerCase();
+    const bodyLower = (scrapedData.body || '').toLowerCase();
+    let category = 'Politik';
+    if (/kebakaran|banjir|gempa|bencana|longsor/.test(titleLower)) category = 'Hukum';
+    else if (/korupsi|kriminal|narkoba|tersangka|polisi|kejahatan/.test(titleLower)) category = 'Kriminal';
+    else if (/ekonomi|bisnis|rupiah|investasi|saham|harga|inflasi/.test(titleLower)) category = 'Ekonomi';
+    else if (/pendidikan|sekolah|kampus|mahasiswa|pelajar/.test(titleLower)) category = 'Pendidikan';
+    else if (/kesehatan|rumah sakit|dokter|penyakit|vaksin/.test(titleLower)) category = 'Kesehatan';
+    else if (/olahraga|sepakbola|bola|timnas|piala/.test(titleLower)) category = 'Olahraga';
+    else if (/teknologi|digital|aplikasi|internet|ai|robot/.test(titleLower)) category = 'Teknologi';
+    else if (/bangkalan/.test(bodyLower + titleLower)) category = 'Bangkalan';
+    else if (/sampang/.test(bodyLower + titleLower)) category = 'Sampang';
+    else if (/pamekasan/.test(bodyLower + titleLower)) category = 'Pamekasan';
+    else if (/sumenep/.test(bodyLower + titleLower)) category = 'Sumenep';
+
+    // Build basic tags from title words
+    const stopWords = new Set(['dan','di','ke','dari','yang','ini','itu','pada','dengan','untuk','dalam','adalah','oleh','atau','juga','tersebut','sebuah','seorang']);
+    const tags = seoTitle
+      .replace(/[^a-zA-Z\s]/g, '')
+      .split(/\s+/)
+      .filter(w => w.length > 3 && !stopWords.has(w.toLowerCase()))
+      .slice(0, 7)
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+
+    if (tags.length < 3) tags.push('Berita Terkini', 'Poros Madura');
+
+    const focusKeyword = tags[0] || seoTitle.split(' ')[0];
+
+    const result: GeneratedArticle = {
+      seoTitle,
+      lead,
+      content: cleanContent,
+      slug,
+      metaDescription,
+      focusKeyword,
+      category,
+      tags,
+    };
+
+    console.log('[AI:Xieqa] Artikel berhasil disusun menggunakan Xieqa LLM (2-step).');
+    return result;
+
+  } catch (error: any) {
+    console.error('[AI:Xieqa] Error:', error.message);
+    if (error instanceof AppError) throw error;
+    if (error.name === 'TimeoutError') {
+      throw new AppError('Xieqa API timeout. Coba lagi atau gunakan provider lain.', 504);
+    }
+    throw new AppError(`Xieqa gagal: ${error.message}`, 500);
+  }
+}
+

@@ -4,8 +4,10 @@ import { AppError } from '../../middleware/errorHandler';
 import { AuthRequest } from '../../middleware/auth';
 import { z } from 'zod';
 import slugify from '../../utils/slugify';
-import { validateUrl, scrapeHtml, generateNewsFromFacts } from './aiGenerator';
+import { generateNewsFromFacts, generateNewsFromFactsXieqa, scrapeHtml, validateUrl } from './aiGenerator';
 
+
+const emptyToNull = (val: any) => (val === '' ? null : val);
 
 const articleSchema = z.object({
   title: z.string().min(5, 'Judul minimal 5 karakter'),
@@ -26,8 +28,9 @@ const articleSchema = z.object({
   metaKeywords: z.array(z.string()).optional(),
   videoUrl: z.string().url().optional().nullable(),
   audioUrl: z.string().url().optional().nullable(),
-  editorId: z.string().uuid().optional().nullable(),
-  reporterId: z.string().uuid().optional().nullable(),
+  editorId: z.preprocess(emptyToNull, z.string().uuid().optional().nullable()),
+  reporterId: z.preprocess(emptyToNull, z.string().uuid().optional().nullable()),
+  authorId: z.preprocess(emptyToNull, z.string().uuid().optional().nullable()),
 });
 
 // Helper: build article select fields
@@ -394,7 +397,7 @@ export async function createArticle(req: AuthRequest, res: Response, next: NextF
         videoUrl: data.videoUrl,
         audioUrl: data.audioUrl,
         categoryId: data.categoryId,
-        authorId: req.user!.id,
+        authorId: data.authorId || req.user!.id,
         editorId: data.editorId,
         reporterId: data.reporterId,
         tags: { create: tagIds.map(id => ({ tagId: id })) },
@@ -564,8 +567,8 @@ export async function scrapeArticle(req: Request, res: Response, next: NextFunct
 
 export async function generateAiNews(req: Request, res: Response, next: NextFunction) {
   try {
-    const { url } = req.body;
-    if (!url || url.trim() === "") {
+    const { url, provider = 'gemini' } = req.body;
+    if (!url || url.trim() === '') {
       throw new AppError('URL tidak boleh kosong', 400);
     }
     if (!validateUrl(url)) {
@@ -611,10 +614,16 @@ export async function generateAiNews(req: Request, res: Response, next: NextFunc
       throw new AppError('Tidak dapat mengambil isi artikel.', 400);
     }
 
-    // Step 4 & 5: AI extract facts & rewrite article
+    // Step 4 & 5: AI extract facts & rewrite article (based on chosen provider)
     let aiArticle;
     try {
-      aiArticle = await generateNewsFromFacts(scraped);
+      if (provider === 'xieqa') {
+        console.log('[Controller] Menggunakan provider: Xieqa LLM');
+        aiArticle = await generateNewsFromFactsXieqa(scraped);
+      } else {
+        console.log('[Controller] Menggunakan provider: Gemini');
+        aiArticle = await generateNewsFromFacts(scraped);
+      }
     } catch (err: any) {
       if (err instanceof AppError) throw err;
       throw new AppError(err.message || 'Gagal membuat artikel. Silakan coba lagi.', err.status || 500);

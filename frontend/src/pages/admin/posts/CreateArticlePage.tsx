@@ -17,6 +17,13 @@ interface Category {
   slug: string;
 }
 
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
 interface MediaAsset {
   id: string;
   url: string;
@@ -109,6 +116,7 @@ export default function CreateArticlePage() {
   const [newsLink, setNewsLink] = useState("");
   const [isScraping, setIsScraping] = useState(false);
   const [scrapingStep, setScrapingStep] = useState("");
+  const [aiProvider, setAiProvider] = useState<"gemini" | "xieqa">("gemini");
 
   const handleScrapeLink = async () => {
     if (!newsLink.trim()) {
@@ -152,7 +160,7 @@ export default function CreateArticlePage() {
     });
 
     try {
-      const res = await adminApi.post<any>("/api/articles/generate-ai-news", { url: newsLink.trim() });
+      const res = await adminApi.post<any>("/api/articles/generate-ai-news", { url: newsLink.trim(), provider: aiProvider });
       
       // Bersihkan timer
       timeoutIds.forEach(clearTimeout);
@@ -222,6 +230,15 @@ export default function CreateArticlePage() {
     }
   });
 
+  // Fetch Users for Author, Reporter, Editor dropdowns
+  const { data: users } = useQuery<User[]>({
+    queryKey: ["admin", "users", "dropdown"],
+    queryFn: async () => {
+      const res = await adminApi.get<{ success: boolean; data: User[] }>("/api/users");
+      return res.data;
+    }
+  });
+
   // Fetch Media Library — includeTemp=true agar gambar yang baru diupload (sebelum artikel dipublish) juga muncul
   const { data: mediaLibrary } = useQuery<MediaAsset[]>({
     queryKey: ["admin", "media", "list", "all"],
@@ -243,6 +260,9 @@ export default function CreateArticlePage() {
       isHeadline: false,
       isEditorChoice: false,
       isTrending: false,
+      authorId: "",
+      editorId: "",
+      reporterId: "",
     }
   });
 
@@ -274,6 +294,9 @@ export default function CreateArticlePage() {
         isHeadline: existingArticle.isHeadline,
         isEditorChoice: existingArticle.isEditorChoice,
         isTrending: existingArticle.isTrending,
+        authorId: existingArticle.authorId || "",
+        editorId: existingArticle.editorId || "",
+        reporterId: existingArticle.reporterId || "",
       });
       setEditorHtml(existingArticle.content || "");
       if (editorRef.current) editorRef.current.innerHTML = existingArticle.content || "";
@@ -752,6 +775,30 @@ export default function CreateArticlePage() {
                       color: "var(--text-primary)", fontSize: 12.5, outline: "none",
                     }}
                   />
+                  {/* AI Provider Toggle */}
+                  <div style={{ display: "flex", gap: 6 }}>
+                    {(["gemini", "xieqa"] as const).map((p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setAiProvider(p)}
+                        disabled={isScraping}
+                        style={{
+                          flex: 1, padding: "6px 8px", borderRadius: 7, border: "1.5px solid",
+                          borderColor: aiProvider === p ? "var(--brand)" : "var(--border)",
+                          background: aiProvider === p ? "var(--brand-subtle)" : "var(--bg-subtle)",
+                          color: aiProvider === p ? "var(--brand)" : "var(--text-tertiary)",
+                          fontSize: 11.5, fontWeight: aiProvider === p ? 700 : 500,
+                          cursor: isScraping ? "not-allowed" : "pointer",
+                          transition: "all 0.15s ease",
+                          display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+                        }}
+                      >
+                        {p === "gemini" ? "🔵 Gemini" : "🟣 Xieqa"}
+                      </button>
+                    ))}
+                  </div>
+
                   <button
                     type="button"
                     onClick={handleScrapeLink}
@@ -766,7 +813,7 @@ export default function CreateArticlePage() {
                     onMouseEnter={(e) => { if (!isScraping) e.currentTarget.style.background = "var(--brand-hover)"; }}
                     onMouseLeave={(e) => { if (!isScraping) e.currentTarget.style.background = "var(--brand)"; }}
                   >
-                    {isScraping ? "Generating..." : "Gaskeun"}
+                    {isScraping ? `Generating via ${aiProvider === "gemini" ? "Gemini" : "Xieqa"}...` : "Gaskeun"}
                   </button>
 
                   {/* Progress Checklist Modern */}
@@ -886,15 +933,64 @@ export default function CreateArticlePage() {
                 <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 6 }}>
                   Author
                 </label>
-                <select style={{
-                  width: "100%", padding: "7px 10px", borderRadius: 8,
-                  border: "1px solid var(--border)", background: "var(--bg-subtle)",
-                  color: "var(--text-primary)", fontSize: 13, outline: "none", cursor: "pointer",
-                }}>
-                  <option>Rudi Santoso</option>
-                  <option>Fatimah Zahra</option>
-                  <option>Budi Hariono</option>
-                  <option>Nia Kurniasih</option>
+                <select 
+                  {...register("authorId")}
+                  style={{
+                    width: "100%", padding: "7px 10px", borderRadius: 8,
+                    border: "1px solid var(--border)", background: "var(--bg-subtle)",
+                    color: "var(--text-primary)", fontSize: 13, outline: "none", cursor: "pointer",
+                  }}
+                >
+                  <option value="">-- Pembuat Otomatis (Default) --</option>
+                  {users?.map(u => (
+                    <option key={`auth-${u.id}`} value={u.id}>
+                      {u.name} ({u.role})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Reporter */}
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 6 }}>
+                  Reporter
+                </label>
+                <select 
+                  {...register("reporterId")}
+                  style={{
+                    width: "100%", padding: "7px 10px", borderRadius: 8,
+                    border: "1px solid var(--border)", background: "var(--bg-subtle)",
+                    color: "var(--text-primary)", fontSize: 13, outline: "none", cursor: "pointer",
+                  }}
+                >
+                  <option value="">-- Tanpa Reporter --</option>
+                  {users?.map(u => (
+                    <option key={`rep-${u.id}`} value={u.id}>
+                      {u.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Editor */}
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 6 }}>
+                  Editor
+                </label>
+                <select 
+                  {...register("editorId")}
+                  style={{
+                    width: "100%", padding: "7px 10px", borderRadius: 8,
+                    border: "1px solid var(--border)", background: "var(--bg-subtle)",
+                    color: "var(--text-primary)", fontSize: 13, outline: "none", cursor: "pointer",
+                  }}
+                >
+                  <option value="">-- Tanpa Editor --</option>
+                  {users?.map(u => (
+                    <option key={`ed-${u.id}`} value={u.id}>
+                      {u.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 
