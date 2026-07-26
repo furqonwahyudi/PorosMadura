@@ -510,10 +510,79 @@ export default function CreateArticlePage() {
   const wordCount = editorHtml.replace(/<[^>]*>/g, "").split(/\s+/).filter(Boolean).length;
   const readingTime = Math.max(1, Math.ceil(wordCount / 200));
 
-  const seoScore = metaTitle.length > 20 && metaDescription.length > 50 && focusKeyword ? 78 : metaTitle.length > 10 ? 45 : 20;
-  const scoreColor = seoScore >= 70 ? "var(--green)" : seoScore >= 40 ? "var(--orange)" : "var(--red)";
+  // ── Dynamic Content Analysis ──────────────────────────────────────────────
+  // SEO Score: points-based, max 100
+  const plainText = editorHtml.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  const h2Count = (editorHtml.match(/<h2[^>]*>/gi) || []).length;
+  const h3Count = (editorHtml.match(/<h3[^>]*>/gi) || []).length;
+  const autoSlug = watch('title') ? watch('title').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-') : '';
+  const hasExcerpt = (watch('excerpt') || '').trim().length > 30;
+  const hasImage = editorHtml.includes('<img');
+  const slugValue = watch('slug') || autoSlug || '';
 
-  const autoSlug = watch("title") ? watch("title").toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-") : "";
+  let seoScore = 0;
+  // Title: present + good length (50-70 chars) = 20pts
+  if (metaTitle.length >= 50 && metaTitle.length <= 70) seoScore += 20;
+  else if (metaTitle.length > 20) seoScore += 10;
+  // Focus keyword present = 10pts
+  if (focusKeyword) seoScore += 10;
+  // Keyword in title = 10pts
+  if (focusKeyword && metaTitle.toLowerCase().includes(focusKeyword.toLowerCase())) seoScore += 10;
+  // Keyword in meta description = 8pts
+  if (focusKeyword && metaDescription.toLowerCase().includes(focusKeyword.toLowerCase())) seoScore += 8;
+  // Meta description good length (120-160 chars) = 10pts
+  if (metaDescription.length >= 120 && metaDescription.length <= 160) seoScore += 10;
+  else if (metaDescription.length > 50) seoScore += 5;
+  // Content length (≥800 words = 15pts, ≥400 = 8pts)
+  if (wordCount >= 800) seoScore += 15;
+  else if (wordCount >= 400) seoScore += 8;
+  else if (wordCount >= 100) seoScore += 3;
+  // Has H2 headings = 8pts (+2 if ≥4 H2s)
+  if (h2Count >= 4) seoScore += 10;
+  else if (h2Count >= 2) seoScore += 8;
+  else if (h2Count >= 1) seoScore += 4;
+  // Has image = 5pts
+  if (hasImage) seoScore += 5;
+  // Has excerpt/lead = 5pts
+  if (hasExcerpt) seoScore += 5;
+  // Slug is set = 5pts
+  if (slugValue) seoScore += 5;
+  seoScore = Math.min(100, seoScore);
+
+  const scoreColor = seoScore >= 70 ? 'var(--green)' : seoScore >= 40 ? 'var(--orange)' : 'var(--red)';
+
+  // Readability: based on avg sentence length & word count
+  const sentences = plainText.split(/[.!?]+/).filter(s => s.trim().length > 5);
+  const avgSentenceLength = sentences.length > 0 ? wordCount / sentences.length : 0;
+  const readabilityLabel = avgSentenceLength <= 15 && wordCount >= 200
+    ? 'Excellent'
+    : avgSentenceLength <= 20 && wordCount >= 100
+    ? 'Good'
+    : avgSentenceLength <= 25
+    ? 'Fair'
+    : 'Poor';
+  const readabilityPct = readabilityLabel === 'Excellent' ? 95 : readabilityLabel === 'Good' ? 72 : readabilityLabel === 'Fair' ? 45 : 20;
+  const readabilityColor = readabilityLabel === 'Excellent' || readabilityLabel === 'Good' ? 'var(--green)' : readabilityLabel === 'Fair' ? 'var(--orange)' : 'var(--red)';
+
+  // Keyword Density: count keyword occurrences in plain text
+  const kwDensity = focusKeyword && wordCount > 0
+    ? (() => {
+        const kw = focusKeyword.toLowerCase();
+        const words = plainText.toLowerCase().split(/\s+/);
+        const kwWords = kw.split(/\s+/);
+        let count = 0;
+        for (let i = 0; i <= words.length - kwWords.length; i++) {
+          if (kwWords.every((w, j) => words[i + j] === w)) count++;
+        }
+        return ((count / wordCount) * 100).toFixed(1);
+      })()
+    : null;
+  const kwDensityNum = kwDensity ? parseFloat(kwDensity) : 0;
+  // Ideal keyword density: 0.5% – 2.5%
+  const kwDensityColor = kwDensityNum >= 0.5 && kwDensityNum <= 2.5 ? 'var(--green)' : kwDensityNum > 0 ? 'var(--orange)' : 'var(--text-tertiary)';
+  const kwDensityPct = kwDensityNum > 0 ? Math.min(100, Math.round((kwDensityNum / 3) * 100)) : 0;
+
+
 
   return (
     <div style={{ display: "flex", height: "calc(100vh - var(--header-height))", overflow: "hidden" }}>
@@ -657,7 +726,7 @@ export default function CreateArticlePage() {
               {...register("excerpt")}
               rows={2}
               style={{
-                width: "100%", fontSize: 18, color: "var(--text-secondary)", lineHeight: 1.6,
+                width: "100%", fontSize: 18, color: "#1F2937", lineHeight: 1.6,
                 border: "none", background: "transparent", outline: "none", resize: "none",
                 fontFamily: "inherit", minHeight: 60, display: "block",
                 borderBottom: "1px solid var(--border-subtle)", paddingBottom: 16, marginBottom: 20,
@@ -685,7 +754,6 @@ export default function CreateArticlePage() {
           </form>
 
           {/* SEO Analysis bottom */}
-          {/* SEO Analysis bottom */}
           <div style={{
             marginTop: 32, padding: 20, background: "var(--surface)",
             border: "1px solid var(--border)", borderRadius: 12,
@@ -693,21 +761,39 @@ export default function CreateArticlePage() {
             <h4 style={{ margin: "0 0 14px", fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
               Content Analysis
             </h4>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 12 }}>
               {[
                 { label: "SEO Score", value: `${seoScore}/100`, color: scoreColor, pct: seoScore },
-                { label: "Readability", value: "Good", color: "var(--green)", pct: 72 },
-                { label: "Keyword Density", value: focusKeyword ? "1.2%" : "—", color: "var(--blue)", pct: 60 },
+                { label: "Readability", value: readabilityLabel, color: readabilityColor, pct: readabilityPct },
+                { label: "Keyword Density", value: kwDensity ? `${kwDensity}%` : "—", color: kwDensityColor, pct: kwDensityPct },
               ].map(item => (
                 <div key={item.label} style={{ padding: "12px", background: "var(--bg-subtle)", borderRadius: 8 }}>
                   <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginBottom: 6 }}>{item.label}</div>
                   <div style={{ fontSize: 16, fontWeight: 700, color: item.color, fontFamily: "'JetBrains Mono', monospace" }}>{item.value}</div>
                   <div style={{ height: 3, borderRadius: 99, background: "var(--border)", marginTop: 8 }}>
-                    <div style={{ height: "100%", borderRadius: 99, background: item.color, width: `${item.pct}%` }} />
+                    <div style={{ height: "100%", borderRadius: 99, background: item.color, width: `${item.pct}%`, transition: "width 0.4s ease" }} />
                   </div>
                 </div>
               ))}
             </div>
+            {/* Detail stats row */}
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
+              {[
+                { label: "Kata", value: wordCount.toLocaleString(), ok: wordCount >= 800, warn: wordCount > 0 && wordCount < 800 },
+                { label: "H2", value: h2Count, ok: h2Count >= 4, warn: h2Count > 0 && h2Count < 4 },
+                { label: "H3", value: h3Count, ok: h3Count >= 1, warn: false },
+                { label: "Gambar", value: hasImage ? "Ada" : "—", ok: hasImage, warn: false },
+              ].map(stat => (
+                <div key={stat.label} style={{
+                  display: "flex", alignItems: "center", gap: 4,
+                  fontSize: 11, color: stat.ok ? "var(--green)" : stat.warn ? "var(--orange)" : "var(--text-tertiary)",
+                }}>
+                  <span style={{ fontWeight: 700 }}>{stat.value}</span>
+                  <span>{stat.label}</span>
+                </div>
+              ))}
+            </div>
+
 
             {/* Google preview */}
             <div style={{ padding: 14, background: "var(--bg-subtle)", borderRadius: 8, border: "1px solid var(--border-subtle)" }}>
@@ -1241,10 +1327,21 @@ export default function CreateArticlePage() {
                 }}>
                   {seoScore}
                 </div>
-                <div>
+                <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>SEO Score</div>
                   <div style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
-                    {seoScore >= 70 ? "Good — keep it up!" : seoScore >= 40 ? "Needs improvement" : "Poor — fill SEO fields"}
+                    {seoScore >= 85 ? "Excellent — siap publish!" : seoScore >= 70 ? "Good — keep it up!" : seoScore >= 40 ? "Perlu perbaikan" : "Buruk — lengkapi field SEO"}
+                  </div>
+                  <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
+                    {[
+                      { label: `${wordCount} kata`, ok: wordCount >= 800 },
+                      { label: `${h2Count} H2`, ok: h2Count >= 4 },
+                      { label: focusKeyword ? "Keyword ✓" : "Keyword —", ok: !!focusKeyword },
+                    ].map(b => (
+                      <span key={b.label} style={{ fontSize: 9.5, fontWeight: 600, color: b.ok ? "var(--green)" : "var(--orange)", background: (b.ok ? "var(--green)" : "var(--orange)") + "15", padding: "1px 5px", borderRadius: 4 }}>
+                        {b.label}
+                      </span>
+                    ))}
                   </div>
                 </div>
               </div>

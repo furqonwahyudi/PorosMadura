@@ -438,7 +438,7 @@ export default function AllArticlesPage({ defaultStatus = "all" }: { defaultStat
                           )}
                         </td>
                         <td style={{ padding: "12px 8px", fontSize: 12.5, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{article.author?.name || "Super Admin"}</td>
-                        <td style={{ padding: "12px 8px", fontSize: 12.5, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{article.editor?.name || "Ahmad Syafi'i"}</td>
+                        <td style={{ padding: "12px 8px", fontSize: 12.5, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{article.editor?.name || "—"}</td>
                         <td style={{ padding: "12px 8px" }}>
                           <span style={{
                             fontSize: 11, fontWeight: 500, padding: "2px 8px", borderRadius: 99,

@@ -323,7 +323,7 @@ Artikel harus:
 - SEO Friendly
 
 Gunakan struktur isi artikel dengan MINIMAL 4 subjudul H2:
-- Lead (1 paragraf, ringkas, langsung menjelaskan inti berita — tulis sebagai <p> pertama sebelum H2 pertama)
+- Lead (1 paragraf komprehensif terdiri dari 2 s.d 3 kalimat padat yang merangkum inti 5W+1H berita secara lengkap — tulis sebagai <p> pertama sebelum H2 pertama)
 - <h2>Kronologi Kejadian</h2>
 - <h2>Fakta Penting</h2>
 - <h2>Pernyataan Resmi</h2>
@@ -366,7 +366,7 @@ Pilih Tag yang sesuai minimal 5, maksimal 10.
 Format hasil akhir WAJIB berupa JSON dengan schema berikut:
 {
   "seoTitle": "string (Judul SEO, maksimal 90 karakter, menarik, natural, mengandung keyword utama)",
-  "lead": "string (Lead berita, 1 paragraf pendek, ringkas, menjelaskan inti berita)",
+  "lead": "string (Lead berita lengkap, 1 paragraf padat terdiri dari 2 s.d 3 kalimat komprehensif yang merangkum seluruh inti 5W+1H berita, berkisar antara 30 s.d 50 kata)",
   "content": "${contentSchemaText}",
   "slug": "string (Slug SEO Friendly, lowercase, hanya huruf, angka dan tanda minus, contoh: polisi-amankan-tiga-pengedar-narkoba-proppo)",
   "metaDescription": "string (Meta Deskripsi SEO, 150-160 karakter)",
@@ -537,7 +537,7 @@ ATURAN WAJIB:
 - Bahasa jurnalistik Indonesia yang baku, profesional, dan natural.
 - Artikel ORIGINAL — bukan paraphrase kalimat per kalimat.
 - Gunakan MINIMAL 4 subjudul <h2>. Gunakan <h3> jika perlu.
-- Struktur wajib: <p>Lead</p> → <h2>Kronologi Kejadian</h2> → <h2>Fakta Penting</h2> → <h2>Pernyataan Resmi</h2> → <h2>Penutup</h2>
+- Struktur wajib: <p>Lead (1 paragraf komprehensif, padat, terdiri dari 2 s.d 3 kalimat lengkap yang mencakup 5W+1H berita, sekitar 30 s.d 50 kata)</p> → <h2>Kronologi Kejadian</h2> → <h2>Fakta Penting</h2> → <h2>Pernyataan Resmi</h2> → <h2>Penutup</h2>
 - Paragraf pendek: maksimal 3 kalimat per paragraf.
 - JANGAN tulis JSON. JANGAN tulis markdown. JANGAN tulis kode. Hanya tulis HTML murni.
 
@@ -606,7 +606,7 @@ Sekarang tuliskan isi artikel berita HTML-nya (800–1.300 kata, minimal 4 H2):
     // Extract first <p> as lead if content starts with one, else use title
     const leadMatch = cleanContent.match(/<p[^>]*>([\s\S]*?)<\/p>/i);
     const lead = leadMatch
-      ? leadMatch[1].replace(/<[^>]+>/g, '').trim().substring(0, 400)
+      ? leadMatch[1].replace(/<[^>]+>/g, '').trim().substring(0, 600)
       : scrapedData.title;
 
     // Build slug from title

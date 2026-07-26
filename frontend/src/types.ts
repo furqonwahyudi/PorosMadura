@@ -30,8 +30,8 @@ export interface Article {
   tags: string[];
   image: string;
   author: string;
-  reporter?: string;
-  editor?: string;
+  reporter?: string | null;
+  editor?: string | null;
   publishDate: string;
   status: "draft" | "published" | "scheduled";
   views: number;

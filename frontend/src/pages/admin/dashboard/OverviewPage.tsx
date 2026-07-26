@@ -357,7 +357,7 @@ export default function OverviewPage() {
                     <td style={{ padding: "10px 8px", fontSize: 13, color: "var(--text-primary)", fontWeight: 500, maxWidth: 300 }}>
                       <div className="truncate">{article.title}</div>
                     </td>
-                    <td style={{ padding: "10px 8px", fontSize: 12, color: "var(--text-secondary)" }}>{article.author}</td>
+                    <td style={{ padding: "10px 8px", fontSize: 12, color: "var(--text-secondary)" }}>{article.author || "—"}</td>
                     <td style={{ padding: "10px 8px" }}>
                       <span style={{
                         fontSize: 11, fontWeight: 500, padding: "2px 7px", borderRadius: 99,

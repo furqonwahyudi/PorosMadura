@@ -212,26 +212,28 @@ export default function ArticleView({ article, onBack, lang, onSelectArticle }: 
 
           {/* Lead / Excerpt */}
           {article.excerpt && (
-            <p className="text-sm sm:text-base text-gray-500 font-medium leading-relaxed mb-5 border-l-2 border-[#D71920] pl-3 italic">
+            <p className="text-sm sm:text-base text-gray-800 font-medium leading-relaxed mb-5 border-l-2 border-[#D71920] pl-3 italic">
               {article.excerpt}
             </p>
           )}
 
           {/* Editorial Attributions */}
           <div className="flex flex-wrap items-center justify-between gap-4 border-t border-b border-gray-100 py-3.5 mb-6 text-xs text-gray-500">
-            <div className="flex items-center gap-4">
-              <span className="flex items-center gap-1">
-                <User size={14} className="text-gray-400" />
-                <span>Reporter: <strong className="text-gray-700">{article.reporter || "Andini Putri"}</strong></span>
-              </span>
-              <span className="text-gray-200">|</span>
-              <span>Editor: <strong className="text-gray-700">{article.editor || "Giri Wijaya"}</strong></span>
+            <div className="flex items-center gap-4 flex-wrap">
+              {/* Author */}
+              {article.author && (
+                <span className="flex items-center gap-1.5">
+                  <User size={14} className="text-gray-400" />
+                  <span>Oleh: <strong className="text-gray-700">{article.author}</strong></span>
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-1.5 font-mono text-gray-400 text-[11px]">
               <Eye size={14} />
               <span>{article.views || 0} Kali Dilihat</span>
             </div>
           </div>
+
 
           {/* Large cover image */}
           <div className="rounded-xl overflow-hidden mb-6 aspect-video">

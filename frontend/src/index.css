@@ -360,4 +360,87 @@ article.prose p {
   margin-bottom: 1.25rem;
 }
 
+/* ── Prose Editor (Create Article) ───────────────────────────────────────── */
+/* Normalizes colors inside the contentEditable editor so scraped HTML        */
+/* doesn't create blue links or inconsistent heading colors                   */
 
+.prose-editor {
+  color: #1a1a1a;
+  font-size: 15px;
+  line-height: 1.75;
+}
+
+.prose-editor p {
+  color: #1a1a1a;
+  margin-bottom: 1.1rem;
+}
+
+/* Override blue hyperlinks from scraped content */
+.prose-editor a {
+  color: #D60000;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(214,0,0,0.35);
+  transition: opacity 0.15s;
+}
+.prose-editor a:hover {
+  opacity: 0.75;
+}
+
+/* Heading hierarchy — consistent scale */
+.prose-editor h2 {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: #111111;
+  margin: 1.8rem 0 0.75rem;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+
+.prose-editor h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 1.5rem 0 0.6rem;
+  line-height: 1.4;
+}
+
+.prose-editor h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #374151;
+  margin: 1.25rem 0 0.5rem;
+  line-height: 1.45;
+}
+
+/* Blockquote */
+.prose-editor blockquote {
+  border-left: 3px solid #D60000;
+  margin: 1.5rem 0;
+  padding: 0.5rem 0 0.5rem 1.25rem;
+  color: #4B5563;
+  font-style: italic;
+}
+
+/* Lists */
+.prose-editor ul,
+.prose-editor ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+  color: #1a1a1a;
+}
+.prose-editor li {
+  margin-bottom: 0.35rem;
+}
+
+/* Strong / Bold */
+.prose-editor strong,
+.prose-editor b {
+  color: #111111;
+  font-weight: 700;
+}
+
+/* Strip inline color/background from pasted or scraped HTML */
+.prose-editor span {
+  color: inherit !important;
+  background: transparent !important;
+}
