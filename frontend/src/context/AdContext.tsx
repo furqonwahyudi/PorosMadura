@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
 import { Ad, AdSlot, AdSettings, Advertiser, Campaign, AdCategory, AdPricing, AdMediaFile } from "../types";
+import { normalizeUrl } from "../lib/api";
 
 interface AdContextProps {
   ads: Ad[];
@@ -47,7 +48,12 @@ export const AdProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setAdSlots(slotsRes.data);
       }
       if (adsRes && adsRes.success) {
-        setAds(adsRes.data);
+        const normalizedAds = adsRes.data.map((ad: any) => ({
+          ...ad,
+          imageDesktop: normalizeUrl(ad.imageDesktop),
+          imageMobile: normalizeUrl(ad.imageMobile),
+        }));
+        setAds(normalizedAds);
       }
     } catch (err) {
       console.error("Gagal memuat data sistem iklan secara dinamis, menggunakan fallback static:", err);

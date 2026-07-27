@@ -19,15 +19,29 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}) {
   return res.json();
 }
 
+export const normalizeUrl = (url?: string | null) => {
+  if (!url) return '';
+  if (url.includes('/uploads/')) {
+    const parts = url.split('/uploads/');
+    return `/uploads/${parts[parts.length - 1]}`;
+  }
+  return url;
+};
+
+export const normalizeHtmlContent = (html?: string) => {
+  if (!html) return '';
+  return html.replace(/src="https?:\/\/[^/]+\/uploads\//g, 'src="/uploads/');
+};
+
 export function mapBackendArticleToFrontend(art: any): Article {
   if (!art) return {} as Article;
   return {
     id: art.id,
     title: art.title,
     slug: art.slug,
-    content: art.content,
+    content: normalizeHtmlContent(art.content),
     excerpt: art.excerpt || '',
-    image: art.image || 'https://picsum.photos/seed/news/800/600',
+    image: normalizeUrl(art.image) || 'https://picsum.photos/seed/news/800/600',
     imageCaption: art.imageCaption || '',
     status: (art.status?.toLowerCase() as any) || 'published',
     publishDate: art.publishedAt || art.createdAt,
@@ -38,8 +52,8 @@ export function mapBackendArticleToFrontend(art: any): Article {
     isHeadline: art.isHeadline || false,
     isEditorChoice: art.isEditorChoice || false,
     isTrending: art.isTrending || false,
-    videoUrl: art.videoUrl || undefined,
-    audioUrl: art.audioUrl || undefined,
+    videoUrl: normalizeUrl(art.videoUrl) || undefined,
+    audioUrl: normalizeUrl(art.audioUrl) || undefined,
     metaDescription: art.metaDescription || '',
     metaKeywords: art.metaKeywords || [],
     canonicalUrl: art.canonicalUrl || undefined,
