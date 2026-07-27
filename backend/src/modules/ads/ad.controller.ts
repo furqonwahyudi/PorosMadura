@@ -16,8 +16,10 @@ export async function getAdForSlot(req: Request, res: Response, next: NextFuncti
         status: 'ACTIVE',
         startDate: { lte: now },
         endDate: { gte: now },
-        OR: [{ targetDevice: 'ALL' }, { targetDevice: device.toUpperCase() as any }],
-        OR: [{ targetPages: { isEmpty: true } }, { targetPages: { has: page } }],
+        AND: [
+          { OR: [{ targetDevice: 'ALL' }, { targetDevice: device.toUpperCase() as any }] },
+          { OR: [{ targetPages: { isEmpty: true } }, { targetPages: { has: page } }] }
+        ]
       },
       orderBy: { priority: 'asc' },
       take: 1,
