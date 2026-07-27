@@ -166,7 +166,7 @@ export default function PortalHome({
           const res = await api.getArticles({
             category: catSlug,
             subCategory: subCatSlug,
-            limit: 100,
+            limit: 400,
             isEditorChoice: isRekomendasi ? true : undefined
           });
           result = res.articles;
