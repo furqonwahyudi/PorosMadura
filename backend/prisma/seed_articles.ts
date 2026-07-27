@@ -171,7 +171,7 @@ async function main() {
         excerpt: art.title.substring(0, 150) + '...',
         image: art.image,
         status: 'PUBLISHED',
-        publishedAt: new Date(art.publishDate),
+        publishedAt: art.publishDate ? new Date(art.publishDate) : new Date(),
         isBreaking: art.isBreaking || false,
         isHeadline: art.isHeadline || false,
         isEditorChoice: art.isEditorChoice || false,
