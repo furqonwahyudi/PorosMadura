@@ -4,20 +4,20 @@
       "price": 6185.783,
       "change": -0.1718247442478965,
       "status": "down",
-      "updatedAt": "2026-07-27T13:10:04.351Z"
+      "updatedAt": "2026-07-27T13:21:04.361Z"
     },
     "usd": {
       "price": 17990,
       "change": 0.12801246730116325,
       "status": "up",
-      "updatedAt": "2026-07-27T13:10:04.462Z"
+      "updatedAt": "2026-07-27T13:21:04.489Z"
     },
     "gold": {
       "price": 2622000,
       "buybackPrice": 2359800,
       "change": -2.3318623550121735,
       "status": "down",
-      "updatedAt": "2026-07-27T13:10:04.710Z"
+      "updatedAt": "2026-07-27T13:21:04.647Z"
     },
     "crypto": {
       "price": 984500000,
@@ -26,5 +26,5 @@
       "updatedAt": "2026-07-22T09:12:00.000Z"
     }
   },
-  "expireAt": 1785157834710
+  "expireAt": 1785158494648
 }
