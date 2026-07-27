@@ -72,6 +72,7 @@ import SeoRedirectPage from "./pages/admin/seo/SeoRedirectPage";
 import MarketWidgetPage from "./pages/admin/market/MarketWidgetPage";
 import WebsiteGeneralPage from "./pages/admin/settings/WebsiteGeneralPage";
 import WebsitePagesPage from "./pages/admin/settings/WebsitePagesPage";
+import ProfileSettingsPage from "./pages/admin/ProfileSettingsPage";
 
 export default function App() {
   return (
@@ -157,6 +158,9 @@ export default function App() {
                 {/* Website Settings */}
                 <Route path="/admin/settings/general" element={<WebsiteGeneralPage />} />
                 <Route path="/admin/settings/pages" element={<WebsitePagesPage />} />
+
+                {/* Unified Profile Settings */}
+                <Route path="/admin/profile-settings" element={<ProfileSettingsPage />} />
               </Route>
             </Route>
           </Routes>

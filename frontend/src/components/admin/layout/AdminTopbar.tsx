@@ -263,7 +263,7 @@ export default function AdminTopbar({ onToggleSidebar, onOpenSearch, darkMode, o
                   {/* Links */}
                   <div style={{ padding: "6px" }}>
                     <Link
-                      to="/admin/settings"
+                      to="/admin/profile-settings"
                       onClick={() => setShowProfile(false)}
                       style={{
                         display: "flex", alignItems: "center", gap: 8, padding: "8px 10px",
@@ -271,18 +271,7 @@ export default function AdminTopbar({ onToggleSidebar, onOpenSearch, darkMode, o
                       }}
                       className="hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]"
                     >
-                      <User size={14} /> Profile
-                    </Link>
-                    <Link
-                      to="/admin/settings"
-                      onClick={() => setShowProfile(false)}
-                      style={{
-                        display: "flex", alignItems: "center", gap: 8, padding: "8px 10px",
-                        borderRadius: 8, color: "var(--text-secondary)", fontSize: 13, textDecoration: "none",
-                      }}
-                      className="hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]"
-                    >
-                      <Settings size={14} /> Settings
+                      <Settings size={14} /> Profile Settings
                     </Link>
                   </div>
 

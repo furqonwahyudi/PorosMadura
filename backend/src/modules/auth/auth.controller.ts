@@ -12,15 +12,20 @@ const loginSchema = z.object({
   password: z.string().min(6, 'Password minimal 6 karakter'),
 });
 
-function generateTokens(user: { id: string; email: string; role: string; name: string }) {
+function generateTokens(
+  user: { id: string; email: string; role: string; name: string },
+  sessionId: string,
+  ipAddress?: string,
+  userAgent?: string
+) {
   const accessToken = jwt.sign(
-    { id: user.id, email: user.email, role: user.role, name: user.name },
+    { id: user.id, email: user.email, role: user.role, name: user.name, sessionId },
     process.env.JWT_SECRET!,
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
   );
 
   const refreshToken = jwt.sign(
-    { id: user.id },
+    { id: user.id, sessionId, ip: ipAddress, ua: userAgent },
     process.env.JWT_REFRESH_SECRET!,
     { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d' }
   );
@@ -42,12 +47,16 @@ export async function login(req: Request, res: Response, next: NextFunction) {
       throw new AppError('Email atau password salah', 401);
     }
 
+    const ipAddress = (req.headers['x-forwarded-for'] as string || req.socket.remoteAddress || '').split(',')[0].trim();
+    const userAgent = req.headers['user-agent'] || '';
+    const sessionId = uuidv4();
+
     const { accessToken, refreshToken } = generateTokens({
       id: user.id,
       email: user.email,
       role: user.role,
       name: user.name,
-    });
+    }, sessionId, ipAddress, userAgent);
 
     // Store refresh token
     const expiresAt = new Date();
@@ -58,7 +67,12 @@ export async function login(req: Request, res: Response, next: NextFunction) {
 
     // Audit log
     await prisma.auditLog.create({
-      data: { userId: user.id, role: user.role, action: 'LOGIN' },
+      data: { 
+        userId: user.id, 
+        role: user.role, 
+        action: 'LOGIN',
+        meta: { ip: ipAddress, ua: userAgent }
+      },
     });
 
     res.json({
@@ -107,7 +121,16 @@ export async function refreshToken(req: Request, res: Response, next: NextFuncti
     const user = await prisma.user.findUnique({ where: { id: decoded.id } });
     if (!user || !user.isActive) throw new AppError('User tidak ditemukan', 401);
 
-    const tokens = generateTokens({ id: user.id, email: user.email, role: user.role, name: user.name });
+    const sessionId = decoded.sessionId || uuidv4();
+    const ipAddress = (req.headers['x-forwarded-for'] as string || req.socket.remoteAddress || '').split(',')[0].trim();
+    const userAgent = req.headers['user-agent'] || '';
+
+    const tokens = generateTokens(
+      { id: user.id, email: user.email, role: user.role, name: user.name },
+      sessionId,
+      ipAddress,
+      userAgent
+    );
 
     // Rotate refresh token
     await prisma.refreshToken.delete({ where: { token: refreshToken } });

@@ -200,21 +200,25 @@ export default function AdminSidebar({ isOpen, onClose, collapsed, onToggleColla
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {};
-    NAV.forEach(section => {
+    for (const section of NAV) {
       if (section.children) {
         const isActive = section.children.some(child => child.path && (
           child.id === "all-articles" ? location.pathname === "/admin/posts" : location.pathname.startsWith(child.path)
         ));
         if (isActive) {
           init[section.id] = true;
+          break; // Stop at the first active section to ensure only one is open initially
         }
       }
-    });
+    }
     return init;
   });
 
   const toggleSection = (id: string) => {
-    setOpenSections(prev => ({ ...prev, [id]: !prev[id] }));
+    setOpenSections(prev => {
+      const isCurrentlyOpen = !!prev[id];
+      return isCurrentlyOpen ? {} : { [id]: true };
+    });
   };
 
   const badgeStyle = (color?: string) => {

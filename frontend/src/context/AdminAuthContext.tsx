@@ -15,6 +15,7 @@ interface AuthContextValue {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  updateUser: (updatedUser: Partial<AdminUser>) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -94,8 +95,15 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }, []);
 
+  const updateUser = useCallback((updatedUser: Partial<AdminUser>) => {
+    setUser(prev => {
+      if (!prev) return null;
+      return { ...prev, ...updatedUser };
+    });
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
