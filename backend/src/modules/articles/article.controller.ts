@@ -687,12 +687,19 @@ export async function getSharePreview(req: Request, res: Response, next: NextFun
     // OG Description: use metaDescription if set, otherwise article excerpt/lead
     const ogDescription = article.metaDescription || article.excerpt || '';
     
-    // OG Image: use article.image (featured image) or a fallback default image
-    const ogImage = article.image || 'https://picsum.photos/seed/news/1200/630';
+    // Mendapatkan URL absolut website secara dinamis (menggunakan HTTPS untuk domain publik)
+    const host = req.get('host') || 'youdie.my.id';
+    const protocol = (host.includes('localhost') || host.includes('127.0.0.1')) ? 'http' : 'https';
+    const siteUrl = process.env.SITE_URL || `${protocol}://${host}`;
+
+    // OG Image: pastikan link absolut (crawlers sosial media wajib menggunakan URL lengkap dengan domain)
+    let ogImage = article.image || 'https://picsum.photos/seed/news/1200/630';
+    if (ogImage.startsWith('/')) {
+      ogImage = `${siteUrl}${ogImage}`;
+    }
 
     // Mendapatkan URL absolut artikel
     const categorySlug = article.category ? article.category.slug : 'berita';
-    const siteUrl = process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
     const articleUrl = `${siteUrl}/${categorySlug}/${article.slug}`;
 
     const html = `<!DOCTYPE html>

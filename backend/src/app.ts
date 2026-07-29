@@ -20,6 +20,18 @@ import searchRoutes from './modules/search/search.routes';
 import tagRoutes from './modules/tags/tag.routes';
 import marketRoutes from './modules/market/market.routes';
 import rbacRoutes from './modules/rbac/rbac.routes';
+import fs from 'fs';
+
+// Pastikan direktori uploads dan subfoldernya sudah dibuat agar upload gambar tidak error
+const requiredDirs = [
+  path.join(process.cwd(), 'uploads'),
+  path.join(process.cwd(), 'uploads', 'images')
+];
+requiredDirs.forEach(dir => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+});
 
 const app = express();
 
