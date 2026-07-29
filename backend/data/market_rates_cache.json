@@ -1,23 +1,23 @@
 {
   "rates": {
     "ihsg": {
-      "price": 6185.783,
-      "change": -0.1718247442478965,
+      "price": 6130.588,
+      "change": -0.8922880094565331,
       "status": "down",
-      "updatedAt": "2026-07-27T15:37:04.348Z"
+      "updatedAt": "2026-07-28T10:18:01.265Z"
     },
     "usd": {
-      "price": 17990,
-      "change": 0.12801246730116325,
+      "price": 18058,
+      "change": 0.5568548836173294,
       "status": "up",
-      "updatedAt": "2026-07-27T15:37:04.462Z"
+      "updatedAt": "2026-07-28T10:18:01.387Z"
     },
     "gold": {
-      "price": 2622000,
-      "buybackPrice": 2359800,
+      "price": 2613000,
+      "buybackPrice": 2351700,
       "change": -2.3318623550121735,
       "status": "down",
-      "updatedAt": "2026-07-27T15:37:04.620Z"
+      "updatedAt": "2026-07-28T10:18:01.563Z"
     },
     "crypto": {
       "price": 984500000,
@@ -26,5 +26,5 @@
       "updatedAt": "2026-07-22T09:12:00.000Z"
     }
   },
-  "expireAt": 1785166654620
+  "expireAt": 1785233911563
 }

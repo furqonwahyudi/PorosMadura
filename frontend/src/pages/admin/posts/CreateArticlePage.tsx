@@ -106,6 +106,7 @@ export default function CreateArticlePage() {
   // Tab State
   const [activeRightTab, setActiveRightTab] = useState("publish");
   const [showPreview, setShowPreview] = useState(false);
+  const [activeSocialTab, setActiveSocialTab] = useState("whatsapp");
 
   // SEO States
   const [metaTitle, setMetaTitle] = useState("");
@@ -519,6 +520,10 @@ export default function CreateArticlePage() {
   const hasExcerpt = (watch('excerpt') || '').trim().length > 30;
   const hasImage = editorHtml.includes('<img');
   const slugValue = watch('slug') || autoSlug || '';
+  const selectedCategoryId = watch("categoryId");
+  const selectedCategoryObj = categories?.find((c: any) => c.id === selectedCategoryId);
+  const categoryName = selectedCategoryObj ? selectedCategoryObj.name.toLowerCase() : "kategori";
+  const imageCount = (editorHtml.match(/<img[^>]*>/gi) || []).length + (featuredImage ? 1 : 0);
 
   let seoScore = 0;
   // Title: present + good length (50-70 chars) = 20pts
@@ -1318,105 +1323,597 @@ export default function CreateArticlePage() {
           )}
 
           {activeRightTab === "seo" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <div style={{ padding: "12px", background: "var(--bg-subtle)", borderRadius: 8, display: "flex", gap: 10, alignItems: "center", border: "1px solid var(--border)" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {/* Content Analysis Card */}
+              <div style={{
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
+                borderRadius: 12,
+                padding: 14,
+                display: "flex",
+                flexDirection: "column",
+                gap: 12,
+              }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
+                  Content Analysis
+                </div>
+
+                {/* 3 Metric Cards Grid */}
                 <div style={{
-                  width: 40, height: 40, borderRadius: 8, background: scoreColor + "20",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 15, fontWeight: 700, color: scoreColor, fontFamily: "'JetBrains Mono', monospace",
+                  display: "grid",
+                  gridTemplateColumns: "repeat(3, 1fr)",
+                  gap: 8,
                 }}>
-                  {seoScore}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>SEO Score</div>
-                  <div style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
-                    {seoScore >= 85 ? "Excellent — siap publish!" : seoScore >= 70 ? "Good — keep it up!" : seoScore >= 40 ? "Perlu perbaikan" : "Buruk — lengkapi field SEO"}
+                  {/* SEO Score Card */}
+                  <div style={{
+                    background: "var(--bg-subtle)",
+                    border: "1px solid var(--border-subtle)",
+                    borderRadius: 8,
+                    padding: "8px 6px",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    minHeight: 64,
+                    textAlign: "center",
+                  }}>
+                    <span style={{ fontSize: 9, fontWeight: 600, color: "var(--text-tertiary)", textTransform: "uppercase" }}>SEO Score</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: scoreColor, fontFamily: "'JetBrains Mono', monospace" }}>
+                      {seoScore}/100
+                    </span>
+                    <div style={{ width: "100%", height: 3, background: scoreColor + "20", borderRadius: 2, overflow: "hidden", marginTop: 4 }}>
+                      <div style={{ width: `${seoScore}%`, height: "100%", background: scoreColor }} />
+                    </div>
                   </div>
-                  <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
-                    {[
-                      { label: `${wordCount} kata`, ok: wordCount >= 800 },
-                      { label: `${h2Count} H2`, ok: h2Count >= 4 },
-                      { label: focusKeyword ? "Keyword ✓" : "Keyword —", ok: !!focusKeyword },
-                    ].map(b => (
-                      <span key={b.label} style={{ fontSize: 9.5, fontWeight: 600, color: b.ok ? "var(--green)" : "var(--orange)", background: (b.ok ? "var(--green)" : "var(--orange)") + "15", padding: "1px 5px", borderRadius: 4 }}>
-                        {b.label}
-                      </span>
-                    ))}
+
+                  {/* Readability Card */}
+                  <div style={{
+                    background: "var(--bg-subtle)",
+                    border: "1px solid var(--border-subtle)",
+                    borderRadius: 8,
+                    padding: "8px 6px",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    minHeight: 64,
+                    textAlign: "center",
+                  }}>
+                    <span style={{ fontSize: 9, fontWeight: 600, color: "var(--text-tertiary)", textTransform: "uppercase" }}>Readability</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: readabilityColor }}>
+                      {readabilityLabel}
+                    </span>
+                    <div style={{ width: "100%", height: 3, background: readabilityColor + "20", borderRadius: 2, overflow: "hidden", marginTop: 4 }}>
+                      <div style={{ width: `${readabilityPct}%`, height: "100%", background: readabilityColor }} />
+                    </div>
+                  </div>
+
+                  {/* Keyword Density Card */}
+                  <div style={{
+                    background: "var(--bg-subtle)",
+                    border: "1px solid var(--border-subtle)",
+                    borderRadius: 8,
+                    padding: "8px 6px",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    minHeight: 64,
+                    textAlign: "center",
+                  }}>
+                    <span style={{ fontSize: 9, fontWeight: 600, color: "var(--text-tertiary)", textTransform: "uppercase" }}>Density</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: kwDensityColor }}>
+                      {focusKeyword && kwDensity ? `${kwDensity}%` : "—"}
+                    </span>
+                    <div style={{ width: "100%", height: 3, background: (focusKeyword ? kwDensityColor : "var(--border)") + "20", borderRadius: 2, overflow: "hidden", marginTop: 4 }}>
+                      <div style={{ width: `${kwDensityPct}%`, height: "100%", background: focusKeyword ? kwDensityColor : "transparent" }} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Counts Badges Row */}
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2, 1fr)",
+                  gap: 6,
+                  marginTop: 4,
+                }}>
+                  {[
+                    { label: `${wordCount} Kata`, ok: wordCount >= 300, info: "Min. 300 kata" },
+                    { label: `${h2Count} H2`, ok: h2Count >= 1, info: "Subheading H2" },
+                    { label: `${h3Count} H3`, ok: h3Count >= 0, info: "Subheading H3" },
+                    { label: imageCount > 0 ? `${imageCount} Gambar` : "— Gambar", ok: imageCount > 0, info: "Media & Cover" },
+                  ].map((item, idx) => (
+                    <div
+                      key={idx}
+                      title={item.info}
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 600,
+                        color: "var(--text-secondary)",
+                        background: "var(--bg-subtle)",
+                        border: "1px solid var(--border-subtle)",
+                        padding: "4px 8px",
+                        borderRadius: 6,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                      }}
+                    >
+                      <div style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: "50%",
+                        background: item.ok ? "var(--green)" : "var(--orange)",
+                      }} />
+                      <span>{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Google Snippet Preview Card */}
+              <div style={{
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
+                borderRadius: 12,
+                padding: 14,
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+              }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
+                  Google Snippet Preview
+                </div>
+                
+                {/* Search result preview mockup */}
+                <div style={{
+                  background: "#ffffff",
+                  border: "1px solid #e1e3e6",
+                  borderRadius: 8,
+                  padding: 12,
+                  fontFamily: "Arial, sans-serif",
+                  textAlign: "left",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                }}>
+                  {/* Link path breadcrumbs */}
+                  <div style={{
+                    fontSize: 11,
+                    color: "#4d5156",
+                    marginBottom: 4,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}>
+                    <span>porosmadura.com</span>
+                    <span style={{ color: "#bdc1c6" }}>&gt;</span>
+                    <span style={{ color: "#70757a" }}>{categoryName}</span>
+                    <span style={{ color: "#bdc1c6" }}>&gt;</span>
+                    <span style={{ color: "#70757a", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {slugValue || "article-slug"}
+                    </span>
+                  </div>
+
+                  {/* Title (Blue link) */}
+                  <div style={{
+                    fontSize: 14,
+                    fontWeight: "normal",
+                    color: "#1a0dab",
+                    lineHeight: "1.3",
+                    marginBottom: 4,
+                    wordBreak: "break-word",
+                    cursor: "pointer",
+                  }}>
+                    {metaTitle || watch("title") || "Article Title Here"} — Poros Madura
+                  </div>
+
+                  {/* Meta Description */}
+                  <div style={{
+                    fontSize: 12,
+                    color: "#4d5156",
+                    lineHeight: "1.4",
+                    wordBreak: "break-word",
+                  }}>
+                    {metaDescription || watch("excerpt") || "Meta description will appear here. Write a compelling description between 120-160 characters."}
                   </div>
                 </div>
               </div>
 
-              <div>
-                <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 5 }}>
-                  Focus Keyword
-                </label>
-                <input
-                  value={focusKeyword}
-                  onChange={e => setFocusKeyword(e.target.value)}
-                  placeholder="e.g. beasiswa sumenep 2025"
-                  style={{
-                    width: "100%", padding: "7px 10px", borderRadius: 8,
-                    border: "1px solid var(--border)", background: "var(--bg-subtle)",
-                    color: "var(--text-primary)", fontSize: 12.5, outline: "none",
-                  }}
-                />
-              </div>
+              {/* Form Input Fields */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 4 }}>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 5 }}>
+                    Focus Keyword
+                  </label>
+                  <input
+                    value={focusKeyword}
+                    onChange={e => setFocusKeyword(e.target.value)}
+                    placeholder="e.g. beasiswa sumenep 2025"
+                    style={{
+                      width: "100%", padding: "7px 10px", borderRadius: 8,
+                      border: "1px solid var(--border)", background: "var(--bg-subtle)",
+                      color: "var(--text-primary)", fontSize: 12.5, outline: "none",
+                    }}
+                  />
+                </div>
 
-              <div>
-                <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 5 }}>
-                  SEO Title
-                </label>
-                <input
-                  value={metaTitle}
-                  onChange={e => setMetaTitle(e.target.value)}
-                  placeholder="Optimized title for search engines"
-                  style={{
-                    width: "100%", padding: "7px 10px", borderRadius: 8,
-                    border: "1px solid var(--border)", background: "var(--bg-subtle)",
-                    color: "var(--text-primary)", fontSize: 12.5, outline: "none",
-                  }}
-                />
-              </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 5 }}>
+                    SEO Title
+                  </label>
+                  <input
+                    value={metaTitle}
+                    onChange={e => setMetaTitle(e.target.value)}
+                    placeholder="Optimized title for search engines"
+                    style={{
+                      width: "100%", padding: "7px 10px", borderRadius: 8,
+                      border: "1px solid var(--border)", background: "var(--bg-subtle)",
+                      color: "var(--text-primary)", fontSize: 12.5, outline: "none",
+                    }}
+                  />
+                </div>
 
-              <div>
-                <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 5 }}>
-                  Meta Description
-                </label>
-                <textarea
-                  value={metaDescription}
-                  onChange={e => setMetaDescription(e.target.value)}
-                  placeholder="Compelling description (120–160 chars)"
-                  rows={3}
-                  style={{
-                    width: "100%", padding: "7px 10px", borderRadius: 8,
-                    border: "1px solid var(--border)", background: "var(--bg-subtle)",
-                    color: "var(--text-primary)", fontSize: 12.5, outline: "none",
-                    resize: "none", fontFamily: "inherit",
-                  }}
-                />
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 5 }}>
+                    Meta Description
+                  </label>
+                  <textarea
+                    value={metaDescription}
+                    onChange={e => setMetaDescription(e.target.value)}
+                    placeholder="Compelling description (120–160 chars)"
+                    rows={3}
+                    style={{
+                      width: "100%", padding: "7px 10px", borderRadius: 8,
+                      border: "1px solid var(--border)", background: "var(--bg-subtle)",
+                      color: "var(--text-primary)", fontSize: 12.5, outline: "none",
+                      resize: "none", fontFamily: "inherit",
+                    }}
+                  />
+                </div>
               </div>
             </div>
           )}
 
           {activeRightTab === "social" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {["Facebook / OpenGraph", "Twitter / X Card"].map(platform => (
-                <div key={platform} style={{ padding: 12, background: "var(--bg-subtle)", borderRadius: 8, border: "1px solid var(--border-subtle)" }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)", marginBottom: 10 }}>{platform}</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    <input placeholder="OG Title" style={{
-                      width: "100%", padding: "6px 9px", borderRadius: 6,
-                      border: "1px solid var(--border)", background: "var(--surface)",
-                      color: "var(--text-primary)", fontSize: 12, outline: "none", fontFamily: "inherit",
-                    }} />
-                    <textarea placeholder="OG Description" rows={2} style={{
-                      width: "100%", padding: "6px 9px", borderRadius: 6,
-                      border: "1px solid var(--border)", background: "var(--surface)",
-                      color: "var(--text-primary)", fontSize: 12, outline: "none", resize: "none", fontFamily: "inherit",
-                    }} />
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {/* Unified Auto OG Card */}
+              <div style={{
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
+                borderRadius: 12,
+                padding: 10,
+                display: "flex",
+                flexDirection: "column",
+                gap: 10,
+              }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>
+                    Unified OpenGraph (Auto-Generated)
+                  </div>
+                  <div style={{ fontSize: 10, color: "var(--text-tertiary)", lineHeight: "1.3" }}>
+                    Metadata OpenGraph dan Twitter Card dihasilkan otomatis dari judul, kutipan, dan gambar utama artikel ini.
                   </div>
                 </div>
-              ))}
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {/* OG Title */}
+                  <div>
+                    <label style={{ fontSize: 9, fontWeight: 600, color: "var(--text-tertiary)", textTransform: "uppercase", display: "block", marginBottom: 3 }}>
+                      OG Title
+                    </label>
+                    <input
+                      disabled
+                      value={metaTitle || watch("title") || "Article Title Here"}
+                      style={{
+                        width: "100%", padding: "5px 8px", borderRadius: 6,
+                        border: "1px solid var(--border)", background: "var(--bg-subtle)",
+                        color: "var(--text-secondary)", fontSize: 11.5, cursor: "not-allowed",
+                        opacity: 0.85,
+                      }}
+                    />
+                  </div>
+
+                  {/* OG Description */}
+                  <div>
+                    <label style={{ fontSize: 9, fontWeight: 600, color: "var(--text-tertiary)", textTransform: "uppercase", display: "block", marginBottom: 3 }}>
+                      OG Description
+                    </label>
+                    <textarea
+                      disabled
+                      rows={2}
+                      value={metaDescription || watch("excerpt") || "Meta description will appear here. Write a compelling description between 120-160 characters."}
+                      style={{
+                        width: "100%", padding: "5px 8px", borderRadius: 6,
+                        border: "1px solid var(--border)", background: "var(--bg-subtle)",
+                        color: "var(--text-secondary)", fontSize: 11.5, cursor: "not-allowed",
+                        resize: "none", fontFamily: "inherit", opacity: 0.85,
+                      }}
+                    />
+                  </div>
+
+                  {/* OG Image */}
+                  <div>
+                    <label style={{ fontSize: 9, fontWeight: 600, color: "var(--text-tertiary)", textTransform: "uppercase", display: "block", marginBottom: 3 }}>
+                      OG Image
+                    </label>
+                    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      <input
+                        disabled
+                        value={featuredImage || "https://picsum.photos/seed/news/1200/630"}
+                        style={{
+                          flex: 1, padding: "5px 8px", borderRadius: 6,
+                          border: "1px solid var(--border)", background: "var(--bg-subtle)",
+                          color: "var(--text-secondary)", fontSize: 11.5, cursor: "not-allowed",
+                          opacity: 0.85, overflow: "hidden", textOverflow: "ellipsis",
+                        }}
+                      />
+                      <div style={{
+                        width: 28, height: 28, borderRadius: 4, overflow: "hidden",
+                        border: "1px solid var(--border-subtle)", flexShrink: 0,
+                        background: "#eee",
+                      }}>
+                        <img
+                          src={featuredImage || "https://picsum.photos/seed/news/1200/630"}
+                          alt="Thumbnail preview"
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                          onError={(e) => {
+                            e.currentTarget.src = "https://picsum.photos/seed/news/1200/630";
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Social Preview Selector */}
+              <div style={{
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
+                borderRadius: 12,
+                padding: 10,
+                display: "flex",
+                flexDirection: "column",
+                gap: 10,
+              }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>
+                  Social Media Link Preview
+                </div>
+
+                {/* Pill tab buttons */}
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(3, 1fr)",
+                  gap: 4,
+                }}>
+                  {[
+                    { key: "whatsapp", label: "WhatsApp" },
+                    { key: "instagram", label: "Instagram" },
+                    { key: "twitter", label: "X (Twitter)" },
+                    { key: "facebook", label: "Facebook" },
+                    { key: "linkedin", label: "LinkedIn" },
+                    { key: "threads", label: "Threads" },
+                  ].map(p => (
+                    <button
+                      key={p.key}
+                      type="button"
+                      onClick={() => setActiveSocialTab(p.key)}
+                      style={{
+                        padding: "6px 2px",
+                        fontSize: 10,
+                        fontWeight: 600,
+                        borderRadius: 6,
+                        border: activeSocialTab === p.key ? "1px solid var(--brand)" : "1px solid var(--border)",
+                        background: activeSocialTab === p.key ? "var(--brand-subtle)" : "var(--bg-subtle)",
+                        color: activeSocialTab === p.key ? "var(--brand)" : "var(--text-secondary)",
+                        cursor: "pointer",
+                        transition: "all 0.1s ease",
+                      }}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Preview Mockup Container */}
+                <div style={{ marginTop: 4 }}>
+                  {activeSocialTab === "whatsapp" && (
+                    <div style={{
+                      background: "#efeae2",
+                      padding: 10,
+                      borderRadius: 10,
+                      border: "1px solid #dcdcdc",
+                      boxShadow: "inset 0 1px 2px rgba(0,0,0,0.05)",
+                    }}>
+                      {/* WhatsApp message bubble */}
+                      <div style={{
+                        background: "#d9fdd3",
+                        borderRadius: "8px 8px 8px 0px",
+                        padding: 6,
+                        maxWidth: "92%",
+                        boxShadow: "0 1px 1px rgba(0,0,0,0.1)",
+                        fontSize: 12.5,
+                        color: "#111b21",
+                        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+                      }}>
+                        {/* Preview Box */}
+                        <div style={{
+                          background: "#e6f8e0",
+                          borderRadius: 6,
+                          overflow: "hidden",
+                          display: "flex",
+                          flexDirection: "row-reverse",
+                          border: "1px solid #c9ebd1",
+                          alignItems: "stretch",
+                        }}>
+                          {/* Image Thumbnail */}
+                          <div style={{ width: 70, minHeight: 70, flexShrink: 0 }}>
+                            <img
+                              src={featuredImage || "https://picsum.photos/seed/news/1200/630"}
+                              alt="Thumbnail"
+                              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                            />
+                          </div>
+                          {/* Text info */}
+                          <div style={{ flex: 1, padding: "6px 8px", textAlign: "left" }}>
+                            <div style={{ fontSize: 9.5, color: "#54656f", textTransform: "lowercase", marginBottom: 2 }}>youdie.my.id</div>
+                            <div style={{ fontSize: 11.5, fontWeight: "bold", color: "#111b21", lineHeight: "1.3", margin: "2px 0", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                              {metaTitle || watch("title") || "Article Title Here"}
+                            </div>
+                            <div style={{ fontSize: 10.5, color: "#54656f", lineHeight: "1.3", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                              {metaDescription || watch("excerpt") || "Meta description will appear here."}
+                            </div>
+                          </div>
+                        </div>
+                        {/* URL inside message */}
+                        <div style={{ color: "#007bfc", fontSize: 11.5, marginTop: 4, textDecoration: "underline", wordBreak: "break-all" }}>
+                          https://youdie.my.id/{selectedCategoryObj?.slug || "berita"}/{slugValue || "article-slug"}
+                        </div>
+                        <div style={{ textAlign: "right", fontSize: 9, color: "#667781", marginTop: 2 }}>
+                          11:23 AM
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeSocialTab === "instagram" && (
+                    <div style={{
+                      background: "#ffffff",
+                      border: "1px solid #dbdbdb",
+                      borderRadius: 12,
+                      overflow: "hidden",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+                    }}>
+                      <div style={{ height: 110, width: "100%", overflow: "hidden", background: "#f0f0f0" }}>
+                        <img
+                          src={featuredImage || "https://picsum.photos/seed/news/1200/630"}
+                          alt="Meta preview"
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        />
+                      </div>
+                      <div style={{ padding: "8px 10px", textAlign: "left" }}>
+                        <div style={{ fontSize: 9.5, color: "#8e8e8e", textTransform: "lowercase", marginBottom: 2 }}>youdie.my.id</div>
+                        <div style={{ fontSize: 11.5, fontWeight: 700, color: "#262626", lineHeight: "1.3", marginBottom: 3 }}>
+                          {metaTitle || watch("title") || "Article Title Here"}
+                        </div>
+                        <div style={{ fontSize: 10.5, color: "#8e8e8e", lineHeight: "1.3", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                          {metaDescription || watch("excerpt") || "Meta description will appear here."}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeSocialTab === "twitter" && (
+                    <div style={{
+                      background: "#ffffff",
+                      border: "1px solid #e1e8ed",
+                      borderRadius: 14,
+                      overflow: "hidden",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+                    }}>
+                      <div style={{ height: 110, width: "100%", overflow: "hidden", background: "#f0f0f0" }}>
+                        <img
+                          src={featuredImage || "https://picsum.photos/seed/news/1200/630"}
+                          alt="X Card preview"
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        />
+                      </div>
+                      <div style={{ padding: "8px 10px", borderTop: "1px solid #e1e8ed", textAlign: "left" }}>
+                        <div style={{ fontSize: 10, color: "#536471", textTransform: "lowercase", marginBottom: 2 }}>youdie.my.id</div>
+                        <div style={{ fontSize: 12, fontWeight: "bold", color: "#0f1419", lineHeight: "1.3", marginBottom: 2 }}>
+                          {metaTitle || watch("title") || "Article Title Here"}
+                        </div>
+                        <div style={{ fontSize: 11, color: "#536471", lineHeight: "1.3", display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                          {metaDescription || watch("excerpt") || "Meta description will appear here."}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeSocialTab === "facebook" && (
+                    <div style={{
+                      background: "#ffffff",
+                      border: "1px solid #ced0d4",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                      fontFamily: "Segoe UI, Helvetica, Arial, sans-serif",
+                    }}>
+                      <div style={{ height: 110, width: "100%", overflow: "hidden", background: "#f0f0f0" }}>
+                        <img
+                          src={featuredImage || "https://picsum.photos/seed/news/1200/630"}
+                          alt="Facebook Link Preview"
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        />
+                      </div>
+                      <div style={{ padding: "8px 10px", background: "#f2f3f5", borderTop: "1px solid #e9ebee", textAlign: "left" }}>
+                        <div style={{ fontSize: 11, color: "#65676b", textTransform: "lowercase", marginBottom: 2 }}>youdie.my.id</div>
+                        <div style={{ fontSize: 12, fontWeight: "bold", color: "#050505", lineHeight: "1.3", marginBottom: 3 }}>
+                          {metaTitle || watch("title") || "Article Title Here"}
+                        </div>
+                        <div style={{ fontSize: 11, color: "#65676b", lineHeight: "1.3", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                          {metaDescription || watch("excerpt") || "Meta description will appear here."}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeSocialTab === "linkedin" && (
+                    <div style={{
+                      background: "#f3f6f8",
+                      border: "1px solid #e0e0e0",
+                      borderRadius: 4,
+                      overflow: "hidden",
+                      fontFamily: "-apple-system, system-ui, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+                    }}>
+                      <div style={{ height: 110, width: "100%", overflow: "hidden", background: "#e0e0e0" }}>
+                        <img
+                          src={featuredImage || "https://picsum.photos/seed/news/1200/630"}
+                          alt="LinkedIn Meta"
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        />
+                      </div>
+                      <div style={{ padding: "8px 10px", textAlign: "left" }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: "#191919", lineHeight: "1.3", display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                          {metaTitle || watch("title") || "Article Title Here"}
+                        </div>
+                        <div style={{ fontSize: 9.5, color: "#666666", textTransform: "lowercase", marginTop: 4 }}>youdie.my.id</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeSocialTab === "threads" && (
+                    <div style={{
+                      background: "#ffffff",
+                      border: "1px solid #e5e5e5",
+                      borderRadius: 12,
+                      overflow: "hidden",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+                    }}>
+                      <div style={{ height: 110, width: "100%", overflow: "hidden", background: "#f5f5f5" }}>
+                        <img
+                          src={featuredImage || "https://picsum.photos/seed/news/1200/630"}
+                          alt="Threads preview"
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        />
+                      </div>
+                      <div style={{ padding: "8px 10px", textAlign: "left" }}>
+                        <div style={{ fontSize: 10, color: "#999999", textTransform: "lowercase", marginBottom: 2 }}>youdie.my.id</div>
+                        <div style={{ fontSize: 12, fontWeight: "bold", color: "#000000", lineHeight: "1.3", marginBottom: 2 }}>
+                          {metaTitle || watch("title") || "Article Title Here"}
+                        </div>
+                        <div style={{ fontSize: 11, color: "#999999", lineHeight: "1.3", display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                          {metaDescription || watch("excerpt") || "Meta description will appear here."}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
         </div>

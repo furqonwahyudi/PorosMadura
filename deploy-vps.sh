@@ -52,7 +52,11 @@ DB_NAME=porosmadura
 
 # Kunci JWT Rahasia
 JWT_SECRET=${JWT_SEC}
-JWT_REFRESH_SECRET=${JWT_REF_}
+JWT_REFRESH_SECRET=${JWT_REF}
+
+# API Keys untuk AI News Generator (Scraping)
+GEMINI_API_KEY=""
+XIEQA_API_KEY=""
 EOT
     echo -e "${GREEN}==> File .env berhasil dibuat dengan password database & token acak baru.${NC}"
 fi

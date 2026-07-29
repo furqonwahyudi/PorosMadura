@@ -5,7 +5,7 @@ import {
   incrementView, incrementRead, incrementShare,
   createArticle, updateArticle, deleteArticle,
   publishArticle, archiveArticle, scrapeArticle,
-  getArticleById, generateAiNews
+  getArticleById, generateAiNews, getSharePreview
 } from './article.controller';
 import { authenticate, authorize } from '../../middleware/auth';
 
@@ -18,6 +18,7 @@ router.get('/breaking', getBreakingNews);
 router.get('/headline', getHeadlines);
 router.get('/trending', getTrending);
 router.get('/editor-choice', getEditorChoice);
+router.get('/:slug/share-preview', getSharePreview);
 router.get('/:slug', getArticleBySlug);
 router.post('/:slug/view', incrementView);
 router.post('/:slug/read', incrementRead);

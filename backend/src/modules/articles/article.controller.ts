@@ -661,4 +661,78 @@ export async function generateAiNews(req: Request, res: Response, next: NextFunc
   }
 }
 
+export async function getSharePreview(req: Request, res: Response, next: NextFunction) {
+  try {
+    const article = await prisma.article.findFirst({
+      where: { slug: req.params.slug, status: 'PUBLISHED' },
+      include: {
+        category: true,
+      },
+    });
+
+    if (!article) {
+      return res.status(404).send('Artikel tidak ditemukan');
+    }
+
+    // Mendapatkan website settings
+    const settings = await prisma.websiteSettings.findUnique({
+      where: { id: 'singleton' },
+    });
+
+    const siteName = settings?.siteName || 'Poros Madura';
+    
+    // OG Title: use metaTitle if set, otherwise article title
+    const ogTitle = article.metaTitle || article.title;
+    
+    // OG Description: use metaDescription if set, otherwise article excerpt/lead
+    const ogDescription = article.metaDescription || article.excerpt || '';
+    
+    // OG Image: use article.image (featured image) or a fallback default image
+    const ogImage = article.image || 'https://picsum.photos/seed/news/1200/630';
+
+    // Mendapatkan URL absolut artikel
+    const categorySlug = article.category ? article.category.slug : 'berita';
+    const siteUrl = process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
+    const articleUrl = `${siteUrl}/${categorySlug}/${article.slug}`;
+
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>${ogTitle} — ${siteName}</title>
+  <meta name="description" content="${ogDescription.replace(/"/g, '&quot;')}" />
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="${articleUrl}" />
+  <meta property="og:title" content="${ogTitle.replace(/"/g, '&quot;')}" />
+  <meta property="og:description" content="${ogDescription.replace(/"/g, '&quot;')}" />
+  <meta property="og:image" content="${ogImage}" />
+  <meta property="og:site_name" content="${siteName}" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:url" content="${articleUrl}" />
+  <meta name="twitter:title" content="${ogTitle.replace(/"/g, '&quot;')}" />
+  <meta name="twitter:description" content="${ogDescription.replace(/"/g, '&quot;')}" />
+  <meta name="twitter:image" content="${ogImage}" />
+</head>
+<body>
+  <h1>${article.title}</h1>
+  <p>${article.excerpt || ''}</p>
+  ${article.image ? `<img src="${article.image}" alt="${article.title}" />` : ''}
+  <script>
+    // Jika diakses oleh browser sungguhan (bukan bot), arahkan ke halaman utama portal berita
+    window.location.href = "${articleUrl}";
+  </script>
+</body>
+</html>`;
+
+    res.setHeader('Content-Type', 'text/html');
+    return res.status(200).send(html);
+  } catch (error) {
+    next(error);
+  }
+}
+
 

@@ -28,6 +28,8 @@ services:
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-supersecretjwtrefreshsecretkey}
       PORT: 3001
       NODE_ENV: production
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      XIEQA_API_KEY: ${XIEQA_API_KEY}
     command: sh -c "npx prisma db push && node dist/server.js"
     volumes:
       - uploads:/app/uploads
