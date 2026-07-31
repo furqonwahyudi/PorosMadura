@@ -1,5 +1,6 @@
 // AI Generator - Gemini & Xieqa provider support
 import { AppError } from '../../middleware/errorHandler';
+import { logger } from '../../config/logger';
 
 interface ScrapedData {
   title: string;
@@ -408,13 +409,11 @@ export async function generateNewsFromFacts(scrapedData: ScrapedData): Promise<G
   // List of models to try in order (fallback if rate limited)
   // Ordered from lightest (less rate-limited) to most capable
   const GEMINI_MODELS = [
-    'gemini-3.5-flash-lite',     // lightest, newest
-    'gemini-3.1-flash-lite',     // light and fast
-    'gemini-2.5-flash-lite',     // stable lite
-    'gemini-2.0-flash-lite',     // older lite fallback
-    'gemini-3.5-flash',          // newest flash
-    'gemini-2.5-flash',          // stable flash
-    'gemini-2.0-flash',          // older stable flash
+    'gemini-3.5-flash',          // Model tercepat dan terbaru (2026)
+    'gemini-3.1-flash-lite',     // Model ringan dengan limit rate tinggi
+    'gemini-2.0-flash',          // Model stabil 2.0
+    'gemini-2.0-flash-lite',     // Model ringan stabil 2.0
+    'gemini-3.1-pro',            // Model pro untuk tugas kompleks
   ];
 
   const requestBody = JSON.stringify({
@@ -435,39 +434,40 @@ export async function generateNewsFromFacts(scrapedData: ScrapedData): Promise<G
 
   for (const model of GEMINI_MODELS) {
     try {
-      console.log(`[AI] Mencoba model: ${model}`);
+      logger.info(`[AI] Mencoba model: ${model}`);
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: requestBody,
+          signal: AbortSignal.timeout(10000), // 10s timeout per model
         }
       );
 
       if (response.status === 429) {
         const retryAfter = response.headers.get('Retry-After');
         const waitMs = retryAfter ? parseInt(retryAfter) * 1000 : 3000;
-        console.warn(`[AI] Model ${model} kena rate limit (429), skip ke model berikutnya...`);
+        logger.warn(`[AI] Model ${model} kena rate limit (429), skip ke model berikutnya...`);
         lastError = new Error(`Model ${model} kena rate limit.`);
         await new Promise(resolve => setTimeout(resolve, Math.min(waitMs, 3000)));
         continue; // try next model
       }
 
       if (response.status === 404) {
-        console.warn(`[AI] Model ${model} tidak ditemukan (404), skip ke model berikutnya...`);
+        logger.warn(`[AI] Model ${model} tidak ditemukan (404), skip ke model berikutnya...`);
         lastError = new Error(`Model ${model} tidak tersedia.`);
         continue; // try next model
       }
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`[AI] Model ${model} gagal:`, errorText);
+        logger.error(`[AI] Model ${model} gagal: ${errorText}`);
         lastError = new Error(`API Gemini gagal (${response.status}): ${errorText.substring(0, 300)}`);
         continue; // try next model
       }
 
-      const responseJson = await response.json();
+      const responseJson = (await response.json()) as any;
       
       // Check for finish reason issues
       const candidate = responseJson.candidates?.[0];
@@ -499,13 +499,13 @@ export async function generateNewsFromFacts(scrapedData: ScrapedData): Promise<G
         result.tags = [];
       }
 
-      console.log(`[AI] Artikel berhasil dibuat menggunakan model: ${model}`);
+      logger.info(`[AI] Artikel berhasil dibuat menggunakan model: ${model}`);
       return result;
 
     } catch (error: any) {
       if (error instanceof AppError) throw error;
       lastError = error;
-      console.error(`[AI] Error dengan model ${model}:`, error.message);
+      logger.error(`[AI] Error dengan model ${model}: ${error.stack || error.message}`);
     }
   }
 
@@ -585,7 +585,7 @@ Sekarang tuliskan isi artikel berita HTML-nya (800–1.300 kata, minimal 4 H2):
       throw new Error(`Xieqa API gagal (${response.status}): ${errorText.substring(0, 300)}`);
     }
 
-    const responseJson = await response.json();
+    const responseJson = (await response.json()) as any;
     const rawContent = responseJson?.choices?.[0]?.message?.content || '';
 
     if (!rawContent || rawContent.trim().length < 20) {

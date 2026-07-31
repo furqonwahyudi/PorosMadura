@@ -1982,16 +1982,53 @@ export default function CreateArticlePage() {
               formValues.status === "SCHEDULED" ? <><Clock size={14} /> Schedule</> :
               <><Save size={14} /> Save Draft</>}
           </button>
+        </div>
+        <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+          {isEditMode ? (
+            <button
+              type="button"
+              onClick={() => {
+                const categorySlug = existingArticle?.category?.slug || "berita";
+                const slug = existingArticle?.slug;
+                if (slug) {
+                  window.open(`/${categorySlug}/${slug}`, "_blank");
+                } else {
+                  showToast("Gagal memuat pratinjau. Pastikan artikel memiliki slug.", "error");
+                }
+              }}
+              style={{
+                flex: 1, padding: "8px", borderRadius: 8,
+                border: "1px solid var(--border)", background: "transparent",
+                color: "var(--text-secondary)", cursor: "pointer", fontSize: 12, fontWeight: 500,
+              }}
+            >
+              Preview Article ↗
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => showToast("Silakan simpan artikel sebagai Draft terlebih dahulu untuk mengaktifkan pratinjau!", "info")}
+              style={{
+                flex: 1, padding: "8px", borderRadius: 8,
+                border: "1px solid var(--border)", background: "transparent",
+                color: "var(--text-tertiary)", cursor: "pointer", fontSize: 12, fontWeight: 500,
+                opacity: 0.6,
+              }}
+              title="Simpan sebagai Draft terlebih dahulu"
+            >
+              Preview Article ↗
+            </button>
+          )}
           <button
             type="button"
             onClick={() => navigate("/admin/posts")}
             style={{
-              width: "100%", padding: "8px", borderRadius: 8,
+              flex: 1, padding: "8px", borderRadius: 8,
               border: "1px solid var(--border)", background: "transparent",
-              color: "var(--text-secondary)", cursor: "pointer", fontSize: 12.5, fontWeight: 500,
+              color: "var(--text-secondary)", cursor: "pointer", fontSize: 12, fontWeight: 500,
             }}
           >
-            Preview Article
+            Cancel
           </button>
         </div>
       </div>
