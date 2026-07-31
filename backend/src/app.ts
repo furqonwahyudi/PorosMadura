@@ -294,7 +294,7 @@ ${sitemapUrls}
 });
 
 // ── Google News XML Sitemap Generator (Terbit 48 Jam Terakhir) ──
-app.get('/news-sitemap.xml', async (req: Request, res: Response, next: NextFunction) => {
+app.get(['/news-sitemap.xml', '/sitemap-news.xml'], async (req: Request, res: Response, next: NextFunction) => {
   try {
     const siteUrl = await getSiteUrl(req);
     const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);

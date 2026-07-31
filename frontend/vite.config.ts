@@ -12,6 +12,13 @@ export default defineConfig(() => {
       },
     },
     server: {
+      proxy: {
+        '/sitemap.xml': 'http://localhost:3001',
+        '/news-sitemap.xml': 'http://localhost:3001',
+        '/sitemap-news.xml': 'http://localhost:3001',
+        '/robots.txt': 'http://localhost:3001',
+        '/feed': 'http://localhost:3001',
+      },
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modify—file watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
