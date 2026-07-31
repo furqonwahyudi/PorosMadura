@@ -144,6 +144,7 @@ model Article {
   metaTitle       String?
   metaDescription String?
   metaKeywords    String[]      @default([])
+  focusKeyword    String?
   canonicalUrl    String?
   videoUrl        String?
   audioUrl        String?
@@ -393,4 +394,35 @@ model WebsiteSettings {
   updatedAt      DateTime @updatedAt
 
   @@map("website_settings")
+}
+
+model SeoSettings {
+  id              String   @id @default("singleton")
+  siteUrl         String   @default("https://youdie.my.id")
+  homeTitle       String   @default("Poros Madura - Portal Berita Madura Terkini & Terpercaya")
+  homeDescription String   @default("Portal berita resmi menyajikan informasi berita terkini seputar Bangkalan, Sampang, Pamekasan, Sumenep, dan wilayah Madura Jawa Timur.")
+  robotsTxt       String   @default("User-agent: *\nAllow: /\nDisallow: /admin/\nDisallow: /api/\n\nSitemap: https://youdie.my.id/sitemap.xml\nSitemap: https://youdie.my.id/news-sitemap.xml")
+  fallbackImage   String?
+  updatedAt       DateTime @updatedAt
+
+  @@map("seo_settings")
+}
+
+model Redirect {
+  id        String   @id @default(uuid())
+  oldUrl    String   @unique
+  newUrl    String
+  type      String   @default("301")
+  createdAt DateTime @default(now())
+
+  @@map("redirects")
+}
+
+model DeadLink {
+  id         String   @id @default(uuid())
+  url        String   @unique
+  count      Int      @default(1)
+  lastSeenAt DateTime @default(now())
+
+  @@map("dead_links")
 }

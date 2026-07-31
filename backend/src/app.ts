@@ -20,6 +20,7 @@ import searchRoutes from './modules/search/search.routes';
 import tagRoutes from './modules/tags/tag.routes';
 import marketRoutes from './modules/market/market.routes';
 import rbacRoutes from './modules/rbac/rbac.routes';
+import seoRoutes from './modules/seo/seo.routes';
 import fs from 'fs';
 
 // Pastikan direktori uploads dan subfoldernya sudah dibuat agar upload gambar tidak error
@@ -102,8 +103,44 @@ app.use('/api/search', searchRoutes);
 app.use('/api/tags', tagRoutes);
 app.use('/api/market', marketRoutes);
 app.use('/api/rbac', rbacRoutes);
+app.use('/api/seo', seoRoutes);
 
-// Helper to generate RSS XML
+// Middleware untuk Pengalihan Tautan 301/302 Redirect Dinamis dari Database
+app.use(async (req: Request, res: Response, next: NextFunction) => {
+  // Hanya intercept request GET untuk halaman (bukan /api, /uploads, dll)
+  if (req.method !== 'GET' || req.path.startsWith('/api') || req.path.startsWith('/uploads') || req.path.includes('.')) {
+    return next();
+  }
+  try {
+    const redirect = await prisma.redirect.findUnique({
+      where: { oldUrl: req.path }
+    });
+    if (redirect) {
+      const code = redirect.type === '302' ? 302 : 301;
+      return res.redirect(code, redirect.newUrl);
+    }
+  } catch (err) {
+    // Abaikan error database agar web utama tidak terganggu
+  }
+  next();
+});
+
+// Helper untuk mengambil URL absolut website terpusat
+async function getSiteUrl(req: Request): Promise<string> {
+  try {
+    const seoSettings = await prisma.seoSettings.findUnique({ where: { id: 'singleton' } });
+    if (seoSettings?.siteUrl) {
+      return seoSettings.siteUrl.replace(/\/$/, ''); // Buang slash akhir jika ada
+    }
+  } catch (e) {
+    // Abaikan error database
+  }
+  const host = req.get('host') || 'youdie.my.id';
+  const protocol = (host.includes('localhost') || host.includes('127.0.0.1')) ? 'http' : 'https';
+  return `${protocol}://${host}`;
+}
+
+// Helper to generate RSS XML dengan Media Content & Category Tags
 async function generateRssXml(title: string, description: string, link: string, feedUrl: string, categoryIds?: string[]) {
   const whereClause: any = { status: 'PUBLISHED' };
   if (categoryIds && categoryIds.length > 0) {
@@ -117,13 +154,19 @@ async function generateRssXml(title: string, description: string, link: string, 
     include: { category: true }
   });
 
-  const frontendUrl = process.env.CORS_ORIGIN || "http://localhost:5173";
-
   const rssItems = articles.map(art => {
     const pubDate = art.publishedAt ? new Date(art.publishedAt).toUTCString() : new Date(art.createdAt).toUTCString();
-    const articleUrl = `${frontendUrl}/${art.category.slug}/${art.slug}`;
+    const articleUrl = `${link}/${art.category.slug}/${art.slug}`;
     const escapedTitle = art.title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const escapedExcerpt = (art.excerpt || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    
+    // Tag media untuk gambar utama berita
+    let mediaTag = '';
+    if (art.image) {
+      const fullImageUrl = art.image.startsWith('http') ? art.image : `${link}${art.image}`;
+      mediaTag = `<media:content url="${fullImageUrl}" medium="image" type="image/jpeg" />`;
+    }
+
     return `
     <item>
       <title>${escapedTitle}</title>
@@ -131,11 +174,13 @@ async function generateRssXml(title: string, description: string, link: string, 
       <guid isPermaLink="true">${articleUrl}</guid>
       <pubDate>${pubDate}</pubDate>
       <description>${escapedExcerpt}</description>
+      <category>${art.category.name}</category>
+      ${mediaTag}
     </item>`;
   }).join('');
 
   return `<?xml version="1.0" encoding="UTF-8" ?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/">
 <channel>
   <title>${title}</title>
   <link>${link}</link>
@@ -151,12 +196,12 @@ async function generateRssXml(title: string, description: string, link: string, 
 // ── RSS Feed Utama ──
 app.get(['/api/rss', '/feed'], async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const frontendUrl = process.env.CORS_ORIGIN || "http://localhost:5173";
-    const feedUrl = `${req.protocol}://${req.get('host')}/feed`;
+    const siteUrl = await getSiteUrl(req);
+    const feedUrl = `${siteUrl}/feed`;
     const xml = await generateRssXml(
       "Poros Madura",
       "Portal Berita Terpercaya &amp; Aktual Madura",
-      frontendUrl,
+      siteUrl,
       feedUrl
     );
     res.header('Content-Type', 'application/xml');
@@ -179,9 +224,9 @@ app.get('/category/:slug/feed', async (req: Request, res: Response, next: NextFu
     const subCats = await prisma.category.findMany({ where: { parentId: category.id }, select: { id: true } });
     const catIds = [category.id, ...subCats.map(c => c.id)];
 
-    const frontendUrl = process.env.CORS_ORIGIN || "http://localhost:5173";
-    const feedUrl = `${req.protocol}://${req.get('host')}/category/${slug}/feed`;
-    const categoryUrl = `${frontendUrl}/${category.slug}`;
+    const siteUrl = await getSiteUrl(req);
+    const feedUrl = `${siteUrl}/category/${slug}/feed`;
+    const categoryUrl = `${siteUrl}/${category.slug}`;
 
     const xml = await generateRssXml(
       `Poros Madura - ${category.name}`,
@@ -192,6 +237,125 @@ app.get('/category/:slug/feed', async (req: Request, res: Response, next: NextFu
     );
     res.header('Content-Type', 'application/xml');
     res.send(xml);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── Standard XML Sitemap Generator ──
+app.get('/sitemap.xml', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const siteUrl = await getSiteUrl(req);
+    
+    // Ambil semua artikel terbit
+    const articles = await prisma.article.findMany({
+      where: { status: 'PUBLISHED' },
+      orderBy: { updatedAt: 'desc' },
+      select: { slug: true, updatedAt: true, category: { select: { slug: true } } }
+    });
+
+    // Ambil semua kategori
+    const categories = await prisma.category.findMany({
+      select: { slug: true }
+    });
+
+    const sitemapUrls = [
+      // Homepage
+      `  <url>
+    <loc>${siteUrl}/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>`,
+      // Kategori
+      ...categories.map(c => `  <url>
+    <loc>${siteUrl}/${c.slug}</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>`),
+      // Artikel
+      ...articles.map(art => `  <url>
+    <loc>${siteUrl}/${art.category.slug}/${art.slug}</loc>
+    <lastmod>${new Date(art.updatedAt).toISOString()}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>`)
+    ].join('\n');
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${sitemapUrls}
+</urlset>`;
+
+    res.header('Content-Type', 'application/xml');
+    res.send(xml);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── Google News XML Sitemap Generator (Terbit 48 Jam Terakhir) ──
+app.get('/news-sitemap.xml', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const siteUrl = await getSiteUrl(req);
+    const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
+
+    const articles = await prisma.article.findMany({
+      where: {
+        status: 'PUBLISHED',
+        publishedAt: { gte: fortyEightHoursAgo }
+      },
+      orderBy: { publishedAt: 'desc' },
+      select: { title: true, slug: true, publishedAt: true, category: { select: { slug: true } } }
+    });
+
+    const websiteSettings = await prisma.websiteSettings.findUnique({ where: { id: 'singleton' } });
+    const siteName = websiteSettings?.siteName || 'Poros Madura';
+
+    const newsUrls = articles.map(art => {
+      const pubDate = art.publishedAt ? new Date(art.publishedAt).toISOString() : new Date().toISOString();
+      const escapedTitle = art.title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      return `  <url>
+    <loc>${siteUrl}/${art.category.slug}/${art.slug}</loc>
+    <news:news>
+      <news:publication>
+        <news:name>${siteName}</news:name>
+        <news:language>id</news:language>
+      </news:publication>
+      <news:publication_date>${pubDate}</news:publication_date>
+      <news:title>${escapedTitle}</news:title>
+    </news:news>
+  </url>`;
+    }).join('\n');
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
+${newsUrls}
+</urlset>`;
+
+    res.header('Content-Type', 'application/xml');
+    res.send(xml);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── robots.txt Dinamis dari Database ──
+app.get('/robots.txt', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const siteUrl = await getSiteUrl(req);
+    const seoSettings = await prisma.seoSettings.findUnique({ where: { id: 'singleton' } });
+    
+    let robotsTxt = seoSettings?.robotsTxt;
+    if (!robotsTxt) {
+      robotsTxt = `User-agent: *\nAllow: /\nDisallow: /admin/\nDisallow: /api/\n\nSitemap: ${siteUrl}/sitemap.xml\nSitemap: ${siteUrl}/news-sitemap.xml`;
+    } else {
+      // Pastikan sitemap URL dinamis ter-update jika domain berubah di robots.txt
+      robotsTxt = robotsTxt.replace(/https:\/\/youdie.my.id/g, siteUrl).replace(/https:\/\/porosmadura.com/g, siteUrl);
+    }
+
+    res.header('Content-Type', 'text/plain');
+    res.send(robotsTxt);
   } catch (err) {
     next(err);
   }

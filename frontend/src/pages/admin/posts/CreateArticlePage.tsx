@@ -305,6 +305,7 @@ export default function CreateArticlePage() {
       setSelectedTags(existingArticle.tags?.map((t: any) => t.tag?.name) || []);
       setMetaTitle(existingArticle.metaTitle || "");
       setMetaDescription(existingArticle.metaDescription || "");
+      setFocusKeyword(existingArticle.focusKeyword || "");
       setTimeout(() => {
         const el = document.querySelector("textarea[placeholder='Article title...']") as HTMLTextAreaElement;
         if (el) {
@@ -504,6 +505,7 @@ export default function CreateArticlePage() {
       tags: selectedTags,
       metaTitle: metaTitle || data.title,
       metaDescription: metaDescription || data.excerpt,
+      focusKeyword: focusKeyword || "",
     };
     saveMutation.mutate(payload);
   };
@@ -1573,6 +1575,45 @@ export default function CreateArticlePage() {
                     }}
                   />
                 </div>
+
+                {/* SEO Checklist Analysis */}
+                <div style={{
+                  borderTop: "1px solid var(--border)",
+                  paddingTop: 12,
+                  marginTop: 4,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 8,
+                }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    SEO Checklist Analysis
+                  </div>
+                  {[
+                    { label: "Panjang Judul SEO (50-70 karakter)", ok: metaTitle.length >= 50 && metaTitle.length <= 70 },
+                    { label: "Menentukan Focus Keyword", ok: !!focusKeyword },
+                    { label: "Focus Keyword di Judul SEO", ok: !!(focusKeyword && metaTitle.toLowerCase().includes(focusKeyword.toLowerCase())) },
+                    { label: "Focus Keyword di Deskripsi Meta", ok: !!(focusKeyword && metaDescription.toLowerCase().includes(focusKeyword.toLowerCase())) },
+                    { label: "Panjang Deskripsi Meta (120-160 karakter)", ok: metaDescription.length >= 120 && metaDescription.length <= 160 },
+                    { label: "Konten minimal 300 kata", ok: wordCount >= 300 },
+                    { label: "Memiliki Heading H2", ok: h2Count >= 1 },
+                    { label: "Memiliki Gambar Utama / Gambar Konten", ok: imageCount > 0 },
+                    { label: "Kutipan / Paragraf Utama terisi", ok: !!watch("excerpt") },
+                    { label: "Slug URL terisi", ok: !!watch("slug") },
+                  ].map((chk, idx) => (
+                    <div key={idx} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11.5, color: "var(--text-secondary)" }}>
+                      <span style={{
+                        width: 14, height: 14, borderRadius: "50%",
+                        background: chk.ok ? "var(--green)" : "var(--orange)",
+                        color: "#fff", display: "flex", alignItems: "center",
+                        justifyContent: "center", fontSize: 8, fontWeight: 800
+                      }}>
+                        {chk.ok ? "✓" : "×"}
+                      </span>
+                      <span style={{ opacity: chk.ok ? 1 : 0.8 }}>{chk.label}</span>
+                    </div>
+                  ))}
+                </div>
+
               </div>
             </div>
           )}

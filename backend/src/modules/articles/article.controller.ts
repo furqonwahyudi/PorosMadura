@@ -26,6 +26,7 @@ const articleSchema = z.object({
   metaTitle: z.string().optional(),
   metaDescription: z.string().optional(),
   metaKeywords: z.array(z.string()).optional(),
+  focusKeyword: z.string().optional().nullable(),
   videoUrl: z.string().url().optional().nullable(),
   audioUrl: z.string().url().optional().nullable(),
   editorId: z.preprocess(emptyToNull, z.string().uuid().optional().nullable()),
@@ -53,6 +54,7 @@ const articleSelect = {
   metaTitle: true,
   metaDescription: true,
   metaKeywords: true,
+  focusKeyword: true,
   videoUrl: true,
   audioUrl: true,
   createdAt: true,
@@ -394,6 +396,7 @@ export async function createArticle(req: AuthRequest, res: Response, next: NextF
         metaTitle: data.metaTitle,
         metaDescription: data.metaDescription,
         metaKeywords: data.metaKeywords || [],
+        focusKeyword: data.focusKeyword,
         videoUrl: data.videoUrl,
         audioUrl: data.audioUrl,
         categoryId: data.categoryId,
@@ -667,6 +670,8 @@ export async function getSharePreview(req: Request, res: Response, next: NextFun
       where: { slug: req.params.slug, status: 'PUBLISHED' },
       include: {
         category: true,
+        author: true,
+        tags: { include: { tag: true } }
       },
     });
 
@@ -679,6 +684,10 @@ export async function getSharePreview(req: Request, res: Response, next: NextFun
       where: { id: 'singleton' },
     });
 
+    const seoSettings = await prisma.seoSettings.findUnique({
+      where: { id: 'singleton' },
+    });
+
     const siteName = settings?.siteName || 'Poros Madura';
     
     // OG Title: use metaTitle if set, otherwise article title
@@ -687,13 +696,15 @@ export async function getSharePreview(req: Request, res: Response, next: NextFun
     // OG Description: use metaDescription if set, otherwise article excerpt/lead
     const ogDescription = article.metaDescription || article.excerpt || '';
     
-    // Mendapatkan URL absolut website secara dinamis (menggunakan HTTPS untuk domain publik)
+    // Mendapatkan URL absolut website secara dinamis (memanfaatkan seoSettings jika terkonfigurasi)
     const host = req.get('host') || 'youdie.my.id';
     const protocol = (host.includes('localhost') || host.includes('127.0.0.1')) ? 'http' : 'https';
-    const siteUrl = process.env.SITE_URL || `${protocol}://${host}`;
+    const siteUrl = seoSettings?.siteUrl 
+      ? seoSettings.siteUrl.replace(/\/$/, '') 
+      : process.env.SITE_URL || `${protocol}://${host}`;
 
     // OG Image: pastikan link absolut (crawlers sosial media wajib menggunakan URL lengkap dengan domain)
-    let ogImage = article.image || 'https://picsum.photos/seed/news/1200/630';
+    let ogImage = article.image || seoSettings?.fallbackImage || 'https://picsum.photos/seed/news/1200/630';
     if (ogImage.startsWith('/')) {
       ogImage = `${siteUrl}${ogImage}`;
     }
@@ -702,12 +713,19 @@ export async function getSharePreview(req: Request, res: Response, next: NextFun
     const categorySlug = article.category ? article.category.slug : 'berita';
     const articleUrl = `${siteUrl}/${categorySlug}/${article.slug}`;
 
+    const publishedTime = article.publishedAt ? article.publishedAt.toISOString() : article.createdAt.toISOString();
+    const modifiedTime = article.updatedAt.toISOString();
+    const authorName = article.author ? article.author.name : 'Redaksi Poros Madura';
+    const sectionName = article.category ? article.category.name : 'Berita';
+    const tagNames = article.tags.map(t => t.tag.name);
+
     const html = `<!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
   <meta charset="utf-8" />
   <title>${ogTitle} — ${siteName}</title>
   <meta name="description" content="${ogDescription.replace(/"/g, '&quot;')}" />
+  <link rel="canonical" href="${articleUrl}" />
   
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="article" />
@@ -716,13 +734,49 @@ export async function getSharePreview(req: Request, res: Response, next: NextFun
   <meta property="og:description" content="${ogDescription.replace(/"/g, '&quot;')}" />
   <meta property="og:image" content="${ogImage}" />
   <meta property="og:site_name" content="${siteName}" />
+  <meta property="article:published_time" content="${publishedTime}" />
+  <meta property="article:modified_time" content="${modifiedTime}" />
+  <meta property="article:author" content="${authorName}" />
+  <meta property="article:section" content="${sectionName}" />
+  ${tagNames.map(t => `<meta property="article:tag" content="${t}" />`).join('\n  ')}
 
-  <!-- Twitter -->
+  <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:url" content="${articleUrl}" />
   <meta name="twitter:title" content="${ogTitle.replace(/"/g, '&quot;')}" />
   <meta name="twitter:description" content="${ogDescription.replace(/"/g, '&quot;')}" />
   <meta name="twitter:image" content="${ogImage}" />
+
+  <!-- Structured Data JSON-LD (Schema.org) -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "NewsArticle",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "${articleUrl}"
+      },
+      "headline": "${ogTitle.replace(/"/g, '\\"')}",
+      "image": [
+        "${ogImage}"
+      ],
+      "datePublished": "${publishedTime}",
+      "dateModified": "${modifiedTime}",
+      "author": {
+        "@type": "Person",
+        "name": "${authorName.replace(/"/g, '\\"')}"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "${siteName.replace(/"/g, '\\"')}",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "${siteUrl}/favicon.ico"
+        }
+      },
+      "description": "${ogDescription.replace(/"/g, '\\"')}"
+    }
+  </script>
 </head>
 <body>
   <h1>${article.title}</h1>

@@ -1,21 +1,69 @@
-import React, { useState } from "react";
-import { Settings, Save, CheckCircle, Eye } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Settings, Save, CheckCircle, RefreshCw } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { adminApi } from "../../../lib/adminApi";
+import { useDialog } from "../../../context/DialogContext";
 
 export default function SeoSettingsPage() {
   const [activeTab, setActiveTab] = useState("homepage");
-  const [canonical, setCanonical] = useState(true);
-  const [saved, setSaved] = useState(false);
+  const { showToast } = useDialog();
+  const queryClient = useQueryClient();
 
-  // Tab values
-  const [homeTitle, setHomeTitle] = useState("Poros Madura - Portal Berita Madura Terkini & Terpercaya");
-  const [homeDesc, setHomeDesc] = useState("Portal berita resmi menyajikan informasi berita terkini seputar Bangkalan, Sampang, Pamekasan, Sumenep, dan wilayah Madura Jawa Timur.");
-  const [titleToken, setTitleToken] = useState("%title% | %category% | %sitename%");
+  // Tab values states
+  const [siteUrl, setSiteUrl] = useState("");
+  const [homeTitle, setHomeTitle] = useState("");
+  const [homeDescription, setHomeDescription] = useState("");
+  const [canonical, setCanonical] = useState(true);
+  const [ogType, setOgType] = useState("website");
+
+  // Load SEO settings from API
+  const { data: seoData, isLoading } = useQuery({
+    queryKey: ["admin", "seo", "settings"],
+    queryFn: async () => {
+      const res = await adminApi.get<{ success: boolean; data: any }>("/api/seo/settings");
+      return res.data;
+    }
+  });
+
+  // Populate states when data loaded
+  useEffect(() => {
+    if (seoData) {
+      setSiteUrl(seoData.siteUrl || "");
+      setHomeTitle(seoData.homeTitle || "");
+      setHomeDescription(seoData.homeDescription || "");
+    }
+  }, [seoData]);
+
+  // Save mutation
+  const saveMutation = useMutation({
+    mutationFn: async (payload: any) => {
+      return adminApi.put("/api/seo/settings", payload);
+    },
+    onSuccess: () => {
+      showToast("Skema metadata SEO berhasil disimpan!", "success");
+      queryClient.invalidateQueries({ queryKey: ["admin", "seo", "settings"] });
+    },
+    onError: (err: any) => {
+      showToast(err.message || "Gagal menyimpan skema SEO.", "error");
+    }
+  });
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    saveMutation.mutate({
+      siteUrl,
+      homeTitle,
+      homeDescription,
+    });
   };
+
+  if (isLoading) {
+    return (
+      <div style={{ padding: "24px", display: "flex", justifyContent: "center", alignItems: "center", minHeight: "200px" }}>
+        <RefreshCw className="animate-spin text-slate-400" size={24} />
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: "24px", display: "flex", flexDirection: "column", gap: 20 }} className="animate-fade-in">
@@ -29,7 +77,7 @@ export default function SeoSettingsPage() {
         </p>
       </div>
 
-      {saved && (
+      {saveMutation.isSuccess && (
         <div style={{
           background: "var(--green-subtle)", border: "1px solid var(--green)",
           borderRadius: 8, padding: "10px 12px", display: "flex", gap: 8, alignItems: "center",
@@ -51,7 +99,6 @@ export default function SeoSettingsPage() {
         }}>
           {[
             { id: "homepage", label: "Homepage Meta" },
-            { id: "tokens", label: "Global Title Formulations" },
             { id: "technical", label: "Technical SEO & OG" },
           ].map(t => (
             <button
@@ -75,6 +122,25 @@ export default function SeoSettingsPage() {
             <>
               <div>
                 <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", marginBottom: 6 }}>
+                  Site URL / Domain Utama *
+                </label>
+                <input
+                  type="url" value={siteUrl} onChange={e => setSiteUrl(e.target.value)}
+                  placeholder="https://youdie.my.id"
+                  style={{
+                    width: "100%", padding: "8px 12px", background: "var(--bg-subtle)",
+                    border: "1px solid var(--border)", borderRadius: 8, fontSize: 13,
+                    color: "var(--text-primary)", outline: "none", boxSizing: "border-box"
+                  }}
+                  required
+                />
+                <p style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 4 }}>
+                  Domain utama situs. Digunakan untuk merender Sitemap XML, RSS Feed, dan tag URL Open Graph secara dinamis.
+                </p>
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", marginBottom: 6 }}>
                   Homepage Meta Title *
                 </label>
                 <input
@@ -93,7 +159,7 @@ export default function SeoSettingsPage() {
                   Homepage Meta Description *
                 </label>
                 <textarea
-                  value={homeDesc} onChange={e => setHomeDesc(e.target.value)}
+                  value={homeDescription} onChange={e => setHomeDescription(e.target.value)}
                   rows={4}
                   style={{
                     width: "100%", padding: "8px 12px", background: "var(--bg-subtle)",
@@ -105,26 +171,6 @@ export default function SeoSettingsPage() {
                 />
               </div>
             </>
-          )}
-
-          {activeTab === "tokens" && (
-            <div>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", marginBottom: 6 }}>
-                Global Title Formulations Token Pattern *
-              </label>
-              <input
-                type="text" value={titleToken} onChange={e => setTitleToken(e.target.value)}
-                style={{
-                  width: "100%", padding: "8px 12px", background: "var(--bg-subtle)",
-                  border: "1px solid var(--border)", borderRadius: 8, fontSize: 13,
-                  color: "var(--text-primary)", outline: "none", boxSizing: "border-box"
-                }}
-                required
-              />
-              <p style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 6, lineHeight: 1.4 }}>
-                Gunakan token pengganti: <strong style={{ color: "var(--text-primary)" }}>%title%</strong> (Judul artikel), <strong style={{ color: "var(--text-primary)" }}>%category%</strong> (Kategori utama), <strong style={{ color: "var(--text-primary)" }}>%sitename%</strong> (Nama website).
-              </p>
-            </div>
           )}
 
           {activeTab === "technical" && (
@@ -149,7 +195,7 @@ export default function SeoSettingsPage() {
                 <div>
                   <span style={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 600 }}>Enforce Global Canonical Links</span>
                   <p style={{ fontSize: 11, color: "var(--text-secondary)", margin: 0 }}>
-                    Tambahkan tag rel="canonical" otomatis untuk menghindari isu duplikasi konten.
+                    Tambahkan tag rel="canonical" otomatis untuk menghindari isu duplikasi konten (selalu aktif).
                   </p>
                 </div>
               </div>
@@ -160,10 +206,12 @@ export default function SeoSettingsPage() {
                   Default Open Graph Entity Type
                 </label>
                 <select
+                  value={ogType} onChange={e => setOgType(e.target.value)}
                   style={{
                     width: "100%", padding: "8px 12px", background: "var(--bg-subtle)",
                     border: "1px solid var(--border)", borderRadius: 8, fontSize: 13,
-                    color: "var(--text-primary)", outline: "none", boxSizing: "border-box"
+                    color: "var(--text-primary)", outline: "none", boxSizing: "border-box",
+                    cursor: "pointer"
                   }}
                 >
                   <option value="website">website</option>
@@ -175,12 +223,13 @@ export default function SeoSettingsPage() {
           )}
 
           {/* Submit */}
-          <button type="submit" style={{
+          <button type="submit" disabled={saveMutation.isPending} style={{
             display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
             padding: "9px 0", background: "var(--brand)", border: "none", borderRadius: 8,
-            cursor: "pointer", color: "#fff", fontSize: 13, fontWeight: 600, marginTop: 10
+            cursor: saveMutation.isPending ? "not-allowed" : "pointer", color: "#fff", fontSize: 13, fontWeight: 600, marginTop: 10,
+            opacity: saveMutation.isPending ? 0.7 : 1
           }}>
-            <Save size={14} /> Simpan Skema SEO
+            <Save size={14} /> {saveMutation.isPending ? "Menyimpan..." : "Simpan Skema SEO"}
           </button>
 
         </div>
