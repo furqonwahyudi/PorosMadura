@@ -65,7 +65,7 @@ export async function createRedirect(req: Request, res: Response, next: NextFunc
 // DELETE /api/seo/redirects/:id
 export async function deleteRedirect(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     await prisma.redirect.delete({ where: { id } });
     res.json({ success: true, message: 'Aturan redirect berhasil dihapus' });
   } catch (error) {

@@ -40,7 +40,7 @@ export async function createUser(req: AuthRequest, res: Response, next: NextFunc
 
 export async function updateUser(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { password, ...rest } = req.body;
     const updateData: any = { ...rest };
     if (password) updateData.password = await bcrypt.hash(password, 12);
@@ -56,7 +56,8 @@ export async function updateUser(req: AuthRequest, res: Response, next: NextFunc
 
 export async function deleteUser(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    await prisma.user.delete({ where: { id: req.params.id } });
+    const id = req.params.id as string;
+    await prisma.user.delete({ where: { id } });
     res.json({ success: true, message: 'User dihapus' });
   } catch (error) { next(error); }
 }
@@ -206,7 +207,7 @@ export async function getSessions(req: AuthRequest, res: Response, next: NextFun
 
 export async function revokeSession(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const userId = req.user!.id;
 
     // Verify session belongs to current user

@@ -18,6 +18,7 @@ export default defineConfig(() => {
         '/sitemap-news.xml': 'http://localhost:3001',
         '/robots.txt': 'http://localhost:3001',
         '/feed': 'http://localhost:3001',
+        '/uploads': 'http://localhost:3001',
       },
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modify—file watching is disabled to prevent flickering during agent edits.

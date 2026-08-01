@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
 import { prisma } from '../../config/database';
 import { AppError } from '../../middleware/errorHandler';
 import { AuthRequest } from '../../middleware/auth';
@@ -157,8 +158,27 @@ export async function getArticles(req: Request, res: Response, next: NextFunctio
 
 export async function getArticleBySlug(req: Request, res: Response, next: NextFunction) {
   try {
+    const authHeader = req.headers.authorization;
+    let isAdmin = false;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+        const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+        if (user && user.isActive) {
+          isAdmin = true;
+        }
+      } catch (err) {
+        // Abaikan error JWT, anggap pembaca umum
+      }
+    }
+
+    const slug = req.params.slug as string;
     const article = await prisma.article.findFirst({
-      where: { slug: req.params.slug, status: 'PUBLISHED' },
+      where: { 
+        slug, 
+        ...(isAdmin ? {} : { status: 'PUBLISHED' }) 
+      },
       include: {
         category: { include: { parent: true } },
         author: { select: { id: true, name: true, avatar: true, bio: true } },
@@ -184,7 +204,7 @@ export async function getArticleBySlug(req: Request, res: Response, next: NextFu
 
 export async function getArticleById(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const article = await prisma.article.findUnique({
       where: { id },
       include: {
@@ -325,8 +345,9 @@ export async function getArticleStats(_req: Request, res: Response, next: NextFu
 
 export async function incrementView(req: Request, res: Response, next: NextFunction) {
   try {
+    const slug = req.params.slug as string;
     await prisma.article.updateMany({
-      where: { slug: req.params.slug },
+      where: { slug },
       data: { views: { increment: 1 } },
     });
     res.json({ success: true });
@@ -337,8 +358,9 @@ export async function incrementView(req: Request, res: Response, next: NextFunct
 
 export async function incrementRead(req: Request, res: Response, next: NextFunction) {
   try {
+    const slug = req.params.slug as string;
     await prisma.article.updateMany({
-      where: { slug: req.params.slug },
+      where: { slug },
       data: { reads: { increment: 1 } },
     });
     res.json({ success: true });
@@ -349,8 +371,9 @@ export async function incrementRead(req: Request, res: Response, next: NextFunct
 
 export async function incrementShare(req: Request, res: Response, next: NextFunction) {
   try {
+    const slug = req.params.slug as string;
     await prisma.article.updateMany({
-      where: { slug: req.params.slug },
+      where: { slug },
       data: { shares: { increment: 1 } },
     });
     res.json({ success: true });
@@ -427,7 +450,7 @@ export async function createArticle(req: AuthRequest, res: Response, next: NextF
 
 export async function updateArticle(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const data = articleSchema.partial().parse(req.body);
 
     const existing = await prisma.article.findUnique({ where: { id } });
@@ -477,7 +500,7 @@ export async function updateArticle(req: AuthRequest, res: Response, next: NextF
 
 export async function deleteArticle(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const existing = await prisma.article.findUnique({ where: { id } });
     if (!existing) throw new AppError('Artikel tidak ditemukan', 404);
 
@@ -495,7 +518,7 @@ export async function deleteArticle(req: AuthRequest, res: Response, next: NextF
 
 export async function publishArticle(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     await prisma.article.update({
       where: { id },
       data: { status: 'PUBLISHED', publishedAt: new Date() },
@@ -508,7 +531,7 @@ export async function publishArticle(req: AuthRequest, res: Response, next: Next
 
 export async function archiveArticle(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     await prisma.article.update({ where: { id }, data: { status: 'ARCHIVED' } });
     res.json({ success: true, message: 'Artikel berhasil diarsipkan' });
   } catch (error) {
@@ -656,7 +679,8 @@ export async function generateAiNews(req: Request, res: Response, next: NextFunc
         metaDescription: aiArticle.metaDescription,
         focusKeyword: aiArticle.focusKeyword,
         categoryId: matchedCategoryId,
-        tags: aiArticle.tags
+        tags: aiArticle.tags,
+        image: scraped.image || ''
       }
     });
   } catch (error) {
@@ -666,14 +690,15 @@ export async function generateAiNews(req: Request, res: Response, next: NextFunc
 
 export async function getSharePreview(req: Request, res: Response, next: NextFunction) {
   try {
-    const article = await prisma.article.findFirst({
-      where: { slug: req.params.slug, status: 'PUBLISHED' },
+    const slug = req.params.slug as string;
+    const article = (await prisma.article.findFirst({
+      where: { slug, status: 'PUBLISHED' },
       include: {
         category: true,
         author: true,
         tags: { include: { tag: true } }
       },
-    });
+    })) as any;
 
     if (!article) {
       return res.status(404).send('Artikel tidak ditemukan');

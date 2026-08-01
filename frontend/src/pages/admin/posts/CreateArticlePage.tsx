@@ -184,6 +184,9 @@ export default function CreateArticlePage() {
         setMetaTitle(res.data.title || "");
         setMetaDescription(res.data.metaDescription || "");
         setFocusKeyword(res.data.focusKeyword || "");
+        if (res.data.image) {
+          setFeaturedImage(res.data.image);
+        }
         
         if (res.data.tags && res.data.tags.length > 0) {
           setSelectedTags(res.data.tags);
@@ -252,6 +255,7 @@ export default function CreateArticlePage() {
   const { register, handleSubmit, setValue, watch, reset } = useForm({
     defaultValues: {
       title: "",
+      slug: "",
       categoryId: "",
       status: "DRAFT",
       scheduledAt: "",
@@ -284,6 +288,7 @@ export default function CreateArticlePage() {
     if (existingArticle) {
       reset({
         title: existingArticle.title,
+        slug: existingArticle.slug || "",
         categoryId: existingArticle.categoryId,
         status: existingArticle.status,
         scheduledAt: existingArticle.scheduledAt
@@ -1982,54 +1987,61 @@ export default function CreateArticlePage() {
               formValues.status === "SCHEDULED" ? <><Clock size={14} /> Schedule</> :
               <><Save size={14} /> Save Draft</>}
           </button>
-        </div>
-        <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-          {isEditMode ? (
+
+          <div style={{ display: "flex", gap: 8 }}>
+            {isEditMode ? (
+              <button
+                type="button"
+                onClick={() => {
+                  const categorySlug = existingArticle?.category?.slug || "berita";
+                  const slug = existingArticle?.slug;
+                  if (slug) {
+                    window.open(`/preview/${categorySlug}/${slug}`, "_blank");
+                  } else {
+                    showToast("Gagal memuat pratinjau. Pastikan artikel memiliki slug.", "error");
+                  }
+                }}
+                style={{
+                  flex: 1, padding: "8px", borderRadius: 8,
+                  border: "1px solid var(--border)", background: "transparent",
+                  color: "var(--text-secondary)", cursor: "pointer", fontSize: 12, fontWeight: 500,
+                  transition: "background 0.1s",
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = "var(--bg-muted)"}
+                onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+              >
+                Preview ↗
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => showToast("Silakan simpan artikel sebagai Draft terlebih dahulu untuk mengaktifkan pratinjau!", "info")}
+                style={{
+                  flex: 1, padding: "8px", borderRadius: 8,
+                  border: "1px solid var(--border)", background: "transparent",
+                  color: "var(--text-tertiary)", cursor: "pointer", fontSize: 12, fontWeight: 500,
+                  opacity: 0.6,
+                }}
+                title="Simpan sebagai Draft terlebih dahulu"
+              >
+                Preview ↗
+              </button>
+            )}
             <button
               type="button"
-              onClick={() => {
-                const categorySlug = existingArticle?.category?.slug || "berita";
-                const slug = existingArticle?.slug;
-                if (slug) {
-                  window.open(`/${categorySlug}/${slug}`, "_blank");
-                } else {
-                  showToast("Gagal memuat pratinjau. Pastikan artikel memiliki slug.", "error");
-                }
-              }}
+              onClick={() => navigate("/admin/posts")}
               style={{
                 flex: 1, padding: "8px", borderRadius: 8,
                 border: "1px solid var(--border)", background: "transparent",
                 color: "var(--text-secondary)", cursor: "pointer", fontSize: 12, fontWeight: 500,
+                transition: "background 0.1s",
               }}
+              onMouseEnter={e => e.currentTarget.style.background = "var(--bg-muted)"}
+              onMouseLeave={e => e.currentTarget.style.background = "transparent"}
             >
-              Preview Article ↗
+              Cancel
             </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => showToast("Silakan simpan artikel sebagai Draft terlebih dahulu untuk mengaktifkan pratinjau!", "info")}
-              style={{
-                flex: 1, padding: "8px", borderRadius: 8,
-                border: "1px solid var(--border)", background: "transparent",
-                color: "var(--text-tertiary)", cursor: "pointer", fontSize: 12, fontWeight: 500,
-                opacity: 0.6,
-              }}
-              title="Simpan sebagai Draft terlebih dahulu"
-            >
-              Preview Article ↗
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => navigate("/admin/posts")}
-            style={{
-              flex: 1, padding: "8px", borderRadius: 8,
-              border: "1px solid var(--border)", background: "transparent",
-              color: "var(--text-secondary)", cursor: "pointer", fontSize: 12, fontWeight: 500,
-            }}
-          >
-            Cancel
-          </button>
+          </div>
         </div>
       </div>
 

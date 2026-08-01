@@ -21,13 +21,13 @@ function generateTokens(
   const accessToken = jwt.sign(
     { id: user.id, email: user.email, role: user.role, name: user.name, sessionId },
     process.env.JWT_SECRET!,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    { expiresIn: (process.env.JWT_EXPIRES_IN || '7d') as any }
   );
 
   const refreshToken = jwt.sign(
     { id: user.id, sessionId, ip: ipAddress, ua: userAgent },
     process.env.JWT_REFRESH_SECRET!,
-    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d' }
+    { expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN || '30d') as any }
   );
 
   return { accessToken, refreshToken };

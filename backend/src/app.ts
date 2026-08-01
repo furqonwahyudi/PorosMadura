@@ -214,7 +214,7 @@ app.get(['/api/rss', '/feed'], async (req: Request, res: Response, next: NextFun
 // ── RSS Feed Kategori ──
 app.get('/category/:slug/feed', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { slug } = req.params;
+    const slug = req.params.slug as string;
     const category = await prisma.category.findUnique({ where: { slug } });
     if (!category) {
       res.status(404).send('Category not found');

@@ -9,6 +9,7 @@ interface ScrapedData {
   date: string;
   url: string;
   body: string;
+  image?: string;
 }
 
 export interface GeneratedArticle {
@@ -38,6 +39,15 @@ export function validateUrl(urlString: string): boolean {
  * Scrapes news details and clean main article body from a HTML string
  */
 export function scrapeHtml(html: string, url: string): ScrapedData {
+  // Extract Image
+  let image = '';
+  const ogImageMatch = html.match(/<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i) ||
+                       html.match(/<meta\s+name=["']twitter:image["']\s+content=["']([^"']+)["']/i) ||
+                       html.match(/<meta\s+name=["']image["']\s+content=["']([^"']+)["']/i);
+  if (ogImageMatch) {
+    image = ogImageMatch[1].trim();
+  }
+
   // Extract Title
   let title = '';
   const ogTitleMatch = html.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i) ||
@@ -131,7 +141,8 @@ export function scrapeHtml(html: string, url: string): ScrapedData {
     media,
     date,
     url,
-    body: articleBody
+    body: articleBody,
+    image
   };
 }
 

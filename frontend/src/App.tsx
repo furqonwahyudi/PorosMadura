@@ -87,6 +87,7 @@ export default function App() {
               <Route path="feed" element={<RssRedirect />} />
               <Route path="category/:slug/feed" element={<RssCategoryRedirect />} />
               <Route path="pages/:pageSlug" element={<StaticPage />} />
+              <Route path="preview/:categorySlug/:slug" element={<ArticlePage />} />
               <Route path=":categorySlug/:slug" element={<ArticlePage />} />
               <Route path=":categorySlug" element={<CategoryPage />} />
             </Route>

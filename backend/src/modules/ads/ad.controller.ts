@@ -5,7 +5,7 @@ import { AuthRequest } from '../../middleware/auth';
 
 export async function getAdForSlot(req: Request, res: Response, next: NextFunction) {
   try {
-    const { slug } = req.params;
+    const slug = req.params.slug as string;
     const page = req.query.page as string || 'all';
     const device = req.query.device as string || 'all';
     const now = new Date();
@@ -33,14 +33,16 @@ export async function getAdForSlot(req: Request, res: Response, next: NextFuncti
 
 export async function recordImpression(req: Request, res: Response, next: NextFunction) {
   try {
-    await prisma.ad.update({ where: { id: req.params.id }, data: { impressions: { increment: 1 } } });
+    const id = req.params.id as string;
+    await prisma.ad.update({ where: { id }, data: { impressions: { increment: 1 } } });
     res.json({ success: true });
   } catch (error) { next(error); }
 }
 
 export async function recordClick(req: Request, res: Response, next: NextFunction) {
   try {
-    await prisma.ad.update({ where: { id: req.params.id }, data: { clicks: { increment: 1 } } });
+    const id = req.params.id as string;
+    await prisma.ad.update({ where: { id }, data: { clicks: { increment: 1 } } });
     res.json({ success: true });
   } catch (error) { next(error); }
 }
@@ -64,8 +66,9 @@ export async function createAdSlot(req: AuthRequest, res: Response, next: NextFu
 
 export async function updateAdSlot(req: AuthRequest, res: Response, next: NextFunction) {
   try {
+    const id = req.params.id as string;
     const slot = await prisma.adSlot.update({
-      where: { id: req.params.id },
+      where: { id },
       data: req.body,
     });
     res.json({ success: true, data: slot });
@@ -74,7 +77,8 @@ export async function updateAdSlot(req: AuthRequest, res: Response, next: NextFu
 
 export async function deleteAdSlot(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    await prisma.adSlot.delete({ where: { id: req.params.id } });
+    const id = req.params.id as string;
+    await prisma.adSlot.delete({ where: { id } });
     res.json({ success: true, message: 'Slot iklan berhasil dihapus' });
   } catch (error) { next(error); }
 }
@@ -88,14 +92,16 @@ export async function createAd(req: AuthRequest, res: Response, next: NextFuncti
 
 export async function updateAd(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const ad = await prisma.ad.update({ where: { id: req.params.id }, data: req.body });
+    const id = req.params.id as string;
+    const ad = await prisma.ad.update({ where: { id }, data: req.body });
     res.json({ success: true, data: ad });
   } catch (error) { next(error); }
 }
 
 export async function deleteAd(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    await prisma.ad.delete({ where: { id: req.params.id } });
+    const id = req.params.id as string;
+    await prisma.ad.delete({ where: { id } });
     res.json({ success: true, message: 'Iklan dihapus' });
   } catch (error) { next(error); }
 }
@@ -139,8 +145,9 @@ export async function createAdvertiser(req: AuthRequest, res: Response, next: Ne
 
 export async function updateAdvertiser(req: AuthRequest, res: Response, next: NextFunction) {
   try {
+    const id = req.params.id as string;
     const advertiser = await prisma.advertiser.update({
-      where: { id: req.params.id },
+      where: { id },
       data: req.body,
     });
     res.json({ success: true, data: advertiser });
@@ -149,7 +156,8 @@ export async function updateAdvertiser(req: AuthRequest, res: Response, next: Ne
 
 export async function deleteAdvertiser(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    await prisma.advertiser.delete({ where: { id: req.params.id } });
+    const id = req.params.id as string;
+    await prisma.advertiser.delete({ where: { id } });
     res.json({ success: true, message: 'Advertiser berhasil dihapus' });
   } catch (error) { next(error); }
 }
@@ -178,8 +186,9 @@ export async function createCampaign(req: AuthRequest, res: Response, next: Next
 
 export async function updateCampaign(req: AuthRequest, res: Response, next: NextFunction) {
   try {
+    const id = req.params.id as string;
     const campaign = await prisma.campaign.update({
-      where: { id: req.params.id },
+      where: { id },
       data: req.body,
     });
     res.json({ success: true, data: campaign });
@@ -188,7 +197,8 @@ export async function updateCampaign(req: AuthRequest, res: Response, next: Next
 
 export async function deleteCampaign(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    await prisma.campaign.delete({ where: { id: req.params.id } });
+    const id = req.params.id as string;
+    await prisma.campaign.delete({ where: { id } });
     res.json({ success: true, message: 'Kampanye berhasil dihapus' });
   } catch (error) { next(error); }
 }

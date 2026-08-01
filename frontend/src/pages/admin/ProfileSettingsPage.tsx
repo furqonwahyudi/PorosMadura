@@ -226,7 +226,7 @@ export default function ProfileSettingsPage() {
   // Helper for toggle checkboxes
   const handleToggleNotif = (key: keyof typeof notifs, value: boolean) => {
     setNotifs(prev => ({ ...prev, [key]: value }));
-    localStorage.setItem(`cms_notif_${key}`, String(value));
+    localStorage.setItem(`cms_notif_${String(key)}`, String(value));
   };
 
   // Helper for toggle preferences
@@ -235,7 +235,7 @@ export default function ProfileSettingsPage() {
     if (key === "compactSidebar") {
       localStorage.setItem("cms_sidebar_collapsed", String(value));
     } else {
-      localStorage.setItem(`cms__${key}`, String(value));
+      localStorage.setItem(`cms__${String(key)}`, String(value));
     }
   };
 
