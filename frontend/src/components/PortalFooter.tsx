@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Send, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Award, ShieldCheck, Rss } from "lucide-react";
+import { Send, Phone, Mail, MapPin, Globe, Facebook, Instagram, Twitter, Youtube, Award, ShieldCheck, Rss } from "lucide-react";
 import logoPutihUrl from "@/Logo_Type_trans_Putih.png";
 import suramaduUrl from "@/suramadu.png";
 
@@ -70,153 +70,184 @@ export default function PortalFooter({ lang }: PortalFooterProps) {
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-10 mb-12">
           
-          {/* Column 1: Brand Info Links */}
-          <div className="flex flex-col gap-4">
+          {/* Column 1: LOGO & BRAND */}
+          <div className="lg:col-span-4 flex flex-col gap-4">
             <img src={logoPutihUrl} alt="Poros Madura" className="h-10 sm:h-12 w-auto object-contain self-start" />
-            <div className="flex flex-col gap-2.5 text-xs text-gray-400 font-sans mt-2">
-              <Link to="/pages/about" className="hover:text-white transition-colors">
-                {lang === "ID" ? "Tentang Kami" : "About Us"}
-              </Link>
-              <Link to="/pages/editorial-board" className="hover:text-white transition-colors">
-                {lang === "ID" ? "Susunan Redaksi" : "Editorial Board"}
-              </Link>
-              <Link to="/pages/cyber-media-guidelines" className="hover:text-white transition-colors">
-                {lang === "ID" ? "Pedoman Media Siber" : "Cyber Media Guidelines"}
-              </Link>
-              <Link to="/pages/dispute-contact" className="hover:text-white transition-colors">
-                {lang === "ID" ? "Kontak Kami" : "Contact Us"}
-              </Link>
-              <Link to="/pages/privacy-policy" className="hover:text-white transition-colors">
-                {lang === "ID" ? "Kebijakan Privasi" : "Privacy Policy"}
-              </Link>
-              <Link to="/pages/rss" className="hover:text-white transition-colors">
-                RSS
-              </Link>
-              <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
-                Sitemap
-              </a>
-            </div>
-          </div>
-
-          {/* Column 2: Categories Guide */}
-          <div>
-            <h4 className="text-sm font-bold tracking-wider uppercase text-[#D71920] mb-5">
-              {lang === "ID" ? "Kategori Utama" : "Top Categories"}
-            </h4>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-gray-400">
-              {dbCategories.length > 0 ? (
-                dbCategories.map(c => (
-                  <Link key={c.id} to={`/${c.slug}`} className="hover:text-white transition-colors">
-                    {c.name}
-                  </Link>
-                ))
-              ) : (
-                <>
-                  {/* Daerah */}
-                  <Link to="/bangkalan" className="hover:text-white transition-colors">Bangkalan</Link>
-                  <Link to="/sampang" className="hover:text-white transition-colors">Sampang</Link>
-                  <Link to="/pamekasan" className="hover:text-white transition-colors">Pamekasan</Link>
-                  <Link to="/sumenep" className="hover:text-white transition-colors">Sumenep</Link>
-
-                  {/* Nasional */}
-                  <Link to="/politik" className="hover:text-white transition-colors">Politik</Link>
-                  <Link to="/pemerintahan" className="hover:text-white transition-colors">Pemerintahan</Link>
-                  <Link to="/hukum" className="hover:text-white transition-colors">Hukum</Link>
-                  <Link to="/kriminal" className="hover:text-white transition-colors">Kriminal</Link>
-                  <Link to="/pendidikan" className="hover:text-white transition-colors">Pendidikan</Link>
-                  <Link to="/kesehatan" className="hover:text-white transition-colors">Kesehatan</Link>
-                  <Link to="/ekonomi" className="hover:text-white transition-colors">Ekonomi</Link>
-                  <Link to="/olahraga" className="hover:text-white transition-colors">Olahraga</Link>
-
-                  {/* Rubrik & Lainnya */}
-                  <Link to="/teknologi" className="hover:text-white transition-colors">Teknologi</Link>
-                  <Link to="/otomotif" className="hover:text-white transition-colors">Otomotif</Link>
-                  <Link to="/lifestyle" className="hover:text-white transition-colors">Lifestyle</Link>
-                  <Link to="/budaya" className="hover:text-white transition-colors">Budaya</Link>
-                  <Link to="/wisata" className="hover:text-white transition-colors">Wisata</Link>
-                  <Link to="/kuliner" className="hover:text-white transition-colors">Kuliner</Link>
-                  <Link to="/hiburan" className="hover:text-white transition-colors">Hiburan</Link>
-                  <Link to="/opini" className="hover:text-white transition-colors">Opini</Link>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Column 3: Redaksi / Contact */}
-          <div>
-            <h4 className="text-sm font-bold tracking-wider uppercase text-[#D71920] mb-5">
-              {lang === "ID" ? "Hubungi Redaksi" : "Contact Redaksi"}
-            </h4>
-            <ul className="flex flex-col gap-3.5 text-xs text-gray-400">
-              <li className="flex items-start gap-2.5">
-                <MapPin size={16} className="text-[#D71920] shrink-0 mt-0.5" />
-                <span>Gedung Poros Madura Lt. 12-15, Jalan Jend. Sudirman No. 50, Jakarta</span>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <Phone size={16} className="text-[#D71920] shrink-0" />
-                <span>+62 21 5550 123</span>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <Mail size={16} className="text-[#D71920] shrink-0" />
-                <span>redaksi@porosmadura.com</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Column 4: Newsletter Automation */}
-          <div>
-            <h4 className="text-sm font-bold tracking-wider uppercase text-[#D71920] mb-5">
-              NEWSLETTER
-            </h4>
-            <p className="text-gray-400 text-xs leading-relaxed mb-4">
-              {lang === "ID" 
-                ? "Dapatkan rangkuman berita terpenting dan kurasi pilihan redaksi langsung di kotak masuk email Anda setiap pagi."
-                : "Get a summary of the most important news curated directly to your email inbox every single morning."
-              }
+            <p className="text-gray-400 text-xs leading-relaxed">
+              Portal berita independen yang menyajikan informasi aktual dan terpercaya.
             </p>
-            {subscribed ? (
-              <div className="bg-green-900/30 border border-green-700/50 rounded-lg p-3 text-center">
-                <span className="text-xs text-green-400 font-semibold block">🎉 Langganan Berhasil!</span>
-                <span className="text-[10px] text-gray-400 block mt-0.5">Kami akan mengirimkan kurasi berita berkualitas.</span>
-              </div>
-            ) : (
-              <form onSubmit={handleSubscribe} className="flex gap-2">
-                <input
-                  type="email"
-                  required
-                  placeholder="name@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="flex-1 px-3 py-2 bg-neutral-900 border border-neutral-800 rounded-lg text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#D71920] focus:border-[#D71920]"
-                />
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="bg-[#D71920] hover:bg-[#D71920]/95 text-white px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center disabled:opacity-50"
-                >
-                  {loading ? "..." : <Send size={14} />}
-                </button>
-              </form>
-            )}
+            <div className="flex items-center gap-3.5 mt-2">
+              <a href="#" className="text-gray-400 hover:text-white transition-colors" title="Facebook"><Facebook size={16} /></a>
+              <a href="#" className="text-gray-400 hover:text-[#E1306C] transition-colors" title="Instagram"><Instagram size={16} /></a>
+              <a href="#" className="text-gray-400 hover:text-white transition-colors" title="TikTok">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" className="shrink-0">
+                  <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.02-2.89-.35-4.15-1.11-.13-.07-.24-.17-.37-.25V14.5c0 2.11-.53 4.31-2.02 5.79-1.57 1.57-3.95 2.16-6.13 1.74-2.48-.48-4.66-2.58-5.11-5.09-.64-3.56 1.82-7.14 5.37-7.61.85-.11 1.71-.05 2.54.17V13.6c-.6-.24-1.29-.31-1.92-.12-1.07.31-1.85 1.37-1.86 2.49.02 1.34 1.25 2.51 2.59 2.37 1.21-.13 2.12-1.17 2.13-2.39l.02-15.93z" />
+                </svg>
+              </a>
+              <a href="#" className="text-gray-400 hover:text-[#FF0000] transition-colors" title="YouTube"><Youtube size={16} /></a>
+            </div>
           </div>
 
+          {/* Part 2: CATEGORIES & LINKS */}
+          <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:flex lg:flex-row lg:justify-start lg:gap-14 gap-8">
+            
+            {/* Column 2: DAERAH */}
+            <div>
+              <h4 className="text-sm font-bold tracking-wider uppercase text-[#D71920] mb-3">
+                {lang === "ID" ? "Daerah" : "Regions"}
+              </h4>
+              <div className="flex flex-col gap-2 text-xs text-gray-400">
+                {dbCategories.length > 0 ? (
+                  dbCategories
+                    .filter(c => ["bangkalan", "sampang", "pamekasan", "sumenep"].includes(c.slug?.toLowerCase()))
+                    .sort((a, b) => {
+                      const order = ["bangkalan", "sampang", "pamekasan", "sumenep"];
+                      return order.indexOf(a.slug?.toLowerCase()) - order.indexOf(b.slug?.toLowerCase());
+                    })
+                    .map(c => (
+                      <Link key={c.id} to={`/${c.slug}`} className="hover:text-white transition-colors">
+                        {c.name}
+                      </Link>
+                    ))
+                ) : (
+                  <>
+                    <Link to="/bangkalan" className="hover:text-white transition-colors">Bangkalan</Link>
+                    <Link to="/sampang" className="hover:text-white transition-colors">Sampang</Link>
+                    <Link to="/pamekasan" className="hover:text-white transition-colors">Pamekasan</Link>
+                    <Link to="/sumenep" className="hover:text-white transition-colors">Sumenep</Link>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Column 3: NASIONAL */}
+            <div>
+              <h4 className="text-sm font-bold tracking-wider uppercase text-[#D71920] mb-3">
+                Nasional
+              </h4>
+              <div className="flex flex-col gap-2 text-xs text-gray-400">
+                {dbCategories.length > 0 ? (
+                  dbCategories
+                    .filter(c => ["politik", "pemerintahan", "hukum", "kriminal", "ekonomi", "pendidikan", "kesehatan"].includes(c.slug?.toLowerCase()))
+                    .sort((a, b) => {
+                      const order = ["politik", "pemerintahan", "hukum", "kriminal", "ekonomi", "pendidikan", "kesehatan"];
+                      return order.indexOf(a.slug?.toLowerCase()) - order.indexOf(b.slug?.toLowerCase());
+                    })
+                    .map(c => (
+                      <Link key={c.id} to={`/${c.slug}`} className="hover:text-white transition-colors">
+                        {c.name}
+                      </Link>
+                    ))
+                ) : (
+                  <>
+                    <Link to="/politik" className="hover:text-white transition-colors">Politik</Link>
+                    <Link to="/pemerintahan" className="hover:text-white transition-colors">Pemerintahan</Link>
+                    <Link to="/hukum" className="hover:text-white transition-colors">Hukum</Link>
+                    <Link to="/kriminal" className="hover:text-white transition-colors">Kriminal</Link>
+                    <Link to="/ekonomi" className="hover:text-white transition-colors">Ekonomi</Link>
+                    <Link to="/pendidikan" className="hover:text-white transition-colors">Pendidikan</Link>
+                    <Link to="/kesehatan" className="hover:text-white transition-colors">Kesehatan</Link>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Column 4: LAINNYA */}
+            <div className="font-sans">
+              <h4 className="text-sm font-bold tracking-wider uppercase text-[#D71920] mb-3">
+                {lang === "ID" ? "Lainnya" : "Others"}
+              </h4>
+              <div className="flex flex-col gap-2 text-xs text-gray-400">
+                {dbCategories.length > 0 ? (
+                  dbCategories
+                    .filter(c => ["olahraga", "teknologi", "otomotif", "lifestyle", "budaya", "wisata", "kuliner", "hiburan", "opini"].includes(c.slug?.toLowerCase()))
+                    .sort((a, b) => {
+                      const order = ["olahraga", "teknologi", "otomotif", "lifestyle", "budaya", "wisata", "kuliner", "hiburan", "opini"];
+                      return order.indexOf(a.slug?.toLowerCase()) - order.indexOf(b.slug?.toLowerCase());
+                    })
+                    .map(c => (
+                      <Link key={c.id} to={`/${c.slug}`} className="hover:text-white transition-colors">
+                        {c.name}
+                      </Link>
+                    ))
+                ) : (
+                  <>
+                    <Link to="/olahraga" className="hover:text-white transition-colors">Olahraga</Link>
+                    <Link to="/teknologi" className="hover:text-white transition-colors">Teknologi</Link>
+                    <Link to="/otomotif" className="hover:text-white transition-colors">Otomotif</Link>
+                    <Link to="/lifestyle" className="hover:text-white transition-colors">Lifestyle</Link>
+                    <Link to="/budaya" className="hover:text-white transition-colors">Budaya</Link>
+                    <Link to="/wisata" className="hover:text-white transition-colors">Wisata</Link>
+                    <Link to="/kuliner" className="hover:text-white transition-colors">Kuliner</Link>
+                    <Link to="/hiburan" className="hover:text-white transition-colors">Hiburan</Link>
+                    <Link to="/opini" className="hover:text-white transition-colors">Opini</Link>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Column 5: INFORMASI */}
+            <div>
+              <h4 className="text-sm font-bold tracking-wider uppercase text-[#D71920] mb-3">
+                {lang === "ID" ? "Informasi" : "Information"}
+              </h4>
+              <div className="flex flex-col gap-2 text-xs text-gray-400">
+                {[
+                  { name: "Tentang Kami", path: "/pages/about" },
+                  { name: "Redaksi", path: "/pages/editorial-board" },
+                  { name: "Pedoman Media Siber", path: "/pages/cyber-media-guidelines" },
+                  { name: "Kode Etik", path: "/pages/kode-etik" },
+                  { name: "Disclaimer", path: "/pages/disclaimer" },
+                  { name: "Privasi", path: "/pages/privacy-policy" },
+                  { name: "Hubungi Kami", path: "/pages/dispute-contact" },
+                  { name: "RSS", path: "/pages/rss" },
+                  { name: "Sitemap", path: "/sitemap.xml", isExternal: true }
+                ].map(item => {
+                  if (item.isExternal) {
+                    return (
+                      <a key={item.name} href={item.path} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                        {item.name}
+                      </a>
+                    );
+                  }
+                  return (
+                    <Link key={item.name} to={item.path} className="hover:text-white transition-colors">
+                      {item.name}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Column 6: LAYANAN */}
+            <div>
+              <h4 className="text-sm font-bold tracking-wider uppercase text-[#D71920] mb-3">
+                {lang === "ID" ? "Layanan" : "Services"}
+              </h4>
+              <div className="flex flex-col gap-2 text-xs text-gray-400">
+                {[
+                  { name: "Pasang Iklan", path: "/pages/pasang-iklan" },
+                  { name: "Media Partner", path: "/pages/media-partner" },
+                  { name: "Press Release", path: "/pages/press-release" },
+                  { name: "Kerja Sama", path: "/pages/kerja-sama" },
+                  { name: "Hak Jawab", path: "/pages/hak-jawab" },
+                  { name: "Koreksi Berita", path: "/pages/koreksi-berita" }
+                ].map(item => (
+                  <Link key={item.name} to={item.path} className="hover:text-white transition-colors">
+                    {item.name}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+          </div>
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-white/20 pt-8 mt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-400">
-          <div>
-            <span>&copy; {new Date().getFullYear()} POROS MADURA. All Rights Reserved. Terdaftar di Dewan Pers.</span>
-          </div>
-
-          {/* Social icons */}
-          <div className="flex items-center gap-3">
-            <a href="#" className="hover:text-white transition-colors"><Facebook size={16} /></a>
-            <a href="#" className="hover:text-white transition-colors"><Instagram size={16} /></a>
-            <a href="#" className="hover:text-white transition-colors"><Twitter size={16} /></a>
-            <a href="#" className="hover:text-white transition-colors"><Youtube size={16} /></a>
-          </div>
+        <div className="border-t border-white/20 pt-8 mt-8 flex items-center justify-center text-xs text-gray-400 text-center">
+          <span>&copy; {new Date().getFullYear()} Poros Madura — Berita Tepat, Fakta Kuat.</span>
         </div>
       </div>
     </footer>
