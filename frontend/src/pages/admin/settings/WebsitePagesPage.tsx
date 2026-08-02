@@ -23,10 +23,18 @@ export default function WebsitePagesPage() {
     { id: 1, name: "Tentang Kami", slug: "/pages/about", status: "Published", mandatory: true },
     { id: 2, name: "Susunan Redaksi & Struktur Organisasi", slug: "/pages/editorial-board", status: "Published", mandatory: true },
     { id: 3, name: "Pedoman Pemberitaan Media Siber", slug: "/pages/cyber-media-guidelines", status: "Published", mandatory: true },
+    { id: 8, name: "Kode Etik Jurnalistik", slug: "/pages/kode-etik", status: "Published", mandatory: true },
+    { id: 9, name: "Penyangkalan (Disclaimer)", slug: "/pages/disclaimer", status: "Published", mandatory: false },
     { id: 4, name: "Kebijakan Privasi (Privacy Policy)", slug: "/pages/privacy-policy", status: "Published", mandatory: true },
     { id: 5, name: "Info Kontak Pengaduan Sengketa", slug: "/pages/dispute-contact", status: "Published", mandatory: true },
     { id: 7, name: "RSS Feed & Sindikasi Berita", slug: "/pages/rss", status: "Published", mandatory: true },
     { id: 6, name: "Karir / Lowongan Kerja", slug: "/pages/careers", status: "Draft", mandatory: false },
+    { id: 10, name: "Pasang Iklan (Advertisements)", slug: "/pages/pasang-iklan", status: "Published", mandatory: false },
+    { id: 11, name: "Kemitraan Media Partner", slug: "/pages/media-partner", status: "Published", mandatory: false },
+    { id: 12, name: "Siaran Pers (Press Release)", slug: "/pages/press-release", status: "Published", mandatory: false },
+    { id: 13, name: "Kerja Sama Strategis", slug: "/pages/kerja-sama", status: "Published", mandatory: false },
+    { id: 14, name: "Hak Jawab Dewan Pers", slug: "/pages/hak-jawab", status: "Published", mandatory: true },
+    { id: 15, name: "Koreksi & Ralat Berita", slug: "/pages/koreksi-berita", status: "Published", mandatory: true },
   ]);
 
   const [settings, setSettings] = useState<any>(null);
@@ -214,6 +222,60 @@ export default function WebsitePagesPage() {
 
 <div class="text-right text-[10px] text-gray-400 mt-6 font-mono">Jakarta, 3 Februari 2012</div>`
         };
+      case "kode-etik":
+        return {
+          title: "Kode Etik Jurnalistik",
+          subtitle: "Landasan Moral dan Etika Profesi Wartawan Poros Madura",
+          content: `<p>Wartawan <strong>Poros Madura</strong> menyadari tanggung jawab sosial dan kewajiban profesionalnya dalam menyajikan informasi kepada masyarakat. Sebagai wujud integritas pers, kami berpegang teguh pada Kode Etik Jurnalistik Dewan Pers:</p>
+
+<h2>Pasal 1</h2>
+<p>Wartawan Indonesia bersikap independen, menghasilkan berita yang akurat, berimbang, dan tidak beriktikad buruk.</p>
+
+<h2>Pasal 2</h2>
+<p>Wartawan Indonesia menempuh cara-cara yang profesional dalam melaksanakan tugas jurnalistik.</p>
+
+<h2>Pasal 3</h2>
+<p>Wartawan Indonesia selalu menguji informasi, memberitakan secara berimbang, tidak mencampurkan fakta dan opini yang menghakimi, serta menerapkan asas praduga tak bersalah.</p>
+
+<h2>Pasal 4</h2>
+<p>Wartawan Indonesia tidak membuat berita bohong, fitnah, sadis, dan cabul.</p>
+
+<h2>Pasal 5</h2>
+<p>Wartawan Indonesia tidak menyebutkan dan menyiarkan identitas korban kejahatan susila dan tidak menyebutkan identitas anak yang menjadi pelaku kejahatan.</p>
+
+<h2>Pasal 6</h2>
+<p>Wartawan Indonesia tidak menyalahgunakan profesi dan tidak menerima suap.</p>
+
+<h2>Pasal 7</h2>
+<p>Wartawan Indonesia memiliki hak tolak untuk melindungi nama dan identitas sumber informasi yang tidak bersedia diketahui identitasnya.</p>
+
+<h2>Pasal 8</h2>
+<p>Wartawan Indonesia tidak menulis atau menyiarkan berita berdasarkan prasangka atau diskriminasi terhadap seseorang atas dasar perbedaan suku, ras, warna kulit, agama, jenis kelamin, dan bahasa serta tidak merendahkan martabat orang lemah, miskin, sakit, cacat jiwa atau cacat jasmani.</p>
+
+<h2>Pasal 9</h2>
+<p>Wartawan Indonesia menghormati hak privasi subjek berita, kecuali untuk kepentingan publik.</p>
+
+<h2>Pasal 10</h2>
+<p>Wartawan Indonesia segera mencabut, meralat, dan memperbaiki berita yang keliru dan tidak akurat disertai dengan permintaan maaf kepada pembaca.</p>
+
+<h2>Pasal 11</h2>
+<p>Wartawan Indonesia melayani hak jawab dan hak koreksi secara proporsional.</p>`
+        };
+      case "disclaimer":
+        return {
+          title: "Pernyataan Penyangkalan (Disclaimer)",
+          subtitle: "Batasan Tanggung Jawab Hukum Konten Poros Madura",
+          content: `<p>Dengan mengakses dan menggunakan seluruh layanan di portal berita <strong>Poros Madura</strong>, Anda dianggap telah memahami dan menyetujui ketentuan penyangkalan tanggung jawab hukum berikut:</p>
+
+<h2>Akurasi Informasi</h2>
+<p>Seluruh materi informasi, baik teks, foto, video, maupun infografis yang disajikan di Poros Madura adalah sebagai rujukan informasi umum saja. Meskipun kami berupaya menyajikan fakta seakurat mungkin, kami tidak bertanggung jawab atas kerugian finansial atau non-finansial yang timbul akibat keputusan pembaca yang berlandaskan informasi tersebut.</p>
+
+<h2>Tanggung Jawab Konten Pengguna</h2>
+<p>Setiap komentar, opini, gagasan, atau materi buatan pengguna (User Generated Content) yang dipublikasikan pembaca di kolom komentar atau forum diskusi adalah sepenuhnya tanggung jawab individu yang membuatnya, bukan redaksi Poros Madura.</p>
+
+<h2>Tautan Pihak Ketiga</h2>
+<p>Situs kami mungkin memuat tautan menuju situs web milik pihak ketiga. Kami tidak memiliki kendali penuh atas konten, kebijakan privasi, atau keandalan situs eksternal tersebut.</p>`
+        };
       case "privacy-policy":
         return {
           title: "Kebijakan Privasi",
@@ -231,14 +293,91 @@ export default function WebsitePagesPage() {
           title: "Kontak Kami",
           subtitle: "Pengaduan Sengketa & Info Bisnis",
           content: `<p>Hubungi meja redaksi Poros Madura untuk pengaduan sengketa pers, hak koreksi, ralat, maupun keperluan bisnis/iklan:</p>
-<p><strong>Alamat Kantor Redaksi:</strong><br/>Gedung Poros Madura Lt. 12-15, Jalan Jend. Sudirman No. 50, Jakarta</p>
-<p><strong>Telepon:</strong> (021) 555-0199<br/><strong>Email:</strong> redaksi@porosmadura.com / info@porosmadura.com</p>`
+<p><strong>Alamat Kantor Redaksi:</strong><br/>Gedung Poros Madura Lt. 1, Jl. Jokotole No. 129, Pamekasan, Madura</p>
+<p><strong>Telepon:</strong> (0324) 333-0199<br/><strong>Email:</strong> redaksi@porosmadura.com / info@porosmadura.com</p>`
         };
       case "rss":
         return {
           title: "RSS Feed",
           subtitle: "Langganan Sindikasi Berita Poros Madura",
           content: `<p>Ikuti pembaruan berita terbaru dari Poros Madura secara real-time melalui RSS Feed kami. Anda dapat menggunakan pembaca RSS (Feed Reader) favorit Anda seperti Feedly, Inoreader, atau Netvibes untuk mendapatkan informasi terkini langsung tanpa harus membuka situs.</p>`
+        };
+      case "pasang-iklan":
+        return {
+          title: "Pasang Iklan",
+          subtitle: "Promosikan Bisnis & Brand Anda Bersama Poros Madura",
+          content: `<p><strong>Poros Madura</strong> menawarkan berbagai ruang periklanan digital (Digital Advertising) yang strategis dan efektif untuk memperluas jangkauan brand dan produk Anda di wilayah Madura serta nasional.</p>
+
+<h2>Jenis Layanan Periklanan</h2>
+<ul>
+  <li><strong>Display Ads (Banner):</strong> Penempatan banner iklan visual di posisi strategis halaman homepage, detail artikel, maupun sidebar.</li>
+  <li><strong>Advertorial (Sponsored Post):</strong> Penulisan artikel ulasan khusus seputar produk, profil instansi, atau rilis bisnis yang ramah SEO.</li>
+  <li><strong>Social Media Amplification:</strong> Kampanye pemasaran melalui kanal media sosial resmi kami (Instagram, TikTok, Facebook).</li>
+</ul>
+
+<h2>Hubungi Tim Pemasaran Kami</h2>
+<p>Silakan kirimkan email proposal periklanan Anda ke <strong>marketing@porosmadura.com</strong> atau hubungi WhatsApp Business kami di <strong>0812-3456-7890</strong> untuk mendapatkan Rate Card edisi terbaru.</p>`
+        };
+      case "media-partner":
+        return {
+          title: "Media Partner",
+          subtitle: "Kemitraan Publikasi Acara, Komunitas, & Kegiatan",
+          content: `<p>Kami berkomitmen mendukung berbagai aktivitas positif kemasyarakatan, kepemudaan, pendidikan, dan kebudayaan di Madura melalui kerja sama media partner resmi.</p>
+
+<h2>Ketentuan Kerja Sama</h2>
+<p>Poros Madura bersedia memberikan dukungan publikasi berita rilis acara/kegiatan secara cuma-cuma dengan imbalan pencantuman logo resmi Poros Madura pada seluruh materi promosi acara (seperti backdrop, e-poster, banner sosial media, dan kaos panitia).</p>
+
+<h2>Cara Mengajukan Kemitraan</h2>
+<p>Kirimkan proposal resmi kegiatan Anda (format PDF) selambat-lambatnya 7 hari sebelum acara berlangsung ke email <strong>partnership@porosmadura.com</strong>.</p>`
+        };
+      case "press-release":
+        return {
+          title: "Siaran Pers (Press Release)",
+          subtitle: "Penyebarluasan Siaran Pers Resmi Perusahaan & Instansi",
+          content: `<p>Poros Madura menyediakan ruang bagi instansi pemerintahan, BUMN, swasta, akademisi, dan organisasi kemasyarakatan untuk mempublikasikan siaran pers (press release) resmi secara cepat dan kredibel.</p>
+
+<h2>Panduan Pengiriman Siaran Pers</h2>
+<ul>
+  <li>Materi siaran pers ditulis dalam bahasa Indonesia yang baik, benar, dan memenuhi nilai berita.</li>
+  <li>Harus menyertakan dokumen rilis tertulis (Ms Word / PDF) beserta minimal 1 (satu) foto dokumentasi pendukung berkualitas baik.</li>
+  <li>Menyertakan kontak humas (Media Contact) yang dapat dihubungi untuk verifikasi lebih lanjut.</li>
+</ul>
+
+<p>Kirimkan draf siaran pers Anda langsung ke email redaksi: <strong>rilis@porosmadura.com</strong>.</p>`
+        };
+      case "kerja-sama":
+        return {
+          title: "Kerja Sama Strategis",
+          subtitle: "Kolaborasi Kemitraan Bersama Poros Madura",
+          content: `<p>Kami menyambut baik berbagai peluang kerja sama jangka panjang (MOU) di bidang sindikasi konten, pertukaran media informasi, riset jurnalistik, pelatihan jurnalisme, maupun pengembangan teknologi berita bersama mitra instansi pemerintah daerah, BUMN, dan swasta.</p>
+
+<h2>Mengapa Bermitra dengan Kami?</h2>
+<p>Poros Madura memiliki jangkauan pembaca lokal yang loyal di empat kabupaten Madura serta reputasi jurnalisme independen yang terverifikasi dan tepercaya.</p>
+
+<p>Untuk diskusi kemitraan formal, silakan hubungi tim legalitas kami di <strong>kerjasama@porosmadura.com</strong>.</p>`
+        };
+      case "hak-jawab":
+        return {
+          title: "Hak Jawab Dewan Pers",
+          subtitle: "Mekanisme Hak Jawab Sesuai Pasal 1 & 5 UU Pers Nomor 40/1999",
+          content: `<p>Sesuai dengan ketentuan Undang-Undang Nomor 40 Tahun 1999 tentang Pers, <strong>Hak Jawab</strong> adalah hak seseorang atau sekelompok orang untuk memberikan tanggapan atau sanggahan terhadap pemberitaan berupa fakta yang merugikan nama baiknya.</p>
+
+<h2>Prosedur Pengajuan Hak Jawab</h2>
+<ul>
+  <li>Hak Jawab diajukan secara tertulis dengan melampirkan identitas resmi serta bukti/fakta sanggahan yang valid.</li>
+  <li>Ditujukan secara resmi kepada Pemimpin Redaksi Poros Madura melalui email: <strong>redaksi@porosmadura.com</strong>.</li>
+  <li>Redaksi akan memverifikasi permohonan tersebut dan mempublikasikan hak jawab secepatnya pada tautan berita awal yang disanggah.</li>
+</ul>`
+        };
+      case "koreksi-berita":
+        return {
+          title: "Koreksi & Ralat Berita",
+          subtitle: "Mekanisme Koreksi, Ralat, dan Perbaikan Pemberitaan",
+          content: `<p>Sebagai bentuk tanggung jawab profesional dan kepatuhan terhadap Kode Etik Jurnalistik, <strong>Poros Madura</strong> senantiasi siap melakukan ralat atau koreksi atas setiap kekeliruan fakta dalam berita yang telah dipublikasikan.</p>
+
+<h2>Cara Mengajukan Ralat/Koreksi</h2>
+<p>Pembaca dapat mengirimkan laporan ralat dengan menyertakan tautan (URL) artikel yang keliru serta rincian bagian yang perlu diperbaiki beserta bukti faktualnya melalui email: <strong>koreksi@porosmadura.com</strong>.</p>
+<p>Setelah diverifikasi, perbaikan akan segera dilakukan dan kami akan mencantumkan catatan ralat di bagian bawah artikel tersebut sebagai bentuk keterbukaan informasi.</p>`
         };
       default:
         return {
