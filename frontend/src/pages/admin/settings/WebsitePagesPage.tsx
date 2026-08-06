@@ -322,52 +322,117 @@ export default function WebsitePagesPage() {
         return {
           title: "Media Partner",
           subtitle: "Kemitraan Publikasi Acara, Komunitas, & Kegiatan",
-          content: `<p>Kami berkomitmen mendukung berbagai aktivitas positif kemasyarakatan, kepemudaan, pendidikan, dan kebudayaan di Madura melalui kerja sama media partner resmi.</p>
-
-<h2>Ketentuan Kerja Sama</h2>
-<p>Poros Madura bersedia memberikan dukungan publikasi berita rilis acara/kegiatan secara cuma-cuma dengan imbalan pencantuman logo resmi Poros Madura pada seluruh materi promosi acara (seperti backdrop, e-poster, banner sosial media, dan kaos panitia).</p>
-
-<h2>Cara Mengajukan Kemitraan</h2>
-<p>Kirimkan proposal resmi kegiatan Anda (format PDF) selambat-lambatnya 7 hari sebelum acara berlangsung ke email <strong>partnership@porosmadura.com</strong>.</p>`
+          content: `<div style="text-align:center;padding:48px 24px;font-family:sans-serif;">
+  <div style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#0D2B5C,#1a3d7a);color:#fff;font-size:11px;font-weight:700;letter-spacing:0.08em;padding:6px 16px;border-radius:99px;text-transform:uppercase;margin-bottom:24px;">
+    <span style="width:7px;height:7px;border-radius:50%;background:#C41E3A;display:inline-block;"></span>
+    Belum Tersedia
+  </div>
+  <div style="font-size:48px;margin-bottom:16px;">🤝</div>
+  <h2 style="font-size:22px;font-weight:800;color:#0D2B5C;margin:0 0 12px;letter-spacing:-0.5px;">Halaman Media Partner Sedang Disiapkan</h2>
+  <p style="color:#6b7280;max-width:480px;margin:0 auto 28px;line-height:1.75;font-size:14px;">Halaman kemitraan media Poros Madura sedang dalam proses pengembangan. Informasi lengkap mengenai program Media Partner, syarat, dan cara pendaftaran akan segera tersedia.</p>
+  <div style="width:60px;height:3px;background:#C41E3A;border-radius:99px;margin:0 auto 28px;"></div>
+  <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+    <div style="background:linear-gradient(135deg,#f8faff,#f0f4ff);border:1px solid #dbe4f7;border-radius:12px;padding:14px 20px;min-width:130px;">
+      <div style="font-size:13px;font-weight:700;color:#0D2B5C;">Segera Hadir</div>
+      <div style="font-size:11px;color:#9ca3af;margin-top:3px;">Dalam waktu dekat</div>
+    </div>
+    <div style="background:linear-gradient(135deg,#f8faff,#f0f4ff);border:1px solid #dbe4f7;border-radius:12px;padding:14px 20px;min-width:130px;">
+      <div style="font-size:13px;font-weight:700;color:#0D2B5C;">Tim Redaksi</div>
+      <div style="font-size:11px;color:#9ca3af;margin-top:3px;">Sedang bekerja</div>
+    </div>
+    <div style="background:linear-gradient(135deg,#fef2f2,#fff5f5);border:1px solid #fecaca;border-radius:12px;padding:14px 20px;min-width:130px;">
+      <div style="font-size:13px;font-weight:700;color:#C41E3A;">Hubungi Kami</div>
+      <div style="font-size:11px;color:#9ca3af;margin-top:3px;">partnership@porosmadura.com</div>
+    </div>
+  </div>
+</div>`
         };
       case "press-release":
         return {
           title: "Siaran Pers (Press Release)",
           subtitle: "Penyebarluasan Siaran Pers Resmi Perusahaan & Instansi",
-          content: `<p>Poros Madura menyediakan ruang bagi instansi pemerintahan, BUMN, swasta, akademisi, dan organisasi kemasyarakatan untuk mempublikasikan siaran pers (press release) resmi secara cepat dan kredibel.</p>
-
-<h2>Panduan Pengiriman Siaran Pers</h2>
-<ul>
-  <li>Materi siaran pers ditulis dalam bahasa Indonesia yang baik, benar, dan memenuhi nilai berita.</li>
-  <li>Harus menyertakan dokumen rilis tertulis (Ms Word / PDF) beserta minimal 1 (satu) foto dokumentasi pendukung berkualitas baik.</li>
-  <li>Menyertakan kontak humas (Media Contact) yang dapat dihubungi untuk verifikasi lebih lanjut.</li>
-</ul>
-
-<p>Kirimkan draf siaran pers Anda langsung ke email redaksi: <strong>rilis@porosmadura.com</strong>.</p>`
+          content: `<div style="text-align:center;padding:48px 24px;font-family:sans-serif;">
+  <div style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#0D2B5C,#1a3d7a);color:#fff;font-size:11px;font-weight:700;letter-spacing:0.08em;padding:6px 16px;border-radius:99px;text-transform:uppercase;margin-bottom:24px;">
+    <span style="width:7px;height:7px;border-radius:50%;background:#C41E3A;display:inline-block;"></span>
+    Belum Tersedia
+  </div>
+  <div style="font-size:48px;margin-bottom:16px;">📰</div>
+  <h2 style="font-size:22px;font-weight:800;color:#0D2B5C;margin:0 0 12px;letter-spacing:-0.5px;">Layanan Siaran Pers Sedang Disiapkan</h2>
+  <p style="color:#6b7280;max-width:480px;margin:0 auto 28px;line-height:1.75;font-size:14px;">Layanan pengiriman dan publikasi siaran pers (press release) Poros Madura sedang dalam tahap persiapan. Panduan lengkap, formulir pengiriman, dan kontak redaksi akan segera tersedia di halaman ini.</p>
+  <div style="width:60px;height:3px;background:#C41E3A;border-radius:99px;margin:0 auto 28px;"></div>
+  <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+    <div style="background:linear-gradient(135deg,#f8faff,#f0f4ff);border:1px solid #dbe4f7;border-radius:12px;padding:14px 20px;min-width:130px;">
+      <div style="font-size:13px;font-weight:700;color:#0D2B5C;">Segera Hadir</div>
+      <div style="font-size:11px;color:#9ca3af;margin-top:3px;">Dalam waktu dekat</div>
+    </div>
+    <div style="background:linear-gradient(135deg,#f8faff,#f0f4ff);border:1px solid #dbe4f7;border-radius:12px;padding:14px 20px;min-width:130px;">
+      <div style="font-size:13px;font-weight:700;color:#0D2B5C;">Tim Redaksi</div>
+      <div style="font-size:11px;color:#9ca3af;margin-top:3px;">Sedang bekerja</div>
+    </div>
+    <div style="background:linear-gradient(135deg,#fef2f2,#fff5f5);border:1px solid #fecaca;border-radius:12px;padding:14px 20px;min-width:130px;">
+      <div style="font-size:13px;font-weight:700;color:#C41E3A;">Kirim ke Redaksi</div>
+      <div style="font-size:11px;color:#9ca3af;margin-top:3px;">rilis@porosmadura.com</div>
+    </div>
+  </div>
+</div>`
         };
       case "kerja-sama":
         return {
           title: "Kerja Sama Strategis",
           subtitle: "Kolaborasi Kemitraan Bersama Poros Madura",
-          content: `<p>Kami menyambut baik berbagai peluang kerja sama jangka panjang (MOU) di bidang sindikasi konten, pertukaran media informasi, riset jurnalistik, pelatihan jurnalisme, maupun pengembangan teknologi berita bersama mitra instansi pemerintah daerah, BUMN, dan swasta.</p>
-
-<h2>Mengapa Bermitra dengan Kami?</h2>
-<p>Poros Madura memiliki jangkauan pembaca lokal yang loyal di empat kabupaten Madura serta reputasi jurnalisme independen yang terverifikasi dan tepercaya.</p>
-
-<p>Untuk diskusi kemitraan formal, silakan hubungi tim legalitas kami di <strong>kerjasama@porosmadura.com</strong>.</p>`
+          content: `<div style="text-align:center;padding:48px 24px;font-family:sans-serif;">
+  <div style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#0D2B5C,#1a3d7a);color:#fff;font-size:11px;font-weight:700;letter-spacing:0.08em;padding:6px 16px;border-radius:99px;text-transform:uppercase;margin-bottom:24px;">
+    <span style="width:7px;height:7px;border-radius:50%;background:#C41E3A;display:inline-block;"></span>
+    Belum Tersedia
+  </div>
+  <div style="font-size:48px;margin-bottom:16px;">🏛️</div>
+  <h2 style="font-size:22px;font-weight:800;color:#0D2B5C;margin:0 0 12px;letter-spacing:-0.5px;">Halaman Kerja Sama Sedang Disiapkan</h2>
+  <p style="color:#6b7280;max-width:480px;margin:0 auto 28px;line-height:1.75;font-size:14px;">Halaman kerja sama dan kemitraan strategis Poros Madura sedang dalam proses penyusunan. Informasi mengenai peluang kolaborasi MOU, sindikasi konten, dan kemitraan instansi akan segera hadir.</p>
+  <div style="width:60px;height:3px;background:#C41E3A;border-radius:99px;margin:0 auto 28px;"></div>
+  <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+    <div style="background:linear-gradient(135deg,#f8faff,#f0f4ff);border:1px solid #dbe4f7;border-radius:12px;padding:14px 20px;min-width:130px;">
+      <div style="font-size:13px;font-weight:700;color:#0D2B5C;">Segera Hadir</div>
+      <div style="font-size:11px;color:#9ca3af;margin-top:3px;">Dalam waktu dekat</div>
+    </div>
+    <div style="background:linear-gradient(135deg,#f8faff,#f0f4ff);border:1px solid #dbe4f7;border-radius:12px;padding:14px 20px;min-width:130px;">
+      <div style="font-size:13px;font-weight:700;color:#0D2B5C;">Tim Legal</div>
+      <div style="font-size:11px;color:#9ca3af;margin-top:3px;">Sedang bekerja</div>
+    </div>
+    <div style="background:linear-gradient(135deg,#fef2f2,#fff5f5);border:1px solid #fecaca;border-radius:12px;padding:14px 20px;min-width:130px;">
+      <div style="font-size:13px;font-weight:700;color:#C41E3A;">Hubungi Kami</div>
+      <div style="font-size:11px;color:#9ca3af;margin-top:3px;">kerjasama@porosmadura.com</div>
+    </div>
+  </div>
+</div>`
         };
       case "hak-jawab":
         return {
           title: "Hak Jawab Dewan Pers",
           subtitle: "Mekanisme Hak Jawab Sesuai Pasal 1 & 5 UU Pers Nomor 40/1999",
-          content: `<p>Sesuai dengan ketentuan Undang-Undang Nomor 40 Tahun 1999 tentang Pers, <strong>Hak Jawab</strong> adalah hak seseorang atau sekelompok orang untuk memberikan tanggapan atau sanggahan terhadap pemberitaan berupa fakta yang merugikan nama baiknya.</p>
-
-<h2>Prosedur Pengajuan Hak Jawab</h2>
-<ul>
-  <li>Hak Jawab diajukan secara tertulis dengan melampirkan identitas resmi serta bukti/fakta sanggahan yang valid.</li>
-  <li>Ditujukan secara resmi kepada Pemimpin Redaksi Poros Madura melalui email: <strong>redaksi@porosmadura.com</strong>.</li>
-  <li>Redaksi akan memverifikasi permohonan tersebut dan mempublikasikan hak jawab secepatnya pada tautan berita awal yang disanggah.</li>
-</ul>`
+          content: `<div style="text-align:center;padding:48px 24px;font-family:sans-serif;">
+  <div style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#0D2B5C,#1a3d7a);color:#fff;font-size:11px;font-weight:700;letter-spacing:0.08em;padding:6px 16px;border-radius:99px;text-transform:uppercase;margin-bottom:24px;">
+    <span style="width:7px;height:7px;border-radius:50%;background:#C41E3A;display:inline-block;"></span>
+    Belum Tersedia
+  </div>
+  <div style="font-size:48px;margin-bottom:16px;">⚖️</div>
+  <h2 style="font-size:22px;font-weight:800;color:#0D2B5C;margin:0 0 12px;letter-spacing:-0.5px;">Prosedur Hak Jawab Sedang Disiapkan</h2>
+  <p style="color:#6b7280;max-width:480px;margin:0 auto 28px;line-height:1.75;font-size:14px;">Prosedur resmi pengajuan hak jawab sesuai UU Pers No. 40/1999 sedang dalam proses penyusunan oleh tim redaksi. Formulir, kontak, dan mekanisme lengkap akan segera tersedia di halaman ini.</p>
+  <div style="width:60px;height:3px;background:#C41E3A;border-radius:99px;margin:0 auto 28px;"></div>
+  <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+    <div style="background:linear-gradient(135deg,#f8faff,#f0f4ff);border:1px solid #dbe4f7;border-radius:12px;padding:14px 20px;min-width:130px;">
+      <div style="font-size:13px;font-weight:700;color:#0D2B5C;">Segera Hadir</div>
+      <div style="font-size:11px;color:#9ca3af;margin-top:3px;">Dalam waktu dekat</div>
+    </div>
+    <div style="background:linear-gradient(135deg,#f8faff,#f0f4ff);border:1px solid #dbe4f7;border-radius:12px;padding:14px 20px;min-width:130px;">
+      <div style="font-size:13px;font-weight:700;color:#0D2B5C;">Tim Redaksi</div>
+      <div style="font-size:11px;color:#9ca3af;margin-top:3px;">Sedang bekerja</div>
+    </div>
+    <div style="background:linear-gradient(135deg,#fef2f2,#fff5f5);border:1px solid #fecaca;border-radius:12px;padding:14px 20px;min-width:130px;">
+      <div style="font-size:13px;font-weight:700;color:#C41E3A;">Kirim Permohonan</div>
+      <div style="font-size:11px;color:#9ca3af;margin-top:3px;">redaksi@porosmadura.com</div>
+    </div>
+  </div>
+</div>`
         };
       case "koreksi-berita":
         return {

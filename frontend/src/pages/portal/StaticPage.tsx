@@ -8,6 +8,142 @@ interface PortalContext {
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
+// ── Coming Soon Placeholder Component ──────────────────────────────────────
+function ComingSoonContent({ title, description, icon }: { title: string; description: string; icon: string }) {
+  return (
+    <div style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      textAlign: "center",
+      padding: "48px 24px",
+      gap: "24px",
+    }}>
+      {/* Decorative top bar */}
+      <div style={{
+        width: "100%",
+        height: "3px",
+        background: "linear-gradient(90deg, transparent, #0D2B5C, #C41E3A, #0D2B5C, transparent)",
+        borderRadius: "99px",
+        marginBottom: "8px",
+      }} />
+
+      {/* Icon circle */}
+      <div style={{
+        width: "96px",
+        height: "96px",
+        borderRadius: "50%",
+        background: "linear-gradient(135deg, #f0f4ff 0%, #fce8ea 100%)",
+        border: "2px solid #e8edf5",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "40px",
+        boxShadow: "0 8px 32px rgba(13,43,92,0.10)",
+      }}>
+        {icon}
+      </div>
+
+      {/* Badge */}
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <span style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "6px",
+          background: "linear-gradient(135deg, #0D2B5C, #1a3d7a)",
+          color: "#fff",
+          fontSize: "11px",
+          fontWeight: 700,
+          letterSpacing: "0.08em",
+          padding: "5px 14px",
+          borderRadius: "99px",
+          textTransform: "uppercase",
+        }}>
+          <span style={{
+            width: "6px", height: "6px", borderRadius: "50%",
+            background: "#C41E3A",
+            display: "inline-block",
+            animation: "pulse 1.5s infinite",
+          }} />
+          Belum Tersedia
+        </span>
+      </div>
+
+      {/* Title */}
+      <div>
+        <h2 style={{
+          fontSize: "24px",
+          fontWeight: 800,
+          color: "#0D2B5C",
+          margin: "0 0 10px",
+          letterSpacing: "-0.5px",
+        }}>
+          Halaman {title} Sedang Disiapkan
+        </h2>
+        <p style={{
+          fontSize: "14px",
+          color: "#6b7280",
+          margin: 0,
+          lineHeight: "1.7",
+          maxWidth: "480px",
+        }}>
+          {description}
+        </p>
+      </div>
+
+      {/* Divider */}
+      <div style={{ width: "60px", height: "3px", background: "#C41E3A", borderRadius: "99px" }} />
+
+      {/* Info cards */}
+      <div style={{
+        display: "flex",
+        gap: "12px",
+        flexWrap: "wrap",
+        justifyContent: "center",
+        marginTop: "4px",
+      }}>
+        {[
+          { label: "Segera Hadir", sublabel: "Dalam waktu dekat" },
+          { label: "Tim Redaksi", sublabel: "Sedang bekerja" },
+          { label: "Hubungi Kami", sublabel: "redaksi@porosmadura.com" },
+        ].map((item, i) => (
+          <div key={i} style={{
+            background: i === 2 ? "linear-gradient(135deg, #fef2f2, #fff5f5)" : "linear-gradient(135deg, #f8faff, #f0f4ff)",
+            border: `1px solid ${i === 2 ? "#fecaca" : "#dbe4f7"}`,
+            borderRadius: "12px",
+            padding: "14px 20px",
+            minWidth: "140px",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+          }}>
+            <div style={{ fontSize: "13px", fontWeight: 700, color: i === 2 ? "#C41E3A" : "#0D2B5C" }}>
+              {item.label}
+            </div>
+            <div style={{ fontSize: "11px", color: "#9ca3af", marginTop: "2px" }}>
+              {item.sublabel}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Bottom decoration */}
+      <div style={{
+        width: "100%",
+        height: "3px",
+        background: "linear-gradient(90deg, transparent, #C41E3A, #0D2B5C, #C41E3A, transparent)",
+        borderRadius: "99px",
+        marginTop: "8px",
+      }} />
+
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.5; transform: scale(0.8); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 export default function StaticPage() {
   const { pageSlug } = useParams<{ pageSlug: string }>();
   const { lang } = useOutletContext<PortalContext>();
@@ -1067,15 +1203,7 @@ export default function StaticPage() {
             title: lang === "ID" ? "Media Partner" : "Media Partnership",
             subtitle: lang === "ID" ? "Kemitraan Publikasi Acara, Komunitas, & Kegiatan" : "Event & Community Publication Partnerships",
             icon: <Handshake className="text-[#0D2B5C]" size={28} />,
-            content: (
-              <div className="flex flex-col gap-6 text-gray-700 text-sm font-sans leading-relaxed">
-                <p>Kami berkomitmen mendukung berbagai aktivitas positif kemasyarakatan, kepemudaan, pendidikan, dan kebudayaan di Madura melalui kerja sama media partner resmi.</p>
-                <h2>Ketentuan Kerja Sama</h2>
-                <p>Poros Madura bersedia memberikan dukungan publikasi berita rilis acara/kegiatan secara cuma-cuma dengan imbalan pencantuman logo resmi Poros Madura pada seluruh materi promosi acara (seperti backdrop, e-poster, banner sosial media, dan kaos panitia).</p>
-                <h2>Cara Mengajukan Kemitraan</h2>
-                <p>Kirimkan proposal resmi kegiatan Anda (format PDF) selambat-lambatnya 7 hari sebelum acara berlangsung ke email <strong>partnership@porosmadura.com</strong>.</p>
-              </div>
-            )
+            content: <ComingSoonContent title="Media Partner" description="Halaman kemitraan media Poros Madura sedang dalam proses pengembangan. Informasi lengkap mengenai program Media Partner, syarat, dan cara pendaftaran akan segera tersedia." icon="🤝" />
           };
 
         case "press-release":
@@ -1083,18 +1211,7 @@ export default function StaticPage() {
             title: lang === "ID" ? "Siaran Pers" : "Press Release",
             subtitle: lang === "ID" ? "Penyebarluasan Siaran Pers Resmi Perusahaan & Instansi" : "Official Press Release Distribution",
             icon: <FileText className="text-[#0D2B5C]" size={28} />,
-            content: (
-              <div className="flex flex-col gap-6 text-gray-700 text-sm font-sans leading-relaxed">
-                <p>Poros Madura menyediakan ruang bagi instansi pemerintahan, BUMN, swasta, akademisi, dan organisasi kemasyarakatan untuk mempublikasikan siaran pers (press release) resmi secara cepat dan kredibel.</p>
-                <h2>Panduan Pengiriman Siaran Pers</h2>
-                <ul>
-                  <li>Materi siaran pers ditulis dalam bahasa Indonesia yang baik, benar, dan memenuhi nilai berita.</li>
-                  <li>Harus menyertakan dokumen rilis tertulis (Ms Word / PDF) beserta minimal 1 (satu) foto dokumentasi pendukung berkualitas baik.</li>
-                  <li>Menyertakan kontak humas (Media Contact) yang dapat dihubungi untuk verifikasi lebih lanjut.</li>
-                </ul>
-                <p>Kirimkan draf siaran pers Anda langsung ke email redaksi: <strong>rilis@porosmadura.com</strong>.</p>
-              </div>
-            )
+            content: <ComingSoonContent title="Siaran Pers" description="Layanan pengiriman dan publikasi siaran pers (press release) Poros Madura sedang dalam tahap persiapan. Panduan lengkap, formulir pengiriman, dan kontak redaksi akan segera tersedia di halaman ini." icon="📰" />
           };
 
         case "kerja-sama":
@@ -1102,14 +1219,7 @@ export default function StaticPage() {
             title: lang === "ID" ? "Kerja Sama" : "Collaboration & Partnership",
             subtitle: lang === "ID" ? "Kolaborasi Kemitraan Bersama Poros Madura" : "Strategic Collaboration Opportunities",
             icon: <Handshake className="text-[#0D2B5C]" size={28} />,
-            content: (
-              <div className="flex flex-col gap-6 text-gray-700 text-sm font-sans leading-relaxed">
-                <p>Kami menyambut baik berbagai peluang kerja sama jangka panjang (MOU) di bidang sindikasi konten, pertukaran media informasi, riset jurnalistik, pelatihan jurnalisme, maupun pengembangan teknologi berita bersama mitra instansi pemerintah daerah, BUMN, dan swasta.</p>
-                <h2>Mengapa Bermitra dengan Kami?</h2>
-                <p>Poros Madura memiliki jangkauan pembaca lokal yang loyal di empat kabupaten Madura serta reputasi jurnalisme independen yang terverifikasi dan tepercaya.</p>
-                <p>Untuk diskusi kemitraan formal, silakan hubungi tim legalitas kami di <strong>kerjasama@porosmadura.com</strong>.</p>
-              </div>
-            )
+            content: <ComingSoonContent title="Kerja Sama" description="Halaman kerja sama dan kemitraan strategis Poros Madura sedang dalam proses penyusunan. Informasi mengenai peluang kolaborasi MOU, sindikasi konten, dan kemitraan instansi akan segera hadir." icon="🏛️" />
           };
 
         case "hak-jawab":
@@ -1117,17 +1227,7 @@ export default function StaticPage() {
             title: lang === "ID" ? "Hak Jawab Dewan Pers" : "Right of Reply",
             subtitle: lang === "ID" ? "Mekanisme Hak Jawab Sesuai Pasal 1 & 5 UU Pers Nomor 40/1999" : "Right of Reply Mechanisms Under Indonesian Law",
             icon: <Scale className="text-[#0D2B5C]" size={28} />,
-            content: (
-              <div className="flex flex-col gap-6 text-gray-700 text-sm font-sans leading-relaxed">
-                <p>Sesuai dengan ketentuan Undang-Undang Nomor 40 Tahun 1999 tentang Pers, <strong>Hak Jawab</strong> adalah hak seseorang atau sekelompok orang untuk memberikan tanggapan atau sanggahan terhadap pemberitaan berupa fakta yang merugikan nama baiknya.</p>
-                <h2>Prosedur Pengajuan Hak Jawab</h2>
-                <ul>
-                  <li>Hak Jawab diajukan secara tertulis dengan melampirkan identitas resmi serta bukti/fakta sanggahan yang valid.</li>
-                  <li>Ditujukan secara resmi kepada Pemimpin Redaksi Poros Madura melalui email: <strong>redaksi@porosmadura.com</strong>.</li>
-                  <li>Redaksi akan memverifikasi permohonan tersebut dan mempublikasikan hak jawab secepatnya pada tautan berita awal yang disanggah.</li>
-                </ul>
-              </div>
-            )
+            content: <ComingSoonContent title="Hak Jawab" description="Prosedur resmi pengajuan hak jawab sesuai UU Pers No. 40/1999 sedang dalam proses penyusunan oleh tim redaksi. Formulir, kontak, dan mekanisme lengkap akan segera tersedia di halaman ini." icon="⚖️" />
           };
 
         case "koreksi-berita":
