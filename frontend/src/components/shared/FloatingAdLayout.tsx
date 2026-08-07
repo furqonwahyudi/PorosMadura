@@ -207,24 +207,41 @@ export default function FloatingAdLayout({ children, page, category }: FloatingA
                 style={{ display: "block", width: "100%", height: "100%" }}
                 aria-label={ad.altText}
               >
-                <img
-                  src={ad.imageDesktop}
-                  alt={ad.altText}
-                  loading="eager"
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                    display: "block",
-                    transition: "transform 0.25s ease",
-                  }}
-                  onMouseEnter={e => {
-                    (e.currentTarget as HTMLImageElement).style.transform = "scale(1.02)";
-                  }}
-                  onMouseLeave={e => {
-                    (e.currentTarget as HTMLImageElement).style.transform = "scale(1)";
-                  }}
-                />
+                {ad.format === "video" ? (
+                  <video
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      display: "block",
+                    }}
+                  >
+                    <source src={ad.imageDesktop} type="video/mp4" />
+                  </video>
+                ) : (
+                  <img
+                    src={ad.imageDesktop}
+                    alt={ad.altText}
+                    loading="eager"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      display: "block",
+                      transition: "transform 0.25s ease",
+                    }}
+                    onMouseEnter={e => {
+                      (e.currentTarget as HTMLImageElement).style.transform = "scale(1.02)";
+                    }}
+                    onMouseLeave={e => {
+                      (e.currentTarget as HTMLImageElement).style.transform = "scale(1)";
+                    }}
+                  />
+                )}
               </a>
             </div>
           ) : (

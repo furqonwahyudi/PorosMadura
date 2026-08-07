@@ -1,4 +1,4 @@
-﻿import { Router } from 'express';
+import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
 import { getMedia, uploadMedia, deleteMedia } from './media.controller';
@@ -16,8 +16,8 @@ const upload = multer({
   storage,
   limits: { fileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760') },
   fileFilter: (_req, file, cb) => {
-    const allowed = /jpeg|jpg|png|gif|webp|svg/;
-    const ok = allowed.test(path.extname(file.originalname).toLowerCase()) && allowed.test(file.mimetype);
+    const allowed = /jpeg|jpg|png|gif|webp|svg|mp4|webm|ogg|quicktime|mpeg/;
+    const ok = allowed.test(path.extname(file.originalname).toLowerCase()) || allowed.test(file.mimetype);
     cb(null, ok ? true : false);
   },
 });

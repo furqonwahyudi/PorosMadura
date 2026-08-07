@@ -268,17 +268,24 @@ export default function AdManagerSlot({ slug, page, category, paragraphIndex }: 
         )}
 
         {ad.format === "video" && (
-          <div className="w-full max-w-3xl aspect-video overflow-hidden bg-black shadow">
+          <a 
+            href={ad.landingUrl} 
+            target={ad.targetBlank ? "_blank" : "_self"} 
+            rel="noreferrer" 
+            onClick={handleAdClick}
+            className="block w-full text-center"
+          >
             <video 
-              controls 
+              autoPlay 
+              loop 
               muted 
-              className="w-full h-full object-cover"
-              onClick={handleAdClick}
+              playsInline 
+              className="mx-auto max-w-full h-auto object-contain hover:opacity-98 transition-opacity"
             >
               <source src={ad.imageDesktop} type="video/mp4" />
               Browser Anda tidak mendukung tag video.
             </video>
-          </div>
+          </a>
         )}
       </div>
     </div>

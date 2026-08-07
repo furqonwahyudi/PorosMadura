@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminApi } from "../../../lib/adminApi";
 import { useDialog } from "../../../context/DialogContext";
-import { Plus, Code, Image as ImageIcon, Link, Loader2, Trash2 } from "lucide-react";
+import { Plus, Code, Image as ImageIcon, Link, Loader2, Trash2, Video } from "lucide-react";
 
 interface AdSlot {
   id: string;
@@ -45,7 +45,7 @@ export default function AdvertisementsPage() {
 
   // Form states
   const [name, setName] = useState("");
-  const [format, setFormat] = useState<"IMAGE" | "HTML">("IMAGE");
+  const [format, setFormat] = useState<"IMAGE" | "VIDEO" | "HTML">("IMAGE");
   const [advertiserId, setAdvertiserId] = useState("");
   const [campaignId, setCampaignId] = useState("");
   const [slotId, setSlotId] = useState("");
@@ -172,6 +172,10 @@ export default function AdvertisementsPage() {
       showToast("Silakan unggah gambar banner terlebih dahulu!", "warning");
       return;
     }
+    if (format === "VIDEO" && !imageDesktop) {
+      showToast("Silakan unggah file video banner terlebih dahulu!", "warning");
+      return;
+    }
     if (format === "HTML" && !htmlCode.trim()) {
       showToast("Kode Script programmatik wajib diisi!", "warning");
       return;
@@ -203,8 +207,8 @@ export default function AdvertisementsPage() {
       advertiserId,
       campaignId: campaignId || null,
       slotId,
-      landingUrl: format === "IMAGE" ? landingUrl : "",
-      imageDesktop: format === "IMAGE" ? imageDesktop : null,
+      landingUrl: format === "HTML" ? "" : landingUrl,
+      imageDesktop: format === "HTML" ? null : imageDesktop,
       htmlCode: format === "HTML" ? htmlCode : null,
       startDate: new Date(startDate).toISOString(),
       endDate: new Date(endDate).toISOString(),
@@ -299,7 +303,7 @@ export default function AdvertisementsPage() {
             <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", marginBottom: 6 }}>Format Materi Iklan *</label>
             <div style={{ display: "flex", gap: 10 }}>
               <button
-                type="button" onClick={() => setFormat("IMAGE")}
+                type="button" onClick={() => { setFormat("IMAGE"); setImageDesktop(""); }}
                 style={{
                   flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                   padding: "9px 0", borderRadius: 8, border: "1.5px solid",
@@ -312,7 +316,20 @@ export default function AdvertisementsPage() {
                 <ImageIcon size={14} /> Direct Banner
               </button>
               <button
-                type="button" onClick={() => setFormat("HTML")}
+                type="button" onClick={() => { setFormat("VIDEO"); setImageDesktop(""); }}
+                style={{
+                  flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                  padding: "9px 0", borderRadius: 8, border: "1.5px solid",
+                  borderColor: format === "VIDEO" ? "var(--brand)" : "var(--border)",
+                  background: format === "VIDEO" ? "var(--brand-subtle)" : "transparent",
+                  color: format === "VIDEO" ? "var(--brand)" : "var(--text-secondary)",
+                  fontSize: 12, fontWeight: 600, cursor: "pointer",
+                }}
+              >
+                <Video size={14} /> Video Loop
+              </button>
+              <button
+                type="button" onClick={() => { setFormat("HTML"); setImageDesktop(""); }}
                 style={{
                   flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                   padding: "9px 0", borderRadius: 8, border: "1.5px solid",
@@ -328,19 +345,21 @@ export default function AdvertisementsPage() {
           </div>
 
           {/* Conditional Input */}
-          {format === "IMAGE" ? (
+          {(format === "IMAGE" || format === "VIDEO") ? (
             <>
               <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", marginBottom: 6 }}>Unggah Gambar Banner *</label>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", marginBottom: 6 }}>
+                  {format === "VIDEO" ? "Unggah Video Banner *" : "Unggah Gambar Banner *"}
+                </label>
                 <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                  <input type="file" accept="image/*" onChange={handleUpload} disabled={uploading}
+                  <input type="file" accept={format === "VIDEO" ? "video/*" : "image/*"} onChange={handleUpload} disabled={uploading}
                     style={{ flex: 1, padding: "6px", background: "var(--bg-subtle)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12, color: "var(--text-primary)", outline: "none", boxSizing: "border-box" }}
                   />
                   {uploading && <Loader2 size={16} className="animate-spin text-slate-400" />}
                 </div>
                 {imageDesktop && (
                   <div style={{ marginTop: 8 }}>
-                    <span style={{ fontSize: 11, color: "var(--green)", fontWeight: 600 }}>Gambar Siap: </span>
+                    <span style={{ fontSize: 11, color: "var(--green)", fontWeight: 600 }}>File Siap: </span>
                     <a href={imageDesktop} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "var(--brand)", textDecoration: "underline" }} className="truncate block max-w-xs">{imageDesktop}</a>
                   </div>
                 )}
@@ -467,8 +486,10 @@ export default function AdvertisementsPage() {
                     </p>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    {item.format === "IMAGE" ? (
-                      <a href={item.imageDesktop} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "var(--brand)", textDecoration: "underline", fontWeight: 600 }}>Banner Link</a>
+                    {(item.format === "IMAGE" || item.format === "VIDEO") ? (
+                      <a href={item.imageDesktop} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "var(--brand)", textDecoration: "underline", fontWeight: 600 }}>
+                        {item.format === "VIDEO" ? "Video Link" : "Banner Link"}
+                      </a>
                     ) : (
                       <span style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: "monospace" }}>Script</span>
                     )}
