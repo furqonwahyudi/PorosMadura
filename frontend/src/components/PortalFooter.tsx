@@ -18,7 +18,7 @@ export default function PortalFooter({ lang }: PortalFooterProps) {
     let active = true;
     const loadCategories = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api/categories`);
+        const res = await fetch(`${import.meta.env.VITE_API_URL || (import.meta.env.PROD ? "" : "http://localhost:3001")}/api/categories`);
         const json = await res.json();
         if (json && json.success && active) {
           setDbCategories(json.data);

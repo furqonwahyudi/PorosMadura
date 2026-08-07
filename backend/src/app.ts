@@ -348,10 +348,12 @@ app.get('/robots.txt', async (req: Request, res: Response, next: NextFunction) =
     
     let robotsTxt = seoSettings?.robotsTxt;
     if (!robotsTxt) {
-      robotsTxt = `User-agent: *\nAllow: /\nDisallow: /admin/\nDisallow: /api/\n\nSitemap: ${siteUrl}/sitemap.xml\nSitemap: ${siteUrl}/news-sitemap.xml`;
+      robotsTxt = `User-agent: *\nAllow: /\nDisallow: /admin/\nDisallow: /api/auth/\n\nSitemap: ${siteUrl}/sitemap.xml\nSitemap: ${siteUrl}/news-sitemap.xml`;
     } else {
       // Pastikan sitemap URL dinamis ter-update jika domain berubah di robots.txt
       robotsTxt = robotsTxt.replace(/https:\/\/youdie.my.id/g, siteUrl).replace(/https:\/\/porosmadura.com/g, siteUrl);
+      // Ganti larangan crawl api secara global agar bot Google bisa memproses AJAX request artikel dinamis
+      robotsTxt = robotsTxt.replace('Disallow: /api/', 'Disallow: /api/auth/');
     }
 
     res.header('Content-Type', 'text/plain');
