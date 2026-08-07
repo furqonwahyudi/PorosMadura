@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import PortalHeader from "../components/PortalHeader";
 import PortalFooter from "../components/PortalFooter";
@@ -11,6 +11,51 @@ export default function PortalLayout() {
   const [lang, setLang] = useState<"ID" | "EN">("ID");
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Load and inject global header ads/script tag
+  useEffect(() => {
+    const injectGlobalScripts = async () => {
+      try {
+        const apiOrigin = import.meta.env.VITE_API_URL || "";
+        const res = await fetch(`${apiOrigin}/api/settings`);
+        const json = await res.json();
+        if (json && json.success && json.data?.adSettings?.globalHeaderScript) {
+          const rawScript = json.data.adSettings.globalHeaderScript;
+          
+          // Parse HTML elements (e.g. script tags) from string
+          const tempEl = document.createElement("div");
+          tempEl.innerHTML = rawScript;
+          
+          const scriptElements = tempEl.querySelectorAll("script");
+          scriptElements.forEach(script => {
+            const src = script.getAttribute("src");
+            
+            // Avoid duplicate injection
+            if (src && document.querySelector(`script[src="${src}"]`)) {
+              return;
+            }
+            
+            const newScript = document.createElement("script");
+            
+            // Copy all attributes (like async, crossorigin, src, etc.)
+            Array.from(script.attributes).forEach(attr => {
+              newScript.setAttribute(attr.name, attr.value);
+            });
+            
+            // Copy inner JS code if inline script
+            if (script.innerHTML) {
+              newScript.appendChild(document.createTextNode(script.innerHTML));
+            }
+            
+            document.head.appendChild(newScript);
+          });
+        }
+      } catch (err) {
+        console.error("Gagal menyuntikkan script iklan header global", err);
+      }
+    };
+    injectGlobalScripts();
+  }, []);
 
   // Determine current page context based on URL
   const path = location.pathname;

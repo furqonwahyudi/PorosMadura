@@ -1,21 +1,69 @@
-import React, { useState } from "react";
-import { ShieldAlert, Save, CheckCircle, FileCode } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { ShieldAlert, Save, CheckCircle, FileCode, Loader2 } from "lucide-react";
+import { adminApi } from "../../../lib/adminApi";
+import { useDialog } from "../../../context/DialogContext";
 
 export default function AdsSettingsPage() {
+  const { showToast } = useDialog();
+  const [loading, setLoading] = useState(true);
   const [antiAdblock, setAntiAdblock] = useState(true);
-  const [adsTxt, setAdsTxt] = useState(
-    "# ads.txt - Google AdSense & Authorized Direct Sellers\n" +
-    "google.com, pub-1029384756102938, DIRECT, f08c47fec0942fa0\n" +
-    "mgid.com, 849302, RESELLER, 2819cdac92837fbc\n" +
-    "porosmadura.com, direct-ad-slot-01, DIRECT"
-  );
-  const [saved, setSaved] = useState(false);
+  const [adsTxt, setAdsTxt] = useState("");
+  const [globalHeaderScript, setGlobalHeaderScript] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      setLoading(true);
+      const res = await adminApi.get<any>("/api/settings");
+      if (res && res.success) {
+        const adSet = res.data.adSettings || {};
+        setAntiAdblock(adSet.antiAdblock !== false);
+        setAdsTxt(adSet.adsTxt || "");
+        setGlobalHeaderScript(adSet.globalHeaderScript || "");
+      }
+    } catch (err) {
+      console.error("Gagal mengambil pengaturan iklan global", err);
+      showToast("Gagal memuat pengaturan dari server.", "error");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setSaving(true);
+      const updatedAdSettings = {
+        antiAdblock,
+        adsTxt,
+        globalHeaderScript
+      };
+      const res = await adminApi.put<any>("/api/settings", {
+        adSettings: updatedAdSettings
+      });
+      if (res && res.success) {
+        showToast("Pengaturan iklan global berhasil disimpan ke database!", "success");
+      }
+    } catch (err) {
+      console.error("Gagal menyimpan pengaturan iklan", err);
+      showToast("Gagal menyimpan pengaturan ke server.", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div style={{ padding: "40px", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, color: "var(--text-secondary)" }}>
+        <Loader2 size={16} className="animate-spin" />
+        <span style={{ fontSize: 13 }}>Memuat pengaturan iklan...</span>
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: "24px", display: "flex", flexDirection: "column", gap: 20 }} className="animate-fade-in">
@@ -25,23 +73,40 @@ export default function AdsSettingsPage() {
           Global Advertising Controls &amp; Verification Files
         </h1>
         <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: "4px 0 0" }}>
-          Konfigurasi mitigasi pemblokir iklan (AdBlock) dan kelola berkas ads.txt otorisasi penjual iklan
+          Konfigurasi mitigasi pemblokir iklan (AdBlock), script header programmatic, dan kelola berkas ads.txt otorisasi penjual iklan
         </p>
       </div>
 
-      {saved && (
-        <div style={{
-          background: "var(--green-subtle)", border: "1px solid var(--green)",
-          borderRadius: 8, padding: "10px 12px", display: "flex", gap: 8, alignItems: "center",
-          maxWidth: 600
-        }}>
-          <CheckCircle size={15} style={{ color: "var(--green)" }} />
-          <span style={{ fontSize: 12, color: "var(--text-primary)" }}>Pengaturan iklan global berhasil diperbarui.</span>
-        </div>
-      )}
-
       <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 600 }}>
         
+        {/* Global Ads Header Script (AdSense/MGID Script Injection) */}
+        <div style={{
+          background: "var(--surface)", border: "1px solid var(--border)",
+          borderRadius: 12, padding: 20, display: "flex", flexDirection: "column", gap: 14
+        }}>
+          <div>
+            <h2 style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", margin: "0 0 4px", display: "flex", alignItems: "center", gap: 6 }}>
+              <FileCode size={15} style={{ color: "var(--brand)" }} /> Global Ad Network Header Scripts (<span style={{ fontFamily: "monospace" }}>&lt;head&gt;</span> Script)
+            </h2>
+            <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: 0 }}>
+              Tempel script tag dari jaringan iklan (seperti Google AdSense Auto Ads Script, kode integrasi header MGID, atau analitik eksternal) di sini. Kode ini akan otomatis dimuat pada bagian kepala (<span style={{ fontFamily: "monospace" }}>&lt;head&gt;</span>) portal berita utama.
+            </p>
+          </div>
+
+          <textarea
+            value={globalHeaderScript} onChange={e => setGlobalHeaderScript(e.target.value)}
+            rows={6}
+            placeholder={`Contoh:
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-xxxxxxxxxxxxxxxx" crossorigin="anonymous"></script>`}
+            style={{
+              width: "100%", padding: "10px 12px", background: "var(--bg-subtle)",
+              border: "1px solid var(--border)", borderRadius: 8, fontSize: 12,
+              fontFamily: "monospace", color: "var(--text-primary)", outline: "none",
+              boxSizing: "border-box", resize: "vertical", lineHeight: 1.5
+            }}
+          />
+        </div>
+
         {/* Anti-AdBlock settings block */}
         <div style={{
           background: "var(--surface)", border: "1px solid var(--border)",
@@ -93,12 +158,12 @@ export default function AdsSettingsPage() {
 
           <textarea
             value={adsTxt} onChange={e => setAdsTxt(e.target.value)}
-            rows={8}
+            rows={6}
             style={{
               width: "100%", padding: "10px 12px", background: "var(--bg-subtle)",
               border: "1px solid var(--border)", borderRadius: 8, fontSize: 12,
               fontFamily: "monospace", color: "var(--text-primary)", outline: "none",
-              boxSizing: "border-box", resize: "none", lineHeight: 1.5
+              boxSizing: "border-box", resize: "vertical", lineHeight: 1.5
             }}
             required
           />
@@ -106,12 +171,14 @@ export default function AdsSettingsPage() {
 
         {/* Submit */}
         <div>
-          <button type="submit" style={{
+          <button type="submit" disabled={saving} style={{
             display: "flex", alignItems: "center", gap: 7, padding: "10px 20px",
             background: "var(--brand)", border: "none", borderRadius: 8,
-            cursor: "pointer", color: "#fff", fontSize: 13, fontWeight: 600
+            cursor: saving ? "not-allowed" : "pointer", color: "#fff", fontSize: 13, fontWeight: 600,
+            opacity: saving ? 0.7 : 1
           }}>
-            <Save size={14} /> Simpan Pengaturan Global
+            {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} 
+            Simpan Pengaturan Global
           </button>
         </div>
 
